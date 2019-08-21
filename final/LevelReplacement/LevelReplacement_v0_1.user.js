@@ -6,7 +6,7 @@
 // @author       Sock#3222
 // @grant        none
 // @include      https://duelingnexus.com/game/* 
-// @include      https://duelingnexus.com/edtior/* 
+// @include      https://duelingnexus.com/editor/* 
 // ==/UserScript==
 
 (function() {
