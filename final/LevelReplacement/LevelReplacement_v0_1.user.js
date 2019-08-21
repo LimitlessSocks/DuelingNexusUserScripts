@@ -11,12 +11,12 @@
 
 (function() {
     'use strict';
-    const BASE_URL = "https://duelingnexus.com/game";
+    // const BASE_URL = "https://duelingnexus.com/game";
 
-    const isGamePage = function () {
-        let currentURL = window.location.toString();
-        return currentURL.startsWith(BASE_URL);
-    }
+    // const isGamePage = function () {
+        // let currentURL = window.location.toString();
+        // return currentURL.startsWith(BASE_URL);
+    // }
     
     // polyfills
     if(!console.error) {
@@ -26,11 +26,11 @@
         console.info = function (text) { console.log("Info: ", text); }
     }
 
-    if(!isGamePage()) {
-        // don't run this script on pages not matching the base
-        console.info("DuelingNexus Level Replacement Script not started.");
-        return;
-    }
+    // if(!isGamePage()) {
+        // // don't run this script on pages not matching the base
+        // console.info("DuelingNexus Level Replacement Script not started.");
+        // return;
+    // }
 
     const TYPE_JOINER = "|";
     const LINK_TYPE = "Link";
