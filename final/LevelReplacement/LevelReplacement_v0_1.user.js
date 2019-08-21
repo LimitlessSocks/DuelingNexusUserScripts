@@ -5,7 +5,8 @@
 // @description  Replaces the stars on cards in the textboxes with a more readable description.
 // @author       Sock#3222
 // @grant        none
-// @include      https://duelingnexus.com/game/*
+// @include      https://duelingnexus.com/game/* 
+// @include      https://duelingnexus.com/edtior/* 
 // ==/UserScript==
 
 (function() {
