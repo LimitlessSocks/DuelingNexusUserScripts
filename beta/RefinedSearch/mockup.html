@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>mockup</title>
+    <meta charset="UTF-8">
+    <style>body{background:black;color:white;}
+        #rs-ext-advanced-search-bar {
+            /*width: 600px;*/
+            width: 100%;
+        }
+        .rs-ext-toggle-button {
+            width: 3em; height: 3em;
+            background: #ddd;
+            border: 1px solid black;
+        }
+        .rs-ext-toggle-button:hover {
+            background: #fff;
+        }
+        button.rs-ext-selected { background: #00008b; color: white; }
+        button.rs-ext-selected:hover { background: #55d; }
+        .rs-ext-left-float {
+            float: left;
+        }
+        .rs-ext-input {
+            
+        }
+        .rs-ext-shrinkable {
+            transition: transform 0.3s ease-out; 
+            height: auto;
+            background: #ccc;
+            width: 100%;
+            transform: scaleY(1);
+            transform-origin: top;*/
+            overflow: hidden;
+            z-index: 10000;
+        }
+        .rs-ext-shrinkable > * {
+            margin: 10px;
+        }
+        /*#rs-ext-monster {
+            background: #8c3b12c0;
+        }
+        #rs-ext-spell {
+            background: #1D9E74c0;
+            background: #126348c0;
+        }
+        #rs-ext-trap {
+            background: #692b46c0;
+        }*/
+        #rs-ext-monster, #rs-ext-spell, #rs-ext-trap {
+            background: rgba(0, 0, 0, 0.7);
+        }
+        
+        .rs-ext-shrunk {
+            transform: scaleY(0);
+            z-index: 100;
+        }
+        #rs-ext-advanced-pop-outs {
+            position: relative;
+        }
+        #rs-ext-advanced-pop-outs > .rs-ext-shrinkable {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        #rs-ext-monster-table th {
+            text-align: right;
+            width: 30px;
+        }
+        .rs-ext-table {
+            padding-right: 5px;
+        }
+        #rs-ext-spacer {
+            height: 0;
+            transition: height 0.3s ease-out;
+        }
+        #rs-ext-spacer.rs-ext-activated {
+        }
+    </style>
+</head>
+<body>
+    
+<div id="rs-ext-advanced-search-bar">
+    <button id="rs-ext-monster-toggle" class="engine-button engine-button-default">monster</button>
+    <button id="rs-ext-spell-toggle" class="engine-button engine-button-default">spell</button>
+    <button id="rs-ext-trap-toggle" class="engine-button engine-button-default">trap</button>
+    <div id="rs-ext-advanced-pop-outs">
+        <div id="rs-ext-spell" class="rs-ext-shrinkable rs-ext-shrunk">
+            <p>
+                <b>Spell Card Type: </b><select id="rs-ext-spell-type">
+                    <option></option>
+                    <option>Normal</option>
+                    <option>Quick-play</option>
+                    <option>Field</option>
+                    <option>Continuous</option>
+                    <option>Ritual</option>
+                    <option>Equip</option>
+                </select>
+            </p>
+        </div>
+        <div id="rs-ext-trap" class="rs-ext-shrinkable rs-ext-shrunk">
+            <p>
+                <b>Trap Card Type: </b><select id="rs-ext-trap-type">
+                    <option></option>
+                    <option>Normal</option>
+                    <option>Continuous</option>
+                    <option>Counter</option>
+                </select>
+            </p>
+        </div>
+        <div id="rs-ext-monster" class="rs-ext-shrinkable rs-ext-shrunk">
+            <table id="rs-ext-link-arrows" class="rs-ext-left-float rs-ext-table">
+                <tr>
+                    <th colspan="3">
+                        Link Arrows
+                    </th>
+                </tr>
+                <tr>
+                    <td><button class="rs-ext-toggle-button">&#x2196;</button></td>
+                    <td><button class="rs-ext-toggle-button">&uarr;</button></td>
+                    <td><button class="rs-ext-toggle-button">&#x2197;</button></td>
+                </tr>
+                <tr>
+                    <td><button class="rs-ext-toggle-button">&larr;</button></td>
+                    <td><button class="rs-ext-toggle-button" id="rs-ext-equals">=</button></td>
+                    <td><button class="rs-ext-toggle-button">&rarr;</button></td>
+                </tr>
+                <tr>
+                    <td><button class="rs-ext-toggle-button">&#x2199;</button></td>
+                    <td><button class="rs-ext-toggle-button">&darr;</button></td>
+                    <td><button class="rs-ext-toggle-button">&#x2198;</button></td>
+                </tr>
+            </table>
+            <div id="rs-ext-monster-table" class="rs-ext-left-float rs-ext-table">
+                <table>
+                    <tr>
+                        <th>Category</th>
+                        <td>
+                            <select id="rs-ext-monster-category" class="rs-ext-input">
+                                <option></option>
+                                <option>Normal</option>
+                                <option>Effect</option>
+                                <option>Non-Effect</option>
+                                <option>Link</option>
+                                <option>Pendulum</option>
+                                <option>Leveled</option>
+                                <option>Xyz</option>
+                                <option>Synchro</option>
+                                <option>Fusion</option>
+                                <option>Ritual</option>
+                                <option>Gemini</option>
+                                <option>Flip</option>
+                                <option>Spirit</option>
+                                <option>Toon</option>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Type</th>
+                        <td>
+                        <select id="rs-ext-monster-type" class="rs-ext-input">
+                            <option></option>
+                            <option>Aqua</option>
+                            <option>Beast</option>
+                            <option>Beast-Warrior</option>
+                            <option>Cyberse</option>
+                            <option>Dinosaur</option>
+                            <option>Dragon</option>
+                            <option>Fairy</option>
+                            <option>Fiend</option>
+                            <option>Fish</option>
+                            <option>Insect</option>
+                            <option>Machine</option>
+                            <option>Plant</option>
+                            <option>Psychic</option>
+                            <option>Pyro</option>
+                            <option>Reptile</option>
+                            <option>Rock</option>
+                            <option>Sea Serpent</option>
+                            <option>Spellcaster</option>
+                            <option>Thunder</option>
+                            <option>Warrior</option>
+                            <option>Winged Beast</option>
+                            <option>Wyrm</option>
+                            <option>Zombie</option>
+                            
+                            <option>Creator God</option>
+                            <option>Divine-Beast</option>
+                        </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Attribute</th>
+                        <td>
+                            <select id="rs-ext-monster-attribute" class="rs-ext-input">
+                                <option></option>
+                                <option>DARK</option>
+                                <option>EARTH</option>
+                                <option>FIRE</option>
+                                <option>LIGHT</option>
+                                <option>WATER</option>
+                                <option>WIND</option>
+                                <option>DIVINE</option>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Level/Rank/Link Rating</th>
+                        <td><input id="rs-ext-level" class="rs-ext-input"></input></td>
+                    </tr>
+                    <tr>
+                        <th>Pendulum Scale</th>
+                        <td><input id="rs-ext-scale" class="rs-ext-input"></input></td>
+                    </tr>
+                    <tr>
+                        <th>ATK</th>
+                        <td><input id="rs-ext-atk" class="rs-ext-input"></input></td>
+                    </tr>
+                    <tr>
+                        <th>DEF</th>
+                        <td><input id="rs-ext-def" class="rs-ext-input"></input></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div id="rs-ext-spacer"></div>
+</div>
+
+
+
+
+
+
+
+
+<p>this is a test</p>
+    
+    <script>
+        // toggleButtonState.bind(el);
+        let toggleButtonState = function () {
+            let isSelected = this.classList.contains("rs-ext-selected");
+            if(isSelected) {
+                this.classList.remove("rs-ext-selected");
+            }
+            else {
+                this.classList.add("rs-ext-selected");
+            }
+        };
+        [...document.querySelectorAll(".rs-ext-toggle-button")].forEach(el => {
+            el.addEventListener("click", toggleButtonState.bind(el));
+        });
+        
+        let monsterTab = document.getElementById("rs-ext-monster");
+        let spellTab = document.getElementById("rs-ext-spell");
+        let trapTab = document.getElementById("rs-ext-trap");
+        
+        let spacer = document.getElementById("rs-ext-spacer");
+        
+        let createToggleOtherListener = function (target, ...others) {
+            return function () {
+                if(target.classList.contains("rs-ext-shrunk")) {
+                    spacer.classList.add("rs-ext-activated");
+                    target.classList.remove("rs-ext-shrunk");
+                    others.forEach(other => other.classList.add("rs-ext-shrunk"));
+                }
+                else {
+                    spacer.classList.remove("rs-ext-activated");
+                    target.classList.add("rs-ext-shrunk");
+                }
+            }
+        }
+        
+        document.getElementById("rs-ext-monster-toggle")
+                .addEventListener("click", createToggleOtherListener(monsterTab,  spellTab,   trapTab));
+        document.getElementById("rs-ext-spell-toggle")
+                .addEventListener("click", createToggleOtherListener(spellTab,    monsterTab, trapTab));
+        document.getElementById("rs-ext-trap-toggle")
+                .addEventListener("click", createToggleOtherListener(trapTab,     monsterTab, spellTab));
+        
+        const currentSection = function () {
+            return [monsterTab, spellTab, trapTab].find(el => !el.classList.contains("rs-ext-shrunk")) || null;
+        }
+        
+        function updatePaddingHeight () {
+            let section = currentSection();
+            let height;
+            if(section) {
+                height = section.clientHeight;
+            }
+            else {
+                height = 0;
+            }
+            spacer.style.height = height + "px";
+        }
+        let interval = setInterval(updatePaddingHeight, 1);
+        console.info("Interval started. ", interval);
+        
+    </script>
+</body>
+</html>

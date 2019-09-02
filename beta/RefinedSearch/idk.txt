@@ -1,0 +1,7 @@
+    const isTrapCard = (card) => card.type & monsterTypeMap["Trap"];
+    const isSpellCard = (card) => card.type & monsterTypeMap["Spell"];
+    const isNormalMonster = (card) => card.type & monsterTypeMap["Normal"];
+    const isEffectMonster = (card) => card.type & monsterTypeMap["Effect"];
+    const isFusionMonster = (card) => card.type & monsterTypeMap["Fusion"];
+    const isRitualMonster = (card) => card.type & monsterTypeMap["Ritual"];
+    const isSpiritMonster = (card) => card.type & monsterTypeMap["Spirit"];
