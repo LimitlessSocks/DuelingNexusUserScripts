@@ -1,6 +1,17 @@
+// ==UserScript==
+// @name         DuelingNexus Deck Editor Revamp
+// @namespace    https://duelingnexus.com/
+// @version      0.1
+// @description  Revamps the deck editor search feature.
+// @author       Sock#3222
+// @grant        none
+// @include      https://duelingnexus.com/editor/*
+// ==/UserScript==
+
 const EXT = {
     RESULTS_PER_PAGE: 30,
     MIN_INPUT_LENGTH: 1,
+    SEARCH_BY_TEXT: true,
     Search: {
         cache: [],
         current_page: 1,
@@ -15,15 +26,207 @@ const FN = {
             return f(g(...inputs));
         }
     },
+    hook: function (f, h, g) {
+        return function (...inputs) {
+            let fv = f(...inputs);
+            let gv = g(...inputs);
+            return h(fv, gv);
+        }
+    },
     not: function (x) {
         return !x;
-    }
+    },
+    or: function (x, y) {
+        return x || y;
+    },
+    and: function (x, y) {
+        return x && y;
+    },
+    // I heard you like obfuscation
+    xor: function (x, y) {
+        return x ? y ? 0 : 1 : y;
+    },
 };
 
 
-(function () {
+const TokenTypes = {
+    OPERATOR: Symbol("TokenTypes.OPERATOR"),
+    OPEN_PAREN: Symbol("TokenTypes.OPEN_PAREN"),
+    CLOSE_PAREN: Symbol("TokenTypes.CLOSE_PAREN"),
+    WHITESPACE: Symbol("TokenTypes.WHITESPACE"),
+    EXPRESSION: Symbol("TokenTypes.EXPRESSION"),
+    UNKNOWN: Symbol("TokenTypes.UNKNOWN"),
+};
+class SearchInputToken {
+    constructor(raw, type, position) {
+        this.raw = raw;
+        this.type = type;
+        this.position = position;
+    }
+    
+    isWhiteSpace() {
+        return this.type === TokenTypes.WHITESPACE;
+    }
+    
+    isData() {
+        return this.type === TokenTypes.EXPRESSION;
+    }
+    
+    isOperator() {
+        return this.type === TokenTypes.OPERATOR;
+    }
+    
+    isOpenParenthesis() {
+        return this.type === TokenTypes.OPEN_PAREN;
+    }
+    
+    isCloseParenthesis() {
+        return this.type === TokenTypes.CLOSE_PAREN;
+    }
+    
+    toString() {
+        // let repr = "Token[ ";
+        // repr += this.position.toString().padStart(2);
+        // repr += ":";
+        // repr += this.type.toString().padEnd(32);
+        // repr += JSON.stringify(this.raw);
+        // repr += " ]";
+        
+        // return repr;
+        
+        return "SearchInputToken(" + JSON.stringify(this.raw) + ", " + this.type.toString() + ", " + this.position + ")";
+    }
+    
+    inspect() {
+        return this.toString();
+    }
+}
+class SearchInputParser {
+    constructor(input) {
+        this.input = input;
+        this.tokens = [];
+        this.index = 0;
+    }
+    
+    get running() {
+        return this.index < this.input.length;
+    }
+    
+    step() {
+        let slice = this.input.slice(this.index);
+        for(let [regex, type] of SearchInputParser.RULES) {
+            let match = slice.match(regex);
+            if(match && match.length) {
+                match = match[0];
+                this.tokens.push(new SearchInputToken(match, type, this.index));
+                this.index += match.length;
+                break;
+            }
+        }
+    }
+    
+    parse() {
+        while(this.running) {
+            this.step();
+        }
+    }
+    
+    static parse(text) {
+        let inst = new SearchInputParser(text);
+        inst.parse();
+        return inst.tokens;
+    }
+    
+    static parseSignificant(text) {
+        return SearchInputParser.parse(text).filter(token => !token.isWhiteSpace());
+    }
+}
+SearchInputParser.RULES = [
+    [/^\s+/, TokenTypes.WHITESPACE],
+    [/^\(/, TokenTypes.OPEN_PAREN],
+    [/^\)/, TokenTypes.CLOSE_PAREN],
+    [/^\b(?:OR|AND)\b|,/, TokenTypes.OPERATOR],
+    [/^((?:[&=]|[!><]=?)\s*)?("(?:[^"]|"")*"|\S+?\b)/, TokenTypes.EXPRESSION],
+    [/^./, TokenTypes.UNKNOWN],
+];
+
+// higher = tighter
+const OPERATOR_PRECEDENCE = {
+    "AND":  100,
+    "OR":   50,
+};
+
+class SearchInputShunter {
+    constructor(input) {
+        this.tokens = SearchInputParser.parseSignificant(input);
+        this.index = 0;
+        this.operatorStack = [];
+        this.outputQueue = [];
+    }
+
+    static parseValue(raw) {
+        return raw.replace(/"((?:[^"]|"")*)"/g, function (match, inner) {
+            // undouble escapes
+            return inner.replace(/""/g, '"');
+        });
+    }
+    
+    get operatorStackTop() {
+        return this.operatorStack[this.operatorStack.length - 1];
+    }
+    
+    get running() {
+        return this.index < this.tokens.length;
+    }
+    
+    parseToken(token) {
+        if(token.isData()) {
+            // idc if this is impure shunting procedures, it works!
+            let modifiedToken = new SearchInputToken(SearchInputShunter.parseValue(token.raw), token.type, token.position);
+            this.outputQueue.push(modifiedToken);
+        }
+        else if(token.isOpenParenthesis()) {
+            this.operatorStack.push(token);
+        }
+        else if(token.isCloseParenthesis()) {
+            while(this.operatorStackTop && !this.operatorStackTop.isOpenParenthesis()) {
+                this.outputQueue.push(this.operatorStack.pop());
+            }
+            if(this.operatorStackTop && this.operatorStackTop.isOpenParenthesis()) {
+                this.operatorStack.pop();
+            }
+            else {
+                throw new Error("Unbalanced parentheses");
+            }
+        }
+        else if(token.isOperator()) {
+            let currentPrecedence = OPERATOR_PRECEDENCE[token.raw];
+            while(this.operatorStackTop && OPERATOR_PRECEDENCE[this.operatorStackTop.raw] > currentPrecedence) {
+                this.outputQueue.push(this.operatorStack.pop());
+            }
+            this.operatorStack.push(token);
+        }
+    }
+    
+    shunt() {
+        for(let token of this.tokens) {
+            this.parseToken(token);
+        }
+        while(this.operatorStackTop) {
+            this.outputQueue.push(this.operatorStack.pop());
+        }
+    }
+    
+    static parseSections(text) {
+        let shunter = new SearchInputShunter(text);
+        shunter.shunt();
+        return shunter.outputQueue;
+    }
+}
+
+let onStart = function () {
     // minified with https://kangax.github.io/html-minifier/
-    const ADVANCED_SETTINGS_HTML_STRING = '<div id=rs-ext-advanced-search-bar><button id=rs-ext-monster-toggle class="engine-button engine-button-default">monster</button> <button id=rs-ext-spell-toggle class="engine-button engine-button-default">spell</button> <button id=rs-ext-trap-toggle class="engine-button engine-button-default">trap</button><div id=rs-ext-advanced-pop-outs><div id=rs-ext-spell class="rs-ext-shrinkable rs-ext-shrunk"><p><b>Spell Card Type: </b><select id=rs-ext-spell-type><option><option>Normal<option>Quick-play<option>Field<option>Continuous<option>Ritual<option>Equip</select></div><div id=rs-ext-trap class="rs-ext-shrinkable rs-ext-shrunk"><p><b>Trap Card Type: </b><select id=rs-ext-trap-type><option><option>Normal<option>Continuous<option>Counter</select></div><div id=rs-ext-monster class="rs-ext-shrinkable rs-ext-shrunk"><table class="rs-ext-left-float rs-ext-table"id=rs-ext-link-arrows><tr><th colspan=3>Link Arrows<tr><td><button class=rs-ext-toggle-button>↖</button><td><button class=rs-ext-toggle-button>↑</button><td><button class=rs-ext-toggle-button>↗</button><tr><td><button class=rs-ext-toggle-button>←</button><td><button class=rs-ext-toggle-button id=rs-ext-equals>=</button><td><button class=rs-ext-toggle-button>→</button><tr><td><button class=rs-ext-toggle-button>↙</button><td><button class=rs-ext-toggle-button>↓</button><td><button class=rs-ext-toggle-button>↘</button></table><div id=rs-ext-monster-table class="rs-ext-left-float rs-ext-table"><table><tr><th>Category<td><select class=rs-ext-input id=rs-ext-monster-category><option><option>Normal<option>Effect<option>Non-Effect<option>Link<option>Pendulum<option>Leveled<option>Xyz<option>Synchro<option>Fusion<option>Ritual<option>Gemini<option>Flip<option>Spirit<option>Toon</select><tr><th>Type<td><select id=rs-ext-monster-type class=rs-ext-input><option><option>Aqua<option>Beast<option>Beast-Warrior<option>Cyberse<option>Dinosaur<option>Dragon<option>Fairy<option>Fiend<option>Fish<option>Insect<option>Machine<option>Plant<option>Psychic<option>Pyro<option>Reptile<option>Rock<option>Sea Serpent<option>Spellcaster<option>Thunder<option>Warrior<option>Winged Beast<option>Wyrm<option>Zombie<option>Creator God<option>Divine-Beast</select><tr><th>Attribute<td><select id=rs-ext-monster-attribute class=rs-ext-input><option><option>DARK<option>EARTH<option>FIRE<option>LIGHT<option>WATER<option>WIND<option>DIVINE</select><tr><th>Level/Rank/Link Rating<td><input class=rs-ext-input id=rs-ext-level><tr><th>Pendulum Scale<td><input class=rs-ext-input id=rs-ext-scale disabled><tr><th>ATK<td><input class=rs-ext-input id=rs-ext-atk><tr><th>DEF<td><input class=rs-ext-input id=rs-ext-def></table></div></div></div><div id=rs-ext-spacer></div></div>';
+    const ADVANCED_SETTINGS_HTML_STRING = '<div id=rs-ext-advanced-search-bar><button id=rs-ext-monster-toggle class="engine-button engine-button-default">monster</button> <button id=rs-ext-spell-toggle class="engine-button engine-button-default">spell</button> <button id=rs-ext-trap-toggle class="engine-button engine-button-default">trap</button><div id=rs-ext-advanced-pop-outs><div id=rs-ext-spell class="rs-ext-shrinkable rs-ext-shrunk"><p><b>Spell Card Type: </b><select id=rs-ext-spell-type><option><option>Normal<option>Quick-play<option>Field<option>Continuous<option>Ritual<option>Equip</select></div><div id=rs-ext-trap class="rs-ext-shrinkable rs-ext-shrunk"><p><b>Trap Card Type: </b><select id=rs-ext-trap-type><option><option>Normal<option>Continuous<option>Counter</select></div><div id=rs-ext-monster class="rs-ext-shrinkable rs-ext-shrunk"><table class="rs-ext-left-float rs-ext-table"id=rs-ext-link-arrows><tr><th colspan=3>Link Arrows<tr><td><button class=rs-ext-toggle-button>↖</button><td><button class=rs-ext-toggle-button>↑</button><td><button class=rs-ext-toggle-button>↗</button><tr><td><button class=rs-ext-toggle-button>←</button><td><button class=rs-ext-toggle-button id=rs-ext-equals>=</button><td><button class=rs-ext-toggle-button>→</button><tr><td><button class=rs-ext-toggle-button>↙</button><td><button class=rs-ext-toggle-button>↓</button><td><button class=rs-ext-toggle-button>↘</button></table><div id=rs-ext-monster-table class="rs-ext-left-float rs-ext-table"><table><tr><th>Category<td><select class=rs-ext-input id=rs-ext-monster-category><option><option>Normal<option>Effect<option>Non-Effect<option>Link<option>Pendulum<option>Leveled<option>Xyz<option>Synchro<option>Fusion<option>Ritual<option>Gemini<option>Flip<option>Spirit<option>Toon</select><tr><th>Type<td><select id=rs-ext-monster-type class=rs-ext-input><option><option>Aqua<option>Beast<option>Beast-Warrior<option>Cyberse<option>Dinosaur<option>Dragon<option>Fairy<option>Fiend<option>Fish<option>Insect<option>Machine<option>Plant<option>Psychic<option>Pyro<option>Reptile<option>Rock<option>Sea Serpent<option>Spellcaster<option>Thunder<option>Warrior<option>Winged Beast<option>Wyrm<option>Zombie<option>Creator God<option>Divine-Beast</select><tr><th>Attribute<td><select id=rs-ext-monster-attribute class=rs-ext-input><option><option>DARK<option>EARTH<option>FIRE<option>LIGHT<option>WATER<option>WIND<option>DIVINE</select><tr><th>Level/Rank/Link Rating<td><input class=rs-ext-input id=rs-ext-level><tr><th>Pendulum Scale<td><input class=rs-ext-input id=rs-ext-scale><tr><th>ATK<td><input class=rs-ext-input id=rs-ext-atk><tr><th>DEF<td><input class=rs-ext-input id=rs-ext-def></table></div></div></div><div id=rs-ext-spacer></div></div>';
     
     const ADVANCED_SETTINGS_HTML_ELS = jQuery.parseHTML(ADVANCED_SETTINGS_HTML_STRING);
     ADVANCED_SETTINGS_HTML_ELS.reverse();
@@ -35,9 +238,58 @@ const FN = {
     $("#editor-search-text").off("input");
     
     // VOLATILE FUNCTIONS, MAY CHANGE AFTER A MAIN UPDATE
-    const CARD_LIST = X;
+    
+    /* reload cards until pendulum hotfix */
+    // const CARD_LIST = X;
+    const CARD_LIST = {};
+    const CardObject = function (a) {
+        this.id = a.id;
+        this.A = a.als || 0;
+        this.za = a.sc || [];
+        this.type = a.typ || 0;
+        this.attack = a.atk || 0;
+        this.i = a.def || 0;
+        var b = a.lvl || 0;
+        this.race = a.rac || 0;
+        this.H = a.att || 0;
+        this.level = b & 0xFF;
+        this.lscale = (b >> 24) & 0xFF;
+        this.rscale = (b >> 16) & 0xFF;
+    };
+    
+    const readCards = function (a) {
+        jQuery.ajaxSetup({
+            beforeSend: function(a) {
+                a.overrideMimeType && a.overrideMimeType("application/json")
+            }
+        });
+        jQuery.getJSON(h("data/cards.json?v=65"), function(b) {
+            // CARD_LIST = {};
+            for (let card of b.cards) {
+                CARD_LIST[card.id] = new CardObject(card);
+            }
+            jQuery.getJSON(h("data/cards_en.json?v=65"), function(b) {
+                for (let card of b.texts) {
+                    let other = CARD_LIST[card.id];
+                    if (other) {
+                        other.name = card.n;
+                        other.description = card.d;
+                        other.ra = card.s || [];
+                        other.Z = qa(other.name);
+                    }
+                }
+                if(a) {
+                    a();
+                }
+            })
+        })
+    };
+    
+    readCards();
+    
     const TYPE_HASH = ag;
     const TYPE_LIST = Object.values(TYPE_HASH);
+    console.log(TYPE_LIST);
     
     const ATTRIBUTE_MASK_HASH = Xf;
     
@@ -59,7 +311,7 @@ const FN = {
     const searchableCardName = function (id_or_card) {
         let card;
         if(typeof id_or_card === "number") {
-            card = CARD_LIST[X];
+            card = CARD_LIST[id_or_card];
         }
         else {
             card = id_or_card;
@@ -83,11 +335,6 @@ const FN = {
         monsterTypeMap[value] = parseInt(key, 10);
     }
     window.monsterTypeMap = monsterTypeMap;
-    
-    const decomposeLinkRating = function (card) {
-        // a.i & Fc && (c += "&#8598;"), a.i & Gc && (c += "&#8593;"), a.i & Hc && (c += "&#8599;"), a.i & Dc && (c += "&#8592;"), a.i & Ec && (c += "&#8594;"), a.i & Ic && (c += "&#8601;"), a.i & Jc && (c += "&#8595;"), a.i & Kc && (c += "&#8600;")
-        
-    }
     
     const allowedCount = function (card) {
         // card.A = the source id (e.g. for alt arts)
@@ -119,6 +366,147 @@ const FN = {
         return noun + (count == 1 ? base : suffix);
     }
     
+    // card identification stuff
+    const isToken               = (card) => card.type & monsterTypeMap["Token"];
+    
+    const isTrapCard            = (card) => card.type & monsterTypeMap["Trap"];
+    const isSpellCard           = (card) => card.type & monsterTypeMap["Spell"];
+    const isRitualSpell         = (card) => isSpellCard(card) && (card.type & monsterTypeMap["Ritual"]);
+    const isContinuous          = (card) => card.type & monsterTypeMap["Continuous"];
+    const isCounter             = (card) => card.type & monsterTypeMap["Counter"];
+    const isField               = (card) => card.type & monsterTypeMap["Field"];
+    const isEquip               = (card) => card.type & monsterTypeMap["Equip"];
+    const isQuickPlay           = (card) => card.type & monsterTypeMap["Quick-Play"];
+    const isSpellOrTrap         = (card) => isSpellCard(card) || isTrapCard(card);
+    
+    const nonNormalSpellTraps   = [isContinuous, isQuickPlay, isField, isCounter, isEquip, isRitualSpell];
+    const isNormalSpellOrTrap   = (card) =>
+        isSpellOrTrap(card)
+        && !nonNormalSpellTraps.some(cond => cond(card));
+    
+    const isNormalMonster       = (card) => card.type & monsterTypeMap["Normal"];
+    const isEffectMonster       = (card) => card.type & monsterTypeMap["Effect"];
+    const isMonster             = (card) => !isTrapCard(card) && !isSpellCard(card);
+    const isNonEffectMonster    = (card) => !isEffectMonster(card);
+    const isFusionMonster       = (card) => card.type & monsterTypeMap["Fusion"];
+    const isRitualMonster       = (card) => isMonster(card) && (card.type & monsterTypeMap["Ritual"]);
+    const isSynchroMonster      = (card) => card.type & monsterTypeMap["Synchro"];
+    const isTunerMonster        = (card) => card.type & monsterTypeMap["Tuner"];
+    const isLinkMonster         = (card) => card.type & monsterTypeMap["Link"];
+    const isGeminiMonster       = (card) => card.type & monsterTypeMap["Dual"];
+    const isToonMonster         = (card) => card.type & monsterTypeMap["Toon"];
+    const isFlipMonster         = (card) => card.type & monsterTypeMap["Flip"];
+    const isSpiritMonster       = (card) => card.type & monsterTypeMap["Spirit"];
+    const isXyzMonster          = (card) => card.type & monsterTypeMap["Xyz"];
+    const isPendulumMonster     = (card) => card.type & monsterTypeMap["Pendulum"];
+    
+    const isLevelMonster = (card) => isMonster(card) && !isLinkMonster(card) && !isXyzMonster(card);
+    
+    let kindMap = {
+        "TRAP": isTrapCard,
+        "SPELL": isSpellCard,
+        "MONSTER": isMonster,
+        "CONT": isContinuous,
+        "CONTINUOUS": isContinuous,
+        "COUNTER": isCounter,
+        "FIELD": isField,
+        "EQUIP": isEquip,
+        "QUICK": isQuickPlay,
+        "QUICKPLAY": isQuickPlay,
+        "NORMAL": isNormalMonster,
+        "NORMALST": isNormalSpellOrTrap,
+        "EFFECT": isEffectMonster,
+        "NONEFF": isNonEffectMonster,
+        "NONEFFECT": isNonEffectMonster,
+        "FUSION": isFusionMonster,
+        "RITUAL": isRitualMonster,
+        "RITUALST": isRitualSpell,
+        "TUNER": isTunerMonster,
+        "LINK": isLinkMonster,
+        "SYNC": isSynchroMonster,
+        "SYNCHRO": isSynchroMonster,
+        "DUAL": isGeminiMonster,
+        "GEMINI": isGeminiMonster,
+        "TOON": isToonMonster,
+        "FLIP": isFlipMonster,
+        "SPIRIT": isSpiritMonster,
+        "XYZ": isXyzMonster,
+        "PENDULUM": isPendulumMonster,
+        "PEND": isPendulumMonster,
+        "LEVELED": isLevelMonster,
+    };
+    
+    
+    const allSatisfies = function (tags, card) {
+        return tags.every(tag => tag(card));
+    }
+    
+    const defaultSearchOptionState = function () {
+        clearVisualSearchOptions();
+    };
+    
+    const displayResults = function () {
+        defaultSearchOptionState();
+        if(EXT.Search.cache.length !== 0) {
+            replaceTextNode(currentPageIndicator, EXT.Search.current_page);
+            let startPosition = (EXT.Search.current_page - 1) * EXT.Search.per_page;
+            let endPosition = Math.min(
+                EXT.Search.cache.length,
+                startPosition + EXT.Search.per_page
+            );
+            for(let i = startPosition; i < endPosition; i++) {
+                addCardToSearch(EXT.Search.cache[i].id);
+            }
+        }
+        clearChildren(infoBox);
+        for(let container of EXT.Search.messages) {
+            let [kind, message] = container;
+            let color, symbol;
+            switch(kind) {
+                case STATUS.ERROR:
+                    color = GUI_COLORS.HEADER.FAILURE;
+                    symbol = SYMBOLS.ERROR;
+                    break;
+                
+                case STATUS.SUCCESS:
+                    color = GUI_COLORS.HEADER.SUCCESS;
+                    symbol = SYMBOLS.SUCCESS;
+                    break;
+                
+                case STATUS.NEUTRAL:
+                default:
+                    color = GUI_COLORS.HEADER.NEUTRAL;
+                    symbol = SYMBOLS.INFO;
+                    break;
+            }
+            let symbolElement = document.createElement("span");
+            let messageElement = document.createElement("span");
+            
+            appendTextNode(symbolElement, symbol);
+            symbolElement.style.padding = "3px";
+            appendTextNode(messageElement, message);
+            
+            let alignTable = document.createElement("table");
+            alignTable.style.backgroundColor = color;
+            alignTable.style.padding = "2px";
+            alignTable.appendChild(makeElement("tr"));
+            alignTable.children[0].appendChild(makeElement("td"));
+            alignTable.children[0].children[0].appendChild(symbolElement);
+            alignTable.children[0].appendChild(makeElement("td"));
+            alignTable.children[0].children[1].appendChild(messageElement);
+            
+            infoBox.appendChild(alignTable);
+        }
+    }
+    
+    const STATUS = { ERROR: 0, NEUTRAL: -1, SUCCESS: 1 };
+    const addMessage = function (kind, message) {
+        EXT.Search.messages.push([kind, message]);
+    }
+    
+    const initializeMessageContainer = function () {
+        EXT.Search.messages = [];
+    }
     // gui/dom manipulation stuff
     const clearChildren = function (el) {
         while(el.firstChild) {
@@ -131,13 +519,26 @@ const FN = {
         el.appendChild(textNode);
         return true;
     }
-    const makeElement = function (name, id = null, content = null) {
+    const makeElement = function (name, id = null, content = null, opts = {}) {
         let el = document.createElement(name);
         if(id !== null) {
             el.id = id;
         }
         if(content !== null) {
             appendTextNode(el, content);
+        }
+        for(let [key, val] of Object.entries(opts)) {
+            el[key] = val;
+        }
+        return el;
+    }
+    const HTMLTag = function (tag, id, classes, ...children) {
+        let el = makeElement(tag, id);
+        if(classes) {
+            el.classList.add(...classes);
+        }
+        for(let child of children) {
+            el.appendChild(child);
         }
         return el;
     }
@@ -181,6 +582,31 @@ const FN = {
     }
     
     /* UPDATE PAGE STRUCTURE */
+    // add options tile
+    let optionsArea = makeElement("div", "options-area"); /* USES NEXUS DEFAULT CSS/ID */
+    let options = makeElement("button", "rs-ext-options");
+    options.classList.add("engine-button", "engine-button", "engine-button-default");
+    let cog = makeElement("i");
+    cog.classList.add("fa", "fa-cog");
+    options.appendChild(cog);
+    appendTextNode(options, " Options");
+    optionsArea.appendChild(options);
+    
+    // TODO: implement option toggle area
+    // document.body.appendChild(optionsArea);
+    
+    let optionsWindow; /* USES NEXUS DEFAULT CSS/ID */
+    let overflowDeckSizeElement;
+    //;
+    // makeElement("div", "options-window")
+    optionsWindow = HTMLTag("div", "options-window", null,
+        HTMLTag("p", null, null,
+            overflowDeckSizeElement = makeElement("input", "rs-ext-decksize-overflow", { type: "checkbox" }),
+            makeElement("label", null, "Enable deck overflow", { for: overflowDeckSizeElement.id })
+        )
+    );
+    // TODO: add this
+    
     // add css
     let rsExtCustomCss = makeElement("style", null, ADVANCED_SETTINGS_CSS_STRING);
     document.head.appendChild(rsExtCustomCss);
@@ -322,18 +748,11 @@ const FN = {
     
     const tagStringOf = function (tag, value = null, comp = "=") {
         if(value !== null) {
-            return "{" + tag + comp + value + "}";
+            return "{" + tag + comp + '"' + value + '"' + "}";
         }
         else {
             return "{" + tag + "}";
         }
-    }
-    
-    const ISOLATE_COMPARATOR_REGEX = /^([&=]|[!><]=?)?(.+)/;
-    // returns 1 or 2 elements
-    const isolateComparator = function (str) {
-        let [_, comp, rest] = str.match(ISOLATE_COMPARATOR_REGEX);
-        return [rest, comp].filter(e => e);
     }
     
     // various elements
@@ -342,6 +761,7 @@ const FN = {
         TYPE:       document.getElementById("rs-ext-monster-type"),
         ATTRIBUTE:  document.getElementById("rs-ext-monster-attribute"),
         LEVEL:      document.getElementById("rs-ext-level"),
+        SCALE:      document.getElementById("rs-ext-scale"),
         ATK:        document.getElementById("rs-ext-atk"),
         DEF:        document.getElementById("rs-ext-def"),
         CATEGORY:   document.getElementById("rs-ext-monster-category"),
@@ -353,6 +773,7 @@ const FN = {
         LEVEL: "LEVIND",
         ATK: "ATK",
         DEF: "DEF",
+        SCALE: "SCALE",
     };
     const CATEGORY_TO_KEYWORD = {
         "Normal": "NORMAL",
@@ -397,7 +818,7 @@ const FN = {
             if(!value) continue;
             switch(inputElement.tagName) {
                 case "INPUT":
-                    tagString += tagStringOf(tagName, ...isolateComparator(value));
+                    tagString += tagStringOf(tagName, value);
                     break;
                 case "SELECT":
                     tagString += tagStringOf(tagName, value);
@@ -497,75 +918,8 @@ const FN = {
         }
     }
     
-    const isToken               = (card) => card.type & monsterTypeMap["Token"];
-    
-    const isTrapCard            = (card) => card.type & monsterTypeMap["Trap"];
-    const isSpellCard           = (card) => card.type & monsterTypeMap["Spell"];
-    const isRitualSpell         = (card) => isSpellCard(card) && (card.type & monsterTypeMap["Ritual"]);
-    const isContinuous          = (card) => card.type & monsterTypeMap["Continuous"];
-    const isCounter             = (card) => card.type & monsterTypeMap["Counter"];
-    const isField               = (card) => card.type & monsterTypeMap["Field"];
-    const isEquip               = (card) => card.type & monsterTypeMap["Equip"];
-    const isQuickPlay           = (card) => card.type & monsterTypeMap["Quick-Play"];
-    const isSpellOrTrap         = (card) => isSpellCard(card) || isTrapCard(card);
-    
-    const nonNormalSpellTraps   = [isContinuous, isQuickPlay, isField, isCounter, isEquip, isRitualSpell];
-    const isNormalSpellOrTrap   = (card) =>
-        isSpellOrTrap(card)
-        && !nonNormalSpellTraps.some(cond => cond(card));
-    
-    const isNormalMonster       = (card) => card.type & monsterTypeMap["Normal"];
-    const isEffectMonster       = (card) => card.type & monsterTypeMap["Effect"];
-    const isMonster             = (card) => !isTrapCard(card) && !isSpellCard(card);
-    const isNonEffectMonster    = (card) => !isEffectMonster(card);
-    const isFusionMonster       = (card) => card.type & monsterTypeMap["Fusion"];
-    const isRitualMonster       = (card) => isMonster(card) && (card.type & monsterTypeMap["Ritual"]);
-    const isSynchroMonster      = (card) => card.type & monsterTypeMap["Synchro"];
-    const isTunerMonster        = (card) => card.type & monsterTypeMap["Tuner"];
-    const isLinkMonster         = (card) => card.type & monsterTypeMap["Link"];
-    const isGeminiMonster       = (card) => card.type & monsterTypeMap["Dual"];
-    const isToonMonster         = (card) => card.type & monsterTypeMap["Toon"];
-    const isFlipMonster         = (card) => card.type & monsterTypeMap["Flip"];
-    const isSpiritMonster       = (card) => card.type & monsterTypeMap["Spirit"];
-    const isXyzMonster          = (card) => card.type & monsterTypeMap["Xyz"];
-    const isPendulumMonster     = (card) => card.type & monsterTypeMap["Pendulum"];
-    
-    const isLevelMonster = (card) => isMonster(card) && !isLinkMonster(card) && !isXyzMonster(card);
-    
-    let kindMap = {
-        "TRAP": isTrapCard,
-        "SPELL": isSpellCard,
-        "MONSTER": isMonster,
-        "CONT": isContinuous,
-        "CONTINUOUS": isContinuous,
-        "COUNTER": isCounter,
-        "FIELD": isField,
-        "EQUIP": isEquip,
-        "QUICK": isQuickPlay,
-        "QUICKPLAY": isQuickPlay,
-        "NORMAL": isNormalMonster,
-        "NORMALST": isNormalSpellOrTrap,
-        "EFFECT": isEffectMonster,
-        "NONEFF": isNonEffectMonster,
-        "NONEFFECT": isNonEffectMonster,
-        "FUSION": isFusionMonster,
-        "RITUAL": isRitualMonster,
-        "RITUALST": isRitualSpell,
-        "TUNER": isTunerMonster,
-        "LINK": isLinkMonster,
-        "SYNC": isSynchroMonster,
-        "SYNCHRO": isSynchroMonster,
-        "DUAL": isGeminiMonster,
-        "GEMINI": isGeminiMonster,
-        "TOON": isToonMonster,
-        "FLIP": isFlipMonster,
-        "SPIRIT": isSpiritMonster,
-        "XYZ": isXyzMonster,
-        "PENDULUM": isPendulumMonster,
-        "PEND": isPendulumMonster,
-        "LEVELED": isLevelMonster,
-    };
     const createKindValidator = function (tagName) {
+        tagName = tagName.toUpperCase();
         if(kindMap[tagName]) {
             return kindMap[tagName];
         } else {
@@ -578,6 +932,7 @@ const FN = {
         "ATK": "attack",
         "DEF": "i",
         "ARROWS": "i",
+        "SCALE": "lscale",
     };
     const VALIDATOR_LEVEL_MAP = {
         "LEVEL": isLevelMonster,
@@ -586,14 +941,16 @@ const FN = {
         "RK": isXyzMonster,
         "LINK": isLinkMonster,
         "LR": isLinkMonster,
-        "SCALE": isPendulumMonster,
         "LI": () => true,
         "LEVIND": () => true,
     };
     
     const initialCapitalize = function (str) {
-        return str[0].toUpperCase() + str.slice(1).toLowerCase()
+        return str.replace(/\w+/g, function (word) {
+            return word[0].toUpperCase() + word.slice(1).toLowerCase();
+        });
     }
+    
     
     // returns a validation function
     /*
@@ -603,6 +960,13 @@ const FN = {
      * LIM, num - search by limit status (0 = banned, 1 = limited, 2 = semi-limited, 3 = unlimited)
      * LV,  num - search by level indicator
      * LEVEL,RANK,RK,LINK,LR - same for respective type
+     *
+     *
+     * tag {
+     *     value: compare to
+     *     param: tag name
+     *     comp:  functional comparator
+     * }
      */
     const createValidator = function (tag) {
         if(VALIDATOR_ONTO_MAP[tag.param]) {
@@ -614,6 +978,9 @@ const FN = {
                     return false;
                 }
                 if(tag.param === "ARROWS" && !isLinkMonster(cardObject)) {
+                    return false;
+                }
+                if(tag.param === "SCALE" && !isPendulumMonster(cardObject)) {
                     return false;
                 }
                 return isMonster(cardObject) && tag.comp(objectValue, value);
@@ -683,98 +1050,60 @@ const FN = {
         }
     }
     
-    const allSatisfies = function (tags, card) {
-        return tags.every(tag => tag(card));
+    const ISOLATE_COMPARATOR_REGEX = /^([&=]|[!><]=?)?(.+)/;
+    
+    // returns 1 or 2 elements
+    const isolateComparator = function (str) {
+        let [_, comp, rest] = str.match(ISOLATE_COMPARATOR_REGEX);
+        return [rest, comp].filter(e => e);
     }
     
-    const defaultSearchOptionState = function () {
-        clearVisualSearchOptions();
-    };
-    
-    const displayResults = function () {
-        defaultSearchOptionState();
-        if(EXT.Search.cache.length !== 0) {
-            replaceTextNode(currentPageIndicator, EXT.Search.current_page);
-            let startPosition = (EXT.Search.current_page - 1) * EXT.Search.per_page;
-            let endPosition = Math.min(
-                EXT.Search.cache.length,
-                startPosition + EXT.Search.per_page
-            );
-            for(let i = startPosition; i < endPosition; i++) {
-                addCardToSearch(EXT.Search.cache[i].id);
-            }
-        }
-        clearChildren(infoBox);
-        for(let container of EXT.Search.messages) {
-            let [kind, message] = container;
-            let color, symbol;
-            switch(kind) {
-                case STATUS.ERROR:
-                    color = GUI_COLORS.HEADER.FAILURE;
-                    symbol = SYMBOLS.ERROR;
-                    break;
-                
-                case STATUS.SUCCESS:
-                    color = GUI_COLORS.HEADER.SUCCESS;
-                    symbol = SYMBOLS.SUCCESS;
-                    break;
-                
-                case STATUS.NEUTRAL:
-                default:
-                    color = GUI_COLORS.HEADER.NEUTRAL;
-                    symbol = SYMBOLS.INFO;
-                    break;
-            }
-            let symbolElement = document.createElement("span");
-            let messageElement = document.createElement("span");
-            
-            appendTextNode(symbolElement, symbol);
-            symbolElement.style.padding = "3px";
-            appendTextNode(messageElement, message);
-            
-            let alignTable = document.createElement("table");
-            alignTable.style.backgroundColor = color;
-            alignTable.style.padding = "2px";
-            alignTable.appendChild(makeElement("tr"));
-            alignTable.children[0].appendChild(makeElement("td"));
-            alignTable.children[0].children[0].appendChild(symbolElement);
-            alignTable.children[0].appendChild(makeElement("td"));
-            alignTable.children[0].children[1].appendChild(messageElement);
-            
-            infoBox.appendChild(alignTable);
-        }
-    }
-    
-    const STATUS = { ERROR: 0, NEUTRAL: -1, SUCCESS: 1 };
-    const addMessage = function (kind, message) {
-        EXT.Search.messages.push([kind, message]);
-    }
-    
-    const initializeMessageContainer = function () {
-        EXT.Search.messages = [];
-    }
-    
-    const ISOLATE_TAG_REGEX = /\{(!?)([^\{\}]+?)((?:([&=]|[!><]=?)([^\{\}]+?),?)*)\}/g;
-    const validatorFrom = function (isNegation, param, comp, value) {
-        let validator;
-        if(comp) {
-            let tag = {
-                param: param.toUpperCase(),
-                comp: generateComparator(comp.toUpperCase()),
-                value: value
-            };
-            // console.log(match, tag);
-            validator = createValidator(tag);
-        } else {
-            validator = createKindValidator(param);
+    const expressionToPredicate = function (expression, param, defaultComp = "=") {
+        let [rest, comp] = isolateComparator(expression);
+        comp = comp || defaultComp;
+        let fn = generateComparator(comp);
+        if(!fn) {
+            throw new Error("Invalid comparator: " + comp);
         }
         
-        if(isNegation) {
-            validator = FN.compose(FN.not, validator);
-        }
+        console.log("expressionToPredicate", rest, param, fn);
         
-        return validator;
+        let tag = {
+            value: rest,
+            param: param,
+            comp: fn,
+        };
+        
+        return createValidator(tag);
+    }
+    
+    const operatorFunctions = {
+        "OR": FN.or,
+        "AND": FN.and,
     };
+    const operatorNameToFunction = function (opName) {
+        let fn = operatorFunctions[opName];
+        return fn;
+    }
+
+    const textToPredicate = function (text, param) {
+        let tokens = SearchInputShunter.parseSections(text);
+        let stack = [];
+        for(let token of tokens) {
+            if(token.type === TokenTypes.EXPRESSION) {
+                stack.push(expressionToPredicate(token.raw, param));
+            }
+            else if(token.type === TokenTypes.OPERATOR) {
+                let right = stack.pop();
+                let left = stack.pop();
+                let fn = operatorNameToFunction(token.raw);
+                stack.push(FN.hook(left, fn, right));
+            }
+        }
+        return stack.pop();
+    }
+    
+    const ISOLATE_TAG_REGEX = /\{(!?)(\w+)([^\{\}]*?)\}/g;
     let updateSearchContents = function () {
         clearVisualSearchOptions();
         initializeMessageContainer();
@@ -790,49 +1119,20 @@ const FN = {
         // isolate the tags in the input
         let tags = [];
         input = input.replace(ISOLATE_TAG_REGEX, function (match, isNegation, param, info) {
-            let validators = [];
-            let previousComp = null;
+            // over each tag:
+            let validator;
             if(info) {
-                let sections = info.split(/\s*,\s*/);
-                // create new tag using conjunction of provided parameters
-                for(let section of sections) {
-                    if(section.length === 0) {
-                        addMessage(STATUS.ERROR, "Incomplete conditional section, skipping");
-                        continue;
-                    }
-                    // console.log(section, sections, param, info);
-                    let [value, comp] = isolateComparator(section);
-                    comp = comp || previousComp || "=";
-                    let validator = validatorFrom(isNegation, param, comp, value);
-                    if(validator) {
-                        validators.push(validator);
-                    }
-                    previousComp = comp;
-                }
+                validator = textToPredicate(info, param);
             }
             else {
-                let validator = validatorFrom(isNegation, param);
-                if(validator) {
-                    validators.push(validator);
-                }
+                validator = createKindValidator(param);
             }
             
-            if(validators.length) {
-                let combined;
-                if(validators.length === 1) {
-                    combined = validators[0];
+            if(validator) {
+                if(isNegation) {
+                    validator = FN.compose(FN.not, validator);
                 }
-                else {
-                    combined = function (cardObject) {
-                        for(let validator of this) {
-                            if(!validator(cardObject)) {
-                                return false;
-                            }
-                        }
-                        return true;
-                    }.bind(validators);
-                }
-                tags.push(combined);
+                tags.push(validator);
             }
             
             // remove the tag, replace with nothing
@@ -840,7 +1140,7 @@ const FN = {
         });
         
         // remove any improper tags
-        input = input.replace(/\{[^\}]+$/, "").toUpperCase();
+        input = input.replace(/\{[^\}]+$/, "");
         
         // needs non-empty input
         if (input.length !== 0 || tags.length !== 0) {
@@ -863,22 +1163,29 @@ const FN = {
             let isLongEnough = input.length >= EXT.MIN_INPUT_LENGTH;
             let isFuzzySearch = hasTags || isLongEnough;
             
-            let searchableInput = input.replace(/ /g, "").toUpperCase();
+            let uppercaseInput = input.toUpperCase();
+            let searchableInput = uppercaseInput.replace(/ /g, "");
             if (0 === fuzzyMatches.length) {
                 // for each card ID
                 for (var e in CARD_LIST) {
                     let card = CARD_LIST[e];
-                    if(isPlayableCard(card)) {
-                        if(allSatisfies(tags, card)) {
-                            let compareName = searchableCardName(card);
-                            if(compareName === searchableInput) {
-                                // if the search name is the input, push it
-                                exactMatches.push(card);
-                            } else if(isFuzzySearch) {
-                                let cardMatchesSearch = compareName.indexOf(searchableInput) !== -1;
-                                if(cardMatchesSearch) {
-                                    fuzzyMatches.push(card);
-                                }
+                    if(!isPlayableCard(card) || !allSatisfies(tags, card)) {
+                        continue;
+                    }
+                    let compareName = searchableCardName(card);
+                    if(compareName === searchableInput) {
+                        // if the search name is the input, push it
+                        exactMatches.push(card);
+                    } else if(isFuzzySearch) {
+                        let cardMatchesSearch = compareName.indexOf(searchableInput) !== -1;
+                        if(cardMatchesSearch) {
+                            fuzzyMatches.push(card);
+                        }
+                        else if(EXT.SEARCH_BY_TEXT) {
+                            card.compareText = card.compareText || card.description.toUpperCase();
+                            let cardTextMatchesSearch = card.compareText.indexOf(uppercaseInput) !== -1;
+                            if(cardTextMatchesSearch) {
+                                fuzzyMatches.push(card);
                             }
                         }
                     }
@@ -976,7 +1283,6 @@ const FN = {
         $(input).on("input", updateSearchContents);
     }
     
-    
     let previousPage = function () {
         EXT.Search.current_page = Math.max(1, EXT.Search.current_page - 1);
         displayResults();
@@ -987,4 +1293,17 @@ const FN = {
     }
     $(leftButton).on("click", previousPage);
     $(rightButton).on("click", nextPage);
-})();
+};
+
+let checkStartUp = function () {
+    if(Z.xa) {
+        onStart();
+        // destroy reference; pseudo-closure
+        onStart = null;
+    }
+    else {
+        setTimeout(checkStartUp, 100);
+    }
+}
+
+checkStartUp();

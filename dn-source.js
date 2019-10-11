@@ -330,11 +330,74 @@ function Wb() {
     }
 }
 
+// NOTE: `Va` is a list containing normal summonable monsters
 function Ac(a, b, c) {
-    Ma || Na || (C = a, null !== a ? (a.location == O.v || a.location == O.u || a.location == O.h ? $("#game-action-view").css("display", "block") : $("#game-action-view").hide(), 0 < a.l.length ? $("#game-action-view-materials").css("display", "block") : $("#game-action-view-materials").hide(), Ha[a.location] || Ia[a.location] ? ($("#game-action-sp-summon").css("display", Ha[a.location] ? "block" : "none"), $("#game-action-activate").css("display", Ia[a.location] ? "block" : "none"), $("#game-action-summon").hide(), $("#game-action-repos").hide(),
-        $("#game-action-set-monster").hide(), $("#game-action-set-spell").hide(), $("#game-action-attack").hide(), $("#game-action-menu").css("left", yb - 10).css("top", zb - 10).show()) : (p !== L.J ? ($("#game-action-summon").css("display", -1 !== Va.indexOf(a) ? "block" : "none"), $("#game-action-sp-summon").css("display", -1 !== u.indexOf(a) ? "block" : "none"), $("#game-action-repos").css("display", -1 !== Wa.indexOf(a) ? "block" : "none"), $("#game-action-set-monster").css("display", -1 !== Xa.indexOf(a) ? "block" : "none"), $("#game-action-set-spell").css("display",
-        -1 !== Ya.indexOf(a) ? "block" : "none"), $("#game-action-attack").hide()) : ($("#game-action-summon").hide(), $("#game-action-sp-summon").hide(), $("#game-action-repos").hide(), $("#game-action-set-monster").hide(), $("#game-action-set-spell").hide(), $("#game-action-attack").css("display", -1 !== $a.indexOf(a) ? "block" : "none")), $("#game-action-activate").css("display", -1 !== v.indexOf(a) ? "block" : "none"))) : ($("#game-action-view").hide(), $("#game-action-view-materials").hide(), $("#game-action-summon").hide(), $("#game-action-sp-summon").hide(),
-        $("#game-action-repos").hide(), $("#game-action-set-monster").hide(), $("#game-action-set-spell").hide(), $("#game-action-attack").hide(), $("#game-action-activate").hide()), a = 0 === b && c === O.f && !ob, $("#game-surrender-button").css("display", a ? "block" : "none"), $("#game-action-menu").css("left", yb - 10).css("top", zb - 10).show())
+    if(Ma || Na) {
+        return;
+    }
+    C = a;
+    if(null !== a) {
+        if(a.location == O.v || a.location == O.u || a.location == O.h) {
+            $("#game-action-view").css("display", "block");
+        }
+        else {
+            $("#game-action-view").hide();
+        }
+        if(0 < a.l.length) {
+            $("#game-action-view-materials").css("display", "block")
+        }
+        else {
+            $("#game-action-view-materials").hide();
+        }
+        if(Ha[a.location] || Ia[a.location]) {
+            $("#game-action-sp-summon").css("display", Ha[a.location] ? "block" : "none");
+            $("#game-action-activate").css("display", Ia[a.location] ? "block" : "none");
+            $("#game-action-summon").hide();
+            $("#game-action-repos").hide();
+            $("#game-action-set-monster").hide();
+            $("#game-action-set-spell").hide();
+            $("#game-action-attack").hide();
+            $("#game-action-menu")
+                .css("left", yb - 10)
+                .css("top", zb - 10).show();
+        } else {
+            if(p !== L.J) {
+                $("#game-action-summon").css("display", -1 !== Va.indexOf(a) ? "block" : "none");
+                $("#game-action-sp-summon").css("display", -1 !== u.indexOf(a) ? "block" : "none");
+                $("#game-action-repos").css("display", -1 !== Wa.indexOf(a) ? "block" : "none");
+                $("#game-action-set-monster").css("display", -1 !== Xa.indexOf(a) ? "block" : "none");
+                $("#game-action-set-spell").css("display", -1 !== Ya.indexOf(a) ? "block" : "none");
+                $("#game-action-attack").hide();
+            } else {
+                $("#game-action-summon").hide();
+                $("#game-action-sp-summon").hide();
+                $("#game-action-repos").hide();
+                $("#game-action-set-monster").hide();
+                $("#game-action-set-spell").hide();
+                $("#game-action-attack").css("display", -1 !== $a.indexOf(a) ? "block" : "none");
+            }
+            $("#game-action-activate").css("display", -1 !== v.indexOf(a) ? "block" : "none"));
+        }
+    } else {
+        $("#game-action-view").hide();
+        $("#game-action-view-materials").hide();
+        $("#game-action-summon").hide();
+        $("#game-action-sp-summon").hide();
+        $("#game-action-repos").hide();
+        $("#game-action-set-monster").hide();
+        $("#game-action-set-spell").hide();
+        $("#game-action-attack").hide();
+        $("#game-action-activate").hide();
+    }
+    a = (0 === b && c === O.f && !ob);
+    
+    $("#game-surrender-button")
+        .css("display", a ? "block" : "none");
+        
+    $("#game-action-menu")
+        .css("left", yb - 10)
+        .css("top", zb - 10)
+        .show();
 }
 
 function $b() {
@@ -2411,6 +2474,7 @@ function ad(a) {
 $(function() {
     window.GameInfo && ia(bd)
 });
+// DECK BUILDING RELATED FUNCTIONS
 var Z = {
     main: [],
     extra: [],
@@ -2463,6 +2527,7 @@ var Z = {
                 a || ++b;
         return b
     },
+    // add card to deck
     O: function(a, b, c, d) {
         var e = X[a];
         if (e && !(e.type & U.U)) {
@@ -2818,7 +2883,9 @@ function Wf(a) {
     var b = a.lvl || 0;
     this.race = a.rac || 0;
     this.H = a.att || 0;
-    this.level = b & 255
+    this.level = b & 0xFF;
+    this.lscale = (b >> 24) & 0xFF;
+    this.rscale = (b >> 16) & 0xFF;
 };
 var X;
 
@@ -3264,6 +3331,7 @@ function ja() {
     this.b = null
 }
 
+// display card in preview, given ID
 function Bc(a) {
     var b = ea;
     if (!(0 >= a) && b.w !== a && (b.w = a, a = X[a])) {
