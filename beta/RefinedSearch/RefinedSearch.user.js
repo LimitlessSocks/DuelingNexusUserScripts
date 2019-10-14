@@ -118,6 +118,9 @@ class SearchInputParser {
             let match = slice.match(regex);
             if(match && match.length) {
                 match = match[0];
+                if(type === TokenTypes.UNKNOWN) {
+                    throw new Error("Unknown token(" + this.index + "): \"" + match + '"');
+                }
                 this.tokens.push(new SearchInputToken(match, type, this.index));
                 this.index += match.length;
                 break;
@@ -141,12 +144,13 @@ class SearchInputParser {
         return SearchInputParser.parse(text).filter(token => !token.isWhiteSpace());
     }
 }
+SearchInputParser.RULE_EXPRESSION = /^((?:[&=]|[!><]=?)\s*)?("(?:[^"]|"")*"|\S+?\b)/;
 SearchInputParser.RULES = [
     [/^\s+/, TokenTypes.WHITESPACE],
     [/^\(/, TokenTypes.OPEN_PAREN],
     [/^\)/, TokenTypes.CLOSE_PAREN],
     [/^\b(?:OR|AND)\b|,/, TokenTypes.OPERATOR],
-    [/^((?:[&=]|[!><]=?)\s*)?("(?:[^"]|"")*"|\S+?\b)/, TokenTypes.EXPRESSION],
+    [SearchInputParser.RULE_EXPRESSION, TokenTypes.EXPRESSION],
     [/^./, TokenTypes.UNKNOWN],
 ];
 
@@ -165,10 +169,19 @@ class SearchInputShunter {
     }
 
     static parseValue(raw) {
-        return raw.replace(/"((?:[^"]|"")*)"/g, function (match, inner) {
+        let wholeMatch = raw.match(SearchInputParser.RULE_EXPRESSION);
+        if(wholeMatch !== null) {
+            let [ match, comp, value ] = wholeMatch;
+            // default to = for comparison
+            raw = (comp || "=") + value;
+        }
+        
+        raw = raw.replace(/"((?:[^"]|"")*)"/g, function (match, inner) {
             // undouble escapes
             return inner.replace(/""/g, '"');
         });
+        
+        return raw;
     }
     
     get operatorStackTop() {
@@ -226,7 +239,7 @@ class SearchInputShunter {
 
 let onStart = function () {
     // minified with https://kangax.github.io/html-minifier/
-    const ADVANCED_SETTINGS_HTML_STRING = '<div id=rs-ext-advanced-search-bar><button id=rs-ext-monster-toggle class="engine-button engine-button-default">monster</button> <button id=rs-ext-spell-toggle class="engine-button engine-button-default">spell</button> <button id=rs-ext-trap-toggle class="engine-button engine-button-default">trap</button><div id=rs-ext-advanced-pop-outs><div id=rs-ext-spell class="rs-ext-shrinkable rs-ext-shrunk"><p><b>Spell Card Type: </b><select id=rs-ext-spell-type><option><option>Normal<option>Quick-play<option>Field<option>Continuous<option>Ritual<option>Equip</select></div><div id=rs-ext-trap class="rs-ext-shrinkable rs-ext-shrunk"><p><b>Trap Card Type: </b><select id=rs-ext-trap-type><option><option>Normal<option>Continuous<option>Counter</select></div><div id=rs-ext-monster class="rs-ext-shrinkable rs-ext-shrunk"><table class="rs-ext-left-float rs-ext-table"id=rs-ext-link-arrows><tr><th colspan=3>Link Arrows<tr><td><button class=rs-ext-toggle-button>↖</button><td><button class=rs-ext-toggle-button>↑</button><td><button class=rs-ext-toggle-button>↗</button><tr><td><button class=rs-ext-toggle-button>←</button><td><button class=rs-ext-toggle-button id=rs-ext-equals>=</button><td><button class=rs-ext-toggle-button>→</button><tr><td><button class=rs-ext-toggle-button>↙</button><td><button class=rs-ext-toggle-button>↓</button><td><button class=rs-ext-toggle-button>↘</button></table><div id=rs-ext-monster-table class="rs-ext-left-float rs-ext-table"><table><tr><th>Category<td><select class=rs-ext-input id=rs-ext-monster-category><option><option>Normal<option>Effect<option>Non-Effect<option>Link<option>Pendulum<option>Leveled<option>Xyz<option>Synchro<option>Fusion<option>Ritual<option>Gemini<option>Flip<option>Spirit<option>Toon</select><tr><th>Type<td><select id=rs-ext-monster-type class=rs-ext-input><option><option>Aqua<option>Beast<option>Beast-Warrior<option>Cyberse<option>Dinosaur<option>Dragon<option>Fairy<option>Fiend<option>Fish<option>Insect<option>Machine<option>Plant<option>Psychic<option>Pyro<option>Reptile<option>Rock<option>Sea Serpent<option>Spellcaster<option>Thunder<option>Warrior<option>Winged Beast<option>Wyrm<option>Zombie<option>Creator God<option>Divine-Beast</select><tr><th>Attribute<td><select id=rs-ext-monster-attribute class=rs-ext-input><option><option>DARK<option>EARTH<option>FIRE<option>LIGHT<option>WATER<option>WIND<option>DIVINE</select><tr><th>Level/Rank/Link Rating<td><input class=rs-ext-input id=rs-ext-level><tr><th>Pendulum Scale<td><input class=rs-ext-input id=rs-ext-scale><tr><th>ATK<td><input class=rs-ext-input id=rs-ext-atk><tr><th>DEF<td><input class=rs-ext-input id=rs-ext-def></table></div></div></div><div id=rs-ext-spacer></div></div>';
+    const ADVANCED_SETTINGS_HTML_STRING = '<div id=rs-ext-advanced-search-bar><button id=rs-ext-monster-toggle class="engine-button engine-button-default">monster</button> <button id=rs-ext-spell-toggle class="engine-button engine-button-default">spell</button> <button id=rs-ext-trap-toggle class="engine-button engine-button-default">trap</button><div id=rs-ext-advanced-pop-outs><div id=rs-ext-spell class="rs-ext-shrinkable rs-ext-shrunk"><p><b>Spell Card Type: </b><select id=rs-ext-spell-type><option><option>Normal<option>Quick-play<option>Field<option>Continuous<option>Ritual<option>Equip</select></div><div id=rs-ext-trap class="rs-ext-shrinkable rs-ext-shrunk"><p><b>Trap Card Type: </b><select id=rs-ext-trap-type><option><option>Normal<option>Continuous<option>Counter</select></div><div id=rs-ext-monster class="rs-ext-shrinkable rs-ext-shrunk"><table class="rs-ext-left-float rs-ext-table"id=rs-ext-link-arrows><tr><th colspan=3>Link Arrows<tr><td><button class=rs-ext-toggle-button>↖</button><td><button class=rs-ext-toggle-button>↑</button><td><button class=rs-ext-toggle-button>↗</button><tr><td><button class=rs-ext-toggle-button>←</button><td><button class=rs-ext-toggle-button id=rs-ext-equals>=</button><td><button class=rs-ext-toggle-button>→</button><tr><td><button class=rs-ext-toggle-button>↙</button><td><button class=rs-ext-toggle-button>↓</button><td><button class=rs-ext-toggle-button>↘</button></table><div id=rs-ext-monster-table class="rs-ext-left-float rs-ext-table"><table><tr><th>Category<td><select class=rs-ext-input id=rs-ext-monster-category><option><option>Normal<option>Effect<option>Non-Effect<option>Link<option>Pendulum<option>Leveled<option>Xyz<option>Synchro<option>Fusion<option>Ritual<option>Gemini<option>Flip<option>Spirit<option>Toon</select><tr><th>Ability<td><select id=rs-ext-monster-ability class=rs-exit-input><option><option>Tuner<option>Toon<option>Spirit<option>Union<option>Gemini<option>Flip<option>Pendulum<tr><th>Type<td><select id=rs-ext-monster-type class=rs-ext-input><option><option>Aqua<option>Beast<option>Beast-Warrior<option>Cyberse<option>Dinosaur<option>Dragon<option>Fairy<option>Fiend<option>Fish<option>Insect<option>Machine<option>Plant<option>Psychic<option>Pyro<option>Reptile<option>Rock<option>Sea Serpent<option>Spellcaster<option>Thunder<option>Warrior<option>Winged Beast<option>Wyrm<option>Zombie<option>Creator God<option>Divine-Beast</select><tr><th>Attribute<td><select id=rs-ext-monster-attribute class=rs-ext-input><option><option>DARK<option>EARTH<option>FIRE<option>LIGHT<option>WATER<option>WIND<option>DIVINE</select><tr><th>Level/Rank/Link Rating<td><input class=rs-ext-input id=rs-ext-level><tr><th>Pendulum Scale<td><input class=rs-ext-input id=rs-ext-scale><tr><th>ATK<td><input class=rs-ext-input id=rs-ext-atk><tr><th>DEF<td><input class=rs-ext-input id=rs-ext-def></table></div></div></div><div id=rs-ext-spacer></div></div>';
     
     const ADVANCED_SETTINGS_HTML_ELS = jQuery.parseHTML(ADVANCED_SETTINGS_HTML_STRING);
     ADVANCED_SETTINGS_HTML_ELS.reverse();
@@ -289,7 +302,7 @@ let onStart = function () {
     
     const TYPE_HASH = ag;
     const TYPE_LIST = Object.values(TYPE_HASH);
-    console.log(TYPE_LIST);
+    // console.log(TYPE_LIST);
     
     const ATTRIBUTE_MASK_HASH = Xf;
     
@@ -746,9 +759,9 @@ let onStart = function () {
         return UNICODE_TO_LINK_NUMBER[chr] || 0;
     }
     
-    const tagStringOf = function (tag, value = null, comp = "=") {
+    const tagStringOf = function (tag, value = null, comp = "") {
         if(value !== null) {
-            return "{" + tag + comp + '"' + value + '"' + "}";
+            return "{" + tag + " " + comp + value + "}";
         }
         else {
             return "{" + tag + "}";
@@ -756,6 +769,9 @@ let onStart = function () {
     }
     
     // various elements
+    const INPUTS_USE_QUOTES = {
+        "TYPE": true,
+    };
     const MONSTER_INPUTS = {
         ARROWS:     [...document.querySelectorAll(".rs-ext-toggle-button")],
         TYPE:       document.getElementById("rs-ext-monster-type"),
@@ -765,6 +781,7 @@ let onStart = function () {
         ATK:        document.getElementById("rs-ext-atk"),
         DEF:        document.getElementById("rs-ext-def"),
         CATEGORY:   document.getElementById("rs-ext-monster-category"),
+        ABILITY:    document.getElementById("rs-ext-monster-ability"),
     };
     const INPUT_TO_KEYWORD = {
         // ARROWS: "ARROWS",
@@ -790,7 +807,9 @@ let onStart = function () {
         "Flip": "FLIP",
         "Spirit": "SPIRIT",
         "Toon": "TOON",
+        "Tuner": "TUNER",
     };
+    const CATEGORY_SOURCES = [ "CATEGORY", "ABILITY" ];
     const monsterSectionTags = function () {
         let tagString = "{MONSTER}";
         
@@ -806,16 +825,21 @@ let onStart = function () {
         }
         
         // category
-        let category = MONSTER_INPUTS.CATEGORY.value;
-        if(category) {
-            let keyword = CATEGORY_TO_KEYWORD[category];
-            tagString += tagStringOf(keyword);
+        for(let category of CATEGORY_SOURCES) {
+            let value = MONSTER_INPUTS[category].value;
+            if(value) {
+                let keyword = CATEGORY_TO_KEYWORD[value];
+                tagString += tagStringOf(keyword);
+            }
         }
         
         for(let [inputName, tagName] of Object.entries(INPUT_TO_KEYWORD)) {
             let inputElement = MONSTER_INPUTS[inputName];
             let value = inputElement.value;
             if(!value) continue;
+            if(INPUTS_USE_QUOTES[inputName]) {
+                value = '"' + value + '"';
+            }
             switch(inputElement.tagName) {
                 case "INPUT":
                     tagString += tagStringOf(tagName, value);
@@ -1091,14 +1115,22 @@ let onStart = function () {
         let stack = [];
         for(let token of tokens) {
             if(token.type === TokenTypes.EXPRESSION) {
+                console.log(">>>>EXPRESSION", token);
                 stack.push(expressionToPredicate(token.raw, param));
             }
             else if(token.type === TokenTypes.OPERATOR) {
                 let right = stack.pop();
                 let left = stack.pop();
+                if(!left || !right) {
+                    throw new Error("Insufficient arguments (incomplete input)");
+                }
                 let fn = operatorNameToFunction(token.raw);
                 stack.push(FN.hook(left, fn, right));
             }
+        }
+        if(stack.length === 0) {
+            addMessage(STATUS.ERROR, "Malformed input, not enough tokens.");
+            return null;
         }
         return stack.pop();
     }
@@ -1121,11 +1153,16 @@ let onStart = function () {
         input = input.replace(ISOLATE_TAG_REGEX, function (match, isNegation, param, info) {
             // over each tag:
             let validator;
-            if(info) {
-                validator = textToPredicate(info, param);
-            }
-            else {
-                validator = createKindValidator(param);
+            try {
+                if(info) {
+                    validator = textToPredicate(info, param);
+                }
+                else {
+                    validator = createKindValidator(param);
+                }
+            } catch(error) {
+                addMessage(STATUS.ERROR, "Problem creating validator: " + error.message);
+                return "";
             }
             
             if(validator) {
@@ -1134,13 +1171,19 @@ let onStart = function () {
                 }
                 tags.push(validator);
             }
+            else if(validator !== null) {
+                addMessage(STATUS.ERROR, "Invalid validator (bug, please report): " + match);
+            }
             
             // remove the tag, replace with nothing
             return "";
         });
         
         // remove any improper tags
-        input = input.replace(/\{[^\}]+$/, "");
+        input = input.replace(/\{[^\}]*$/, function (tag) {
+            addMessage(STATUS.NEUTRAL, "Removed incomplete tag: " + tag);
+            return "";
+        });
         
         // needs non-empty input
         if (input.length !== 0 || tags.length !== 0) {
@@ -1157,7 +1200,6 @@ let onStart = function () {
                 }
             }
             
-            console.log("SEARCHING: ", JSON.stringify(input));
             // only if the user is not searching by a valid ID
             let hasTags = tags.length !== 0;
             let isLongEnough = input.length >= EXT.MIN_INPUT_LENGTH;

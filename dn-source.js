@@ -31,7 +31,7 @@ ca(function(a) {
                     break a
                 }
             }
-            a = void 0
+            a = ((undefined))
         }
         return a
     }
@@ -405,7 +405,7 @@ function $b() {
 }
 
 function S(a, b, c, d, e) {
-    m[b].O(a, c, void 0 === d ? -1 : d, e)
+    m[b].O(a, c, ((undefined)) === d ? -1 : d, e)
 }
 
 function T(a, b, c, d) {
@@ -715,7 +715,7 @@ function bd() {
     $("#options-show-button").click(dd);
     $("#options-hide-button").click(ed);
     $("#options-reset-button").click(fd);
-    void 0 === f.options && (f.options = {});
+    ((undefined)) === f.options && (f.options = {});
     gd("sounds", 0, 100, 50);
     gd("music", 0, 100, 20);
     gd("speed", 20, 300, 100);
@@ -725,7 +725,7 @@ function bd() {
     sc("sounds");
     sc("speed");
     id = sc;
-    void 0 === f.game && (f.game = {});
+    ((undefined)) === f.game && (f.game = {});
     $("#game-start-button").hide();
     $("#game-ready-button").hide();
     $("#game-not-ready-button").click(function() {
@@ -1469,7 +1469,7 @@ function ff(a) {
         S(b, a.currentController, a.currentLocation, a.currentSequence);
         gf(b)
     } else 0 === a.currentLocation ? (b = T(a.previousController, a.previousLocation, a.previousSequence, a.previousPosition), b.fadeOut(300 * B, function() {
-        m[b.controller].P(b, void 0);
+        m[b.controller].P(b, ((undefined)));
         W()
     })) : (b = T(a.previousController, a.previousLocation, a.previousSequence, a.previousPosition), a.previousLocation & O.da && a.previousLocation != a.currentLocation && (b.F = {}), bf(b), m[b.controller].P(b,
         !0), S(b, a.currentController, a.currentLocation, a.currentSequence, !0), cf(b, a.cardCode, a.currentPosition, 300 * B, W))
@@ -1972,7 +1972,7 @@ function ec(a, b) {
     Ma = !0;
     for (var c = $("#game-selection-list"), d = 0; d < a.length; ++d) {
         var e = a[d],
-            g = void 0,
+            g = ((undefined)),
             k = !1;
         b ? g = a[d] : (g = T(e.controller, e.location, e.sequence, e.position), e.sumValue && (g.I = e.sumValue), e.isAlreadySelected && (k = !0));
         var w = wa.clone().data("card-controller", g.controller).data("card-location", g.location).data("card-sequence", g.D).data("card-subsequence", e.position).mouseenter(function() {
@@ -2431,7 +2431,7 @@ function fd() {
 }
 
 function gd(a, b, c, d) {
-    void 0 === f.options[a] && (f.options[a] = d);
+    ((undefined)) === f.options[a] && (f.options[a] = d);
     var e = f.options[a];
     cd[a] = {
         type: "bar",
@@ -2452,7 +2452,7 @@ function gd(a, b, c, d) {
 }
 
 function hd(a, b) {
-    void 0 === f.options[a] && (f.options[a] = b);
+    ((undefined)) === f.options[a] && (f.options[a] = b);
     var c = f.options[a];
     cd[a] = {
         type: "check",
@@ -2808,6 +2808,7 @@ function la() {
     this.volume = 1
 }
 
+// load sounds
 function Tb() {
     var a = fa;
     V(a, "activate", 2);
@@ -2838,7 +2839,8 @@ la.prototype.play = function(a) {
 };
 
 function V(a, b, c) {
-    c = void 0 !== c ? c : 1;
+    // c has a default value of 1
+    c = ((undefined)) !== c ? c : 1;
     a.b[b] = [];
     for (var d = 0; d < c; ++d) {
         var e = new Audio(h("sounds/" + b + ".wav"));
