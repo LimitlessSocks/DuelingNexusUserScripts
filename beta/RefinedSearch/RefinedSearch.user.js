@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.3
+// @version      0.4
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -12,6 +12,7 @@ const EXT = {
     RESULTS_PER_PAGE: 30,
     MIN_INPUT_LENGTH: 1,
     SEARCH_BY_TEXT: true,
+    MAX_UNDO_RECORD: 30,
     Search: {
         cache: [],
         current_page: 1,
@@ -245,7 +246,7 @@ let onStart = function () {
     ADVANCED_SETTINGS_HTML_ELS.reverse();
     
     // minified with cssminifier.com
-    const ADVANCED_SETTINGS_CSS_STRING = "#rs-ext-advanced-search-bar{width:100%}.rs-ext-toggle-button{width:3em;height:3em;background:#ddd;border:1px solid #000}.rs-ext-toggle-button:hover{background:#fff}button.rs-ext-selected{background:#00008b;color:#fff}button.rs-ext-selected:hover{background:#55d}.rs-ext-left-float{float:left}.rs-ext-shrinkable{transition:transform .3s ease-out;height:auto;background:#ccc;width:100%;transform:scaleY(1);transform-origin:top;overflow:hidden;z-index:10000}.rs-ext-shrinkable>*{margin:10px}#rs-ext-monster,#rs-ext-spell,#rs-ext-trap{background:rgba(0,0,0,.7)}.rs-ext-shrunk{transform:scaleY(0);z-index:100}#rs-ext-advanced-pop-outs{position:relative}#rs-ext-advanced-pop-outs>.rs-ext-shrinkable{position:absolute;top:0;left:0}#rs-ext-monster-table th{text-align:right;width:30px}.rs-ext-table{padding-right:5px}#rs-ext-spacer{height:0;transition:height .3s ease-out}";
+    const ADVANCED_SETTINGS_CSS_STRING = "#rs-ext-advanced-search-bar{width:100%}.rs-ext-toggle-button{width:3em;height:3em;background:#ddd;border:1px solid #000}.rs-ext-toggle-button:hover{background:#fff}button.rs-ext-selected{background:#00008b;color:#fff}button.rs-ext-selected:hover{background:#55d}.rs-ext-left-float{float:left}.rs-ext-shrinkable{transition:transform .3s ease-out;height:auto;background:#ccc;width:100%;transform:scaleY(1);transform-origin:top;overflow:hidden;z-index:10000}.rs-ext-shrinkable>*{margin:10px}#rs-ext-monster,#rs-ext-spell,#rs-ext-trap{background:rgba(0,0,0,.7)}.rs-ext-shrunk{transform:scaleY(0);z-index:100}#rs-ext-advanced-pop-outs{position:relative}#rs-ext-advanced-pop-outs>.rs-ext-shrinkable{position:absolute;top:0;left:0}#rs-ext-monster-table th{text-align:right;width:30px}.rs-ext-table{padding-right:5px}#rs-ext-spacer{height:0;transition:height .3s ease-out}.engine-button[disabled],.engine-button:disabled{cursor:not-allowed;background:rgb(50,0,0);color:#a0a0a0;font-style:italic;}";
     
     // disable default listener (Z.Pb)
     $("#editor-search-text").off("input");
@@ -594,7 +595,209 @@ let onStart = function () {
         el.style.marginBottom = "10px";
     }
     
+    // https://stackoverflow.com/a/30832210/4119004
+    const download = function promptSaveFile (data, filename, type) {
+        var file = new Blob([data], {type: type});
+        if (window.navigator.msSaveOrOpenBlob) // IE10+
+            window.navigator.msSaveOrOpenBlob(file, filename);
+        else { // Others
+            var a = document.createElement("a"),
+                    url = URL.createObjectURL(file);
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(function() {
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);  
+            }, 0); 
+        }
+    }
+    
+    
+    
+    /* UNDO / REDO */
+    // const cloneArray = function (arr) {
+        // return [...arr];
+    // };
+    // add some API for potential add-on devs
+    EXT.EDIT_API = {};
+    
+    const addCardSilent = Z.O;
+    const removeCardSilent = Z.P;
+    const addCard = function (...args) {
+        addCardSilent(...args);
+        updateHistory();
+    };
+    Z.O = addCard;
+    EXT.EDIT_API.addCard = addCard;
+    EXT.EDIT_API.addCardSilent = addCardSilent;
+    
+    const removeCard = function (...args) {
+        removeCardSilent(...args);
+        updateHistory();
+    };
+    Z.P = removeCard;
+    EXT.EDIT_API.removeCard = removeCard;
+    EXT.EDIT_API.removeCardSilent = removeCardSilent;
+    
+    const deepCloneArray = function (arr) {
+        return arr.map ? arr.map(deepCloneArray) : arr;
+    };
+    const isRawObject = (obj) => typeof obj === "object";
+    const deepEquals = function (left, right) {
+        if(left.map && right.map) {
+            if(left.length !== right.length) {
+                return false;
+            }
+            return left.every((e, i) => deepEquals(e, right[i]));
+        }
+        else {
+            if(isRawObject(left) && isRawObject(right)) {
+                let leftEntries = Object.entries(left).sort();
+                let rightEntries = Object.entries(right).sort();
+                return deepEquals(leftEntries, rightEntries);
+            }
+            return left === right;
+        }
+    };
+    const mapIDs = function (arr) {
+        return arr.map(e => e.data("id"));
+    };
+    const currentDeckState = function () {
+        return {
+            main: mapIDs(Z.main),
+            extra: mapIDs(Z.extra),
+            side: mapIDs(Z.side)
+        };
+    }
+    const clearLocation = function (location) {
+        while(Z[location].length) {
+            removeCardSilent(location, 0);
+        }
+    };
+    const clearDeck = function () {
+        for (let location of ["main", "extra", "side"]) {
+            clearLocation(location);
+        }
+    };
+    
+    const updateDeckState = function (newState) {
+        let state = currentDeckState();
+        for (let location of ["main", "extra", "side"]) {
+            if(deepEquals(state[location], newState[location])) {
+                continue;
+            }
+            clearLocation(location);
+            for (let id of newState[location]) {
+                addCardSilent(id, location, -1);
+            }
+        }
+    };
+    EXT.EDIT_API.updateDeckState = updateDeckState;
+    EXT.EDIT_API.updateDeckState = currentDeckState;
+    EXT.EDIT_API.EDIT_HISTORY = [ currentDeckState() ];
+    EXT.EDIT_API.EDIT_LOCATION = 0;
+    // update listener
+    const updateHistory = function () {
+        let userIsBusy = !!Z.selection;
+        if(userIsBusy) {
+            return;
+        }
+        
+        let state = currentDeckState();
+        let previousState = EXT.EDIT_API.EDIT_HISTORY[EXT.EDIT_API.EDIT_HISTORY.length - 1];
+        if(previousState && deepEquals(state, previousState)) {
+            return;
+        }
+        if(EXT.EDIT_API.EDIT_LOCATION >= EXT.EDIT_API.EDIT_HISTORY.length) {
+            EXT.EDIT_API.EDIT_HISTORY.splice(EXT.EDIT_API.EDIT_LOCATION);
+        }
+        EXT.EDIT_API.EDIT_HISTORY.push(state);
+        if(EXT.EDIT_API.EDIT_HISTORY.length > EXT.MAX_UNDO_RECORD) {
+            EXT.EDIT_API.EDIT_HISTORY.shift();
+        }
+        EXT.EDIT_API.EDIT_LOCATION = EXT.EDIT_API.EDIT_HISTORY.length - 1;
+        undoButton.disabled = false;
+        redoButton.disabled = true;
+    };
+    EXT.EDIT_API.updateHistory = updateHistory;
+    
+    const undo = function () {
+        if(EXT.EDIT_API.EDIT_LOCATION === 0) {
+            return;
+        }
+        console.log("EXT.EDIT_API.EDIT_LOCATION",EXT.EDIT_API.EDIT_LOCATION);
+        EXT.EDIT_API.EDIT_LOCATION--;
+        updateDeckState(EXT.EDIT_API.EDIT_HISTORY[EXT.EDIT_API.EDIT_LOCATION]);
+        redoButton.disabled = false;
+    }
+    EXT.EDIT_API.undo = undo;
+    
+    const redo = function () {
+        if(EXT.EDIT_API.EDIT_LOCATION === EXT.EDIT_API.EDIT_HISTORY.length) {
+            return;
+        }
+        EXT.EDIT_API.EDIT_LOCATION++;
+        updateDeckState(EXT.EDIT_API.EDIT_HISTORY[EXT.EDIT_API.EDIT_LOCATION]);
+    }
+    EXT.EDIT_API.redo = redo;
+    
+    const clear = function () {
+        for (let location of ["main", "extra", "side"]) {
+            while(Z[location].length) {
+                removeCardSilent(location, 0);
+            }
+        }
+        updateHistory();
+    }
+    EXT.EDIT_API.clear = clear;
+    
+    let editorClearButton = document.getElementById("editor-clear-button");
+    $(editorClearButton).unbind();
+    editorClearButton.addEventListener("click", clear);
+    
     /* UPDATE PAGE STRUCTURE */
+    // add new buttons
+    
+    let editorMenuContent = document.getElementById("editor-menu-content");
+    
+    let undoButton = makeElement("button", "rs-ext-editor-export-button", "Undo");
+    undoButton.classList.add("engine-button", "engine-button", "engine-button-default");
+    appendTextNode(editorMenuContent, " ");
+    editorMenuContent.appendChild(undoButton);
+    undoButton.disabled = true;
+    
+    undoButton.addEventListener("click", undo);
+    
+    let redoButton = makeElement("button", "rs-ext-editor-export-button", "Redo");
+    redoButton.classList.add("engine-button", "engine-button", "engine-button-default");
+    appendTextNode(editorMenuContent, " ");
+    editorMenuContent.appendChild(redoButton);
+    redoButton.disabled = true;
+    
+    redoButton.addEventListener("click", redo);
+    
+    let exportButton = makeElement("button", "rs-ext-editor-export-button", "Export");
+    exportButton.classList.add("engine-button", "engine-button", "engine-button-default");
+    exportButton.title = "Export Saved Version of Deck";
+    appendTextNode(editorMenuContent, " ");
+    editorMenuContent.appendChild(exportButton);
+    
+    exportButton.addEventListener("click", function () {
+        let lines = [
+            "#created by RefinedSearch plugin"
+        ];
+        for(let kind of ["main", "extra", "side"]) {
+            let header = (kind === "side" ? "!" : "#") + kind;
+            lines.push(header);
+            lines.push(...Deck[kind]);
+        }
+        let message = lines.join("\n");
+        download(message, Deck.name + ".ydk", "text");
+    });
+    
+    
     // add options tile
     let optionsArea = makeElement("div", "options-area"); /* USES NEXUS DEFAULT CSS/ID */
     let options = makeElement("button", "rs-ext-options");
