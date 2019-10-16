@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.4
+// @version      0.5
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -753,9 +753,36 @@ let onStart = function () {
     }
     EXT.EDIT_API.clear = clear;
     
+    // reset listener for editor's clear button
     let editorClearButton = document.getElementById("editor-clear-button");
     $(editorClearButton).unbind();
     editorClearButton.addEventListener("click", clear);
+    
+    // code for Export readable
+    const countIn = function (arr, el) {
+        return arr.filter(e => e === el).length;
+    }
+
+    const namesOf = function (el) {
+        let names = [...el.children].map(e => X[$(e).data("id")].name);
+        let uniq = [...new Set(names)];
+        return uniq.map(name =>
+            `${countIn(names, name)}x ${name}`
+        );
+    }
+
+    const outputDeck = function () {
+        let decks = {
+            Main: "editor-main-deck",
+            Extra: "editor-extra-deck",
+            Side: "editor-side-deck",
+        };
+        
+        return Object.entries(decks).map(([key, value]) =>
+            [key + " Deck:", ...namesOf(document.getElementById(value))]
+            .join("\n")
+        ).join("\n--------------\n");
+    }
     
     /* UPDATE PAGE STRUCTURE */
     // add new buttons
@@ -778,7 +805,7 @@ let onStart = function () {
     
     redoButton.addEventListener("click", redo);
     
-    let exportButton = makeElement("button", "rs-ext-editor-export-button", "Export");
+    let exportButton = makeElement("button", "rs-ext-editor-export-button", "Export .ydk");
     exportButton.classList.add("engine-button", "engine-button", "engine-button-default");
     exportButton.title = "Export Saved Version of Deck";
     appendTextNode(editorMenuContent, " ");
@@ -797,6 +824,16 @@ let onStart = function () {
         download(message, Deck.name + ".ydk", "text");
     });
     
+    let exportRawButton = makeElement("button", "rs-ext-editor-export-button", "Export Readable");
+    exportRawButton.classList.add("engine-button", "engine-button", "engine-button-default");
+    exportRawButton.title = "Export Human Readable Version of Deck";
+    appendTextNode(editorMenuContent, " ");
+    editorMenuContent.appendChild(exportRawButton);
+    
+    exportRawButton.addEventListener("click", function () {
+        let message = outputDeck();
+        download(message, Deck.name + ".txt", "text");
+    });
     
     // add options tile
     let optionsArea = makeElement("div", "options-area"); /* USES NEXUS DEFAULT CSS/ID */
