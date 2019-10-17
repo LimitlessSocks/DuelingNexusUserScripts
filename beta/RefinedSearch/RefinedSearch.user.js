@@ -417,12 +417,12 @@ let onStart = function () {
             Bc($(this).data("id"));
         });
         template.mousedown(function (a) {
-            if (1 == template.which) {
+            if (1 == a.which) {
                 let id = $(this).data("id");
                 Z.ya(id);
                 return false;
             }
-            if (3 == template.which) {
+            if (3 == a.which) {
                 return false;
             }
         });
