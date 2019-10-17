@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.5
+// @version      0.6
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -246,7 +246,7 @@ let onStart = function () {
     ADVANCED_SETTINGS_HTML_ELS.reverse();
     
     // minified with cssminifier.com
-    const ADVANCED_SETTINGS_CSS_STRING = "#rs-ext-advanced-search-bar{width:100%}.rs-ext-toggle-button{width:3em;height:3em;background:#ddd;border:1px solid #000}.rs-ext-toggle-button:hover{background:#fff}button.rs-ext-selected{background:#00008b;color:#fff}button.rs-ext-selected:hover{background:#55d}.rs-ext-left-float{float:left}.rs-ext-shrinkable{transition:transform .3s ease-out;height:auto;background:#ccc;width:100%;transform:scaleY(1);transform-origin:top;overflow:hidden;z-index:10000}.rs-ext-shrinkable>*{margin:10px}#rs-ext-monster,#rs-ext-spell,#rs-ext-trap{background:rgba(0,0,0,.7)}.rs-ext-shrunk{transform:scaleY(0);z-index:100}#rs-ext-advanced-pop-outs{position:relative}#rs-ext-advanced-pop-outs>.rs-ext-shrinkable{position:absolute;top:0;left:0}#rs-ext-monster-table th{text-align:right;width:30px}.rs-ext-table{padding-right:5px}#rs-ext-spacer{height:0;transition:height .3s ease-out}.engine-button[disabled],.engine-button:disabled{cursor:not-allowed;background:rgb(50,0,0);color:#a0a0a0;font-style:italic;}";
+    const ADVANCED_SETTINGS_CSS_STRING = "#rs-ext-advanced-search-bar{width:100%}.rs-ext-toggle-button{width:3em;height:3em;background:#ddd;border:1px solid #000}.rs-ext-toggle-button:hover{background:#fff}button.rs-ext-selected{background:#00008b;color:#fff}button.rs-ext-selected:hover{background:#55d}.rs-ext-left-float{float:left}.rs-ext-shrinkable{transition:transform .3s ease-out;height:auto;background:#ccc;width:100%;transform:scaleY(1);transform-origin:top;overflow:hidden;z-index:10000}.rs-ext-shrinkable>*{margin:10px}#rs-ext-monster,#rs-ext-spell,#rs-ext-trap{background:rgba(0,0,0,.7)}.rs-ext-shrunk{transform:scaleY(0);z-index:100}#rs-ext-advanced-pop-outs{position:relative}#rs-ext-advanced-pop-outs>.rs-ext-shrinkable{position:absolute;top:0;left:0}#rs-ext-monster-table th{text-align:right;width:30px}.rs-ext-table{padding-right:5px}#rs-ext-spacer{height:0;transition:height .3s ease-out}.engine-button[disabled],.engine-button:disabled{cursor:not-allowed;background:rgb(50,0,0);color:#a0a0a0;font-style:italic;}.rs-ext-card-entry-table button,.rs-ext-fullwidth-wrapper{width:100%;height:100%;}.rs-ext-card-entry-table{border-collapse:collapse;}.rs-ext-card-entry-table tr,.rs-ext-card-entry-table td{height:100%;}.editor-search-description{white-space:normal;}";
     
     // disable default listener (Z.Pb)
     $("#editor-search-text").off("input");
@@ -371,8 +371,110 @@ let onStart = function () {
     const cardCompare = function (cardA, cardB) {
         return Z.fa(cardA, cardB);
     }
+    
+    const engineButton = function (content, id = null) {
+        let button = makeElement("button", id, content);
+        button.classList.add("engine-button", "engine-button", "engine-button-default");
+        return button;
+    }
+    
+    // reimplements Z.la
+    const banlistIcons = {
+        3: null,
+        2: "banlist-semilimited.png",
+        1: "banlist-limited.png",
+        0: "banlist-banned.png",
+    };
+    const addCardToSearchWithButtons = function (cardId) {
+        let card = CARD_LIST[cardId];
+        let template = $(Z.Lb);
+        template.find(".template-name").text(card.name);
+        l(template.find(".template-picture"), card.id);
+        if (card.type & U.L) {
+            template.find(".template-if-spell").remove();
+            template.find(".template-level").text(card.level);
+            template.find(".template-atk").text(card.attack);
+            template.find(".template-def").text(card.i);
+            // Df - object indexed by powers of 2 containg *type* information
+            // card.race = type
+            template.find(".template-race").text(Df[card.race]);
+            // Ef - object indexed by powers of 2 containing *attribute* information
+            // card.H = attribute
+            template.find(".template-attribute").text(Ef[card.H]);
+        }
+        else {
+            template.find(".template-if-monster").remove();
+            var types = [];
+            for (let n of Object.values(U)) {
+                if(card.type & n) {
+                    types.push(Vf[n]);
+                }
+            }
+            template.find(".template-types").text(types.join("|"));
+        }
+        template.data("id", card.id);
+        template.mouseover(function () {
+            Bc($(this).data("id"));
+        });
+        template.mousedown(function (a) {
+            if (1 == template.which) {
+                let id = $(this).data("id");
+                Z.ya(id);
+                return false;
+            }
+            if (3 == template.which) {
+                return false;
+            }
+        });
+        let addThisCard = function (el, destination = null) {
+            let id = $(el).data("id");
+            let card = CARD_LIST[id];
+            // deduce destination
+            if(!destination) {
+                destination = "main";
+                if (card.type & U.S || card.type & U.T || card.type & U.G || card.type & U.C) {
+                    destination = "extra";
+                }
+            }
+            Z.O(id, destination, -1);
+            return false;
+        }
+        template.on("contextmenu", function () {
+            return addThisCard(this);
+        });
+        /* BANLIST TOKEN GENERATION */
+        var banlistIcon = template.find(".editor-search-banlist-icon");
+        let limitStatus = Uf(0 !== card.A ? card.A : card.id);
+        if(limitStatus !== 3) {
+            banlistIcon.attr("src", "assets/images/" + banlistIcons[limitStatus]);
+        }
+        else {
+            banlistIcon.remove();
+        }
+        let container = $("<table width=100% class=rs-ext-card-entry-table><tr><td width=74%></td><td width=13%></td><td width=13%></td></tr></table>");
+        let [ cardTd, mainTd, sideTd ] = container.find("td");
+        
+        // console.log(template);
+        cardTd.append(...template);
+        
+        let mainDeckAdd = engineButton("Add to Main");
+        mainDeckAdd.addEventListener("click", function () {
+            addThisCard(template);
+        });
+        mainTd.append(mainDeckAdd);
+        
+        let sideDeckAdd = engineButton("Add to Side");
+        sideDeckAdd.addEventListener("click", function () {
+            addThisCard(template, "side");
+        });
+        sideTd.append(sideDeckAdd);
+        
+        Z.xa.append(container);
+    }
+    
     const addCardToSearch = function (card) {
-        return Z.la(card);
+        // return Z.la(card);
+        return addCardToSearchWithButtons(card);
     }
     
     // interaction stuff
@@ -764,7 +866,7 @@ let onStart = function () {
     }
 
     const namesOf = function (el) {
-        let names = [...el.children].map(e => X[$(e).data("id")].name);
+        let names = [...el.children].map(e => CARD_LIST[$(e).data("id")].name);
         let uniq = [...new Set(names)];
         return uniq.map(name =>
             `${countIn(names, name)}x ${name}`
@@ -1526,20 +1628,6 @@ let onStart = function () {
                 message += " (" + EXT.Search.max_page + " " + pluralize("page", EXT.Search.max_page) + ")";
                 addMessage(anyErrors ? STATUS.NEUTRAL : STATUS.SUCCESS, message);
             }
-            
-            
-            
-            /* 
-            // show exact matches
-            let numberToShow = EXT.RESULTS_PER_PAGE;
-            for (let i = 0; i < exactMatches.length && numberToShow !== 0; ++i, --numberToShow) {
-                // Z.la - add to search
-                addCardToSearch(exactMatches[i].id);
-            }
-            
-            for (let i = 0; i < fuzzyMatches.length && numberToShow; ++i, --numberToShow) {
-                addCardToSearch(fuzzyMatches[i].id);
-            } */
         }
         else {
             EXT.Search.cache = [];
