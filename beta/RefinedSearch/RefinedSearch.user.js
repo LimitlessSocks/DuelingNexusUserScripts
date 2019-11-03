@@ -8,18 +8,24 @@
 // @include      https://duelingnexus.com/editor/*
 // ==/UserScript==
 
+// TODO: separate search by name/eff
+// TODO: rehash sort function
+
 const EXT = {
     RESULTS_PER_PAGE: 30,
     MIN_INPUT_LENGTH: 1,
     SEARCH_BY_TEXT: true,
     MAX_UNDO_RECORD: 30,
+    DECK_SIZE_LIMIT: null,
     Search: {
         cache: [],
         current_page: 1,
         max_page: null,
         per_page: null,
         messages: [],
-    }
+    },
+    // contents defined later
+    EDIT_API: {}
 };
 const FN = {
     compose: function (f, g) {
@@ -246,7 +252,7 @@ let onStart = function () {
     ADVANCED_SETTINGS_HTML_ELS.reverse();
     
     // minified with cssminifier.com
-    const ADVANCED_SETTINGS_CSS_STRING = "#rs-ext-advanced-search-bar{width:100%}.rs-ext-toggle-button{width:3em;height:3em;background:#ddd;border:1px solid #000}.rs-ext-toggle-button:hover{background:#fff}button.rs-ext-selected{background:#00008b;color:#fff}button.rs-ext-selected:hover{background:#55d}.rs-ext-left-float{float:left}.rs-ext-shrinkable{transition:transform .3s ease-out;height:auto;background:#ccc;width:100%;transform:scaleY(1);transform-origin:top;overflow:hidden;z-index:10000}.rs-ext-shrinkable>*{margin:10px}#rs-ext-monster,#rs-ext-spell,#rs-ext-trap{background:rgba(0,0,0,.7)}.rs-ext-shrunk{transform:scaleY(0);z-index:100}#rs-ext-advanced-pop-outs{position:relative}#rs-ext-advanced-pop-outs>.rs-ext-shrinkable{position:absolute;top:0;left:0}#rs-ext-monster-table th{text-align:right;width:30px}.rs-ext-table{padding-right:5px}#rs-ext-spacer{height:0;transition:height .3s ease-out}.engine-button[disabled],.engine-button:disabled{cursor:not-allowed;background:rgb(50,0,0);color:#a0a0a0;font-style:italic;}.rs-ext-card-entry-table button,.rs-ext-fullwidth-wrapper{width:100%;height:100%;}.rs-ext-card-entry-table{border-collapse:collapse;}.rs-ext-card-entry-table tr,.rs-ext-card-entry-table td{height:100%;}.editor-search-description{white-space:normal;}";
+    const ADVANCED_SETTINGS_CSS_STRING = "#rs-ext-advanced-search-bar{width:100%}.rs-ext-toggle-button{width:3em;height:3em;background:#ddd;border:1px solid #000}.rs-ext-toggle-button:hover{background:#fff}button.rs-ext-selected{background:#00008b;color:#fff}button.rs-ext-selected:hover{background:#55d}.rs-ext-left-float{float:left}.rs-ext-shrinkable{transition:transform .3s ease-out;height:auto;background:#ccc;width:100%;transform:scaleY(1);transform-origin:top;overflow:hidden;z-index:10000}.rs-ext-shrinkable>*{margin:10px}#rs-ext-monster,#rs-ext-spell,#rs-ext-trap{background:rgba(0,0,0,.7)}.rs-ext-shrunk{transform:scaleY(0);z-index:100}#rs-ext-advanced-pop-outs{position:relative}#rs-ext-advanced-pop-outs>.rs-ext-shrinkable{position:absolute;top:0;left:0}#rs-ext-monster-table th{text-align:right;width:30px}.rs-ext-table{padding-right:5px}#rs-ext-spacer{height:0;transition:height .3s ease-out}.engine-button[disabled],.engine-button:disabled{cursor:not-allowed;background:rgb(50,0,0);color:#a0a0a0;font-style:italic;}.rs-ext-card-entry-table button,.rs-ext-fullwidth-wrapper{width:100%;height:100%;}.rs-ext-card-entry-table{border-collapse:collapse;}.rs-ext-card-entry-table tr,.rs-ext-card-entry-table td{height:100%;}.editor-search-description{white-space:normal;}#editor-menu-spacer{width:15%;}.engine-button{cursor:pointer;}";
     
     // disable default listener (Z.Pb)
     $("#editor-search-text").off("input");
@@ -271,18 +277,19 @@ let onStart = function () {
         this.rscale = (b >> 16) & 0xFF;
     };
     
+    const CARD_LIST_VERSION = 73;
     const readCards = function (a) {
         jQuery.ajaxSetup({
             beforeSend: function(a) {
                 a.overrideMimeType && a.overrideMimeType("application/json")
             }
         });
-        jQuery.getJSON(h("data/cards.json?v=65"), function(b) {
-            // CARD_LIST = {};
+        jQuery.getJSON(h(`data/cards.json?v=${CARD_LIST_VERSION}`), function(b) {
             for (let card of b.cards) {
                 CARD_LIST[card.id] = new CardObject(card);
             }
-            jQuery.getJSON(h("data/cards_en.json?v=65"), function(b) {
+            // NOTE: different request from the above
+            jQuery.getJSON(h(`data/cards_en.json?v=${CARD_LIST_VERSION}`), function(b) {
                 for (let card of b.texts) {
                     let other = CARD_LIST[card.id];
                     if (other) {
@@ -303,7 +310,6 @@ let onStart = function () {
     
     const TYPE_HASH = ag;
     const TYPE_LIST = Object.values(TYPE_HASH);
-    // console.log(TYPE_LIST);
     
     const ATTRIBUTE_MASK_HASH = Xf;
     
@@ -371,13 +377,68 @@ let onStart = function () {
     const cardCompare = function (cardA, cardB) {
         return Z.fa(cardA, cardB);
     }
+    const shuffle = function (list) {
+        return Z.Nb(list);
+    }
+    // clears the visual state, allowing editing to take place
+    const clearVisualState = function () {
+        Z.pa();
+    }
+    // restores the visual state
+    const restoreVisualState = function () {
+        Z.ma();
+    }
+    const lastElement = function (arr) {
+        return arr[arr.length - 1];
+    }
+    
+    // corresponds to EDIT_LOCATION where save was clicked
+    // EXT.EDIT_API.SAVED_INDEX = 0;
+    // const saveDeck = function () {
+        // Z.Ob();
+        // $("#editor-save-button").addClass("engine-button-disabled");
+        // $.post("api/update-deck.php", {
+            // id: window.Deck.id,
+            // deck: JSON.stringify({
+                // main: window.Deck.main,
+                // extra: window.Deck.extra,
+                // side: window.Deck.side
+            // })
+        // }, function(a) {
+            // a.success || "no_changes" === a.error ? $("#editor-save-button").text("Saved!").delay(2E3).queue(function() {
+                    // $(this).removeClass("engine-button-disabled").text("Save").dequeue()
+                // }) :
+                // $("#editor-save-button").text("Error while saving: " + a.error).delay(5E3).queue(function() {
+                    // $(this).removeClass("engine-button-disabled").text("Save").dequeue()
+                // })
+        // }, "json");
+    // }
+    // EXT.EDIT_API.save = saveDeck;
+    // re-attach listener
+    // let saveButton = document.getElementById("editor-save-button");
+    // $(saveButton).unbind();
+    // saveButton.addEventListener("click", saveDeck);
+    // capture page beforeunload
+    window.addEventListener("beforeunload", function (ev) {
+        if(EXT.EDIT_API.SAVED_INDEX !== EXT.EDIT_API.EDIT_LOCATION) {
+            ev.preventDefault(); // PREFERED METHOD (not supported universally)
+            return event.returnValue = ""; // deprecated
+        }
+        return null;
+    });
     
     const engineButton = function (content, id = null) {
         let button = makeElement("button", id, content);
-        button.classList.add("engine-button", "engine-button", "engine-button-default");
+        button.classList.add("engine-button", "engine-button-default");
         return button;
     }
     
+    // Z.Ba = function() {
+        // if(Z.selection) {
+            // console.log("tick");
+            // Z.selection.css("left", Z.Ib + 3).css("top", Z.Jb + 3);
+        // }
+    // };
     // reimplements Z.la
     const banlistIcons = {
         3: null,
@@ -417,11 +478,13 @@ let onStart = function () {
             Bc($(this).data("id"));
         });
         template.mousedown(function (a) {
+            // left mouse - move card to tooltip
             if (1 == a.which) {
                 let id = $(this).data("id");
                 Z.ya(id);
                 return false;
             }
+            // right mouse - do nothing (allow contextmenu to trigger)
             if (3 == a.which) {
                 return false;
             }
@@ -436,7 +499,7 @@ let onStart = function () {
                     destination = "extra";
                 }
             }
-            Z.O(id, destination, -1);
+            addCard(id, destination, -1);
             return false;
         }
         template.on("contextmenu", function () {
@@ -444,7 +507,7 @@ let onStart = function () {
         });
         /* BANLIST TOKEN GENERATION */
         var banlistIcon = template.find(".editor-search-banlist-icon");
-        let limitStatus = Uf(0 !== card.A ? card.A : card.id);
+        let limitStatus = allowedCount(card);
         if(limitStatus !== 3) {
             banlistIcon.attr("src", "assets/images/" + banlistIcons[limitStatus]);
         }
@@ -454,7 +517,6 @@ let onStart = function () {
         let container = $("<table width=100% class=rs-ext-card-entry-table><tr><td width=74%></td><td width=13%></td><td width=13%></td></tr></table>");
         let [ cardTd, mainTd, sideTd ] = container.find("td");
         
-        // console.log(template);
         cardTd.append(...template);
         
         let mainDeckAdd = engineButton("Add to Main");
@@ -515,6 +577,13 @@ let onStart = function () {
     const isSpiritMonster       = (card) => card.type & monsterTypeMap["Spirit"];
     const isXyzMonster          = (card) => card.type & monsterTypeMap["Xyz"];
     const isPendulumMonster     = (card) => card.type & monsterTypeMap["Pendulum"];
+    
+    const isExtraDeckMonster = (card) => [
+        isFusionMonster,
+        isSynchroMonster,
+        isXyzMonster,
+        isLinkMonster
+    ].some(fn => fn(card));
     
     const isLevelMonster = (card) => isMonster(card) && !isLinkMonster(card) && !isXyzMonster(card);
     
@@ -716,20 +785,118 @@ let onStart = function () {
         }
     }
     
+    /* TODO: allow larger deck sizes */
     
+    /*
+    let deckSizes = {
+        "main":  [   40,    60,   100],
+        "extra": [   10,    15,    25],
+        "side":  [   10,    15,    25],
+    };
+    // if length > corresponding cell in deckSizes, pad by this much
+    let cardMargins = {
+        "main":  [ -3.6, -4.05, -6.00],
+        "extra": [ -3.6, -4.05, -6.00],
+        "side":  [ -3.6, -4.05, -6.00],
+    };
+    Z.Aa = function (a) {
+        var padding = "0";
+        // let 
+        if(Z[a].length > ("main" == a ? 80 : 25)) {
+            // padding = "main" == a ? "-4.05%" : "-4.72%";
+            padding = "-6.0%";
+        }
+        else if(Z[a].length > ("main" == a ? 60 : 15)) {
+            padding = "main" == a ? "-4.05%" : "-4.72%";
+        }
+        else if(Z[a].length > ("main" == a ? 40 : 10)) {
+            padding = "-3.6%";
+        }
+        if (Z.ha[a] !== padding) {
+            Z.ha[a] = padding;
+            for (var c = 0; c < Z[a].length; ++c) Z[a][c].css("margin-right", padding);
+        }
+    },
+    */
     
     /* UNDO / REDO */
-    // const cloneArray = function (arr) {
-        // return [...arr];
-    // };
-    // add some API for potential add-on devs
-    EXT.EDIT_API = {};
-    
-    const addCardSilent = Z.O;
+    // const addCardSilent = Z.O;
+    const addCardSilent = function(a, destination, c, d) {
+        let card = X[a];
+        if (card && !isToken(card)) {
+            let toMainDeck = destination === "main";
+            let toExtraDeck = destination === "extra";
+            let isExtra = isExtraDeckMonster(card);
+            let sizeLimit = EXT.DECK_SIZE_LIMIT || toMainDeck ? 60 : 15;
+            let isInvalidLocation = (
+                   isExtra && toMainDeck
+                || !isExtra && toExtraDeck
+                || Z[destination].length >= sizeLimit
+                // cannot have more than 3 copies!
+                || Z.Eb(card.A ? card.A : card.id) >= 3
+            );
+            
+            if (!isInvalidLocation) {
+                g = Z[destination];
+                var k = $("#editor-" + destination + "-deck");
+                d = $("<img>").css("margin-right", Z.ha[destination]).addClass("editor-card-small");
+                l(d, a);
+                d.mouseover(function() {
+                    Bc($(this).data("id"))
+                });
+                d.mousedown(function(a) {
+                    if (1 == a.which) {
+                        a = $(this).data("id");
+                        var b = $(this).data("location"),
+                            c = $(this).parent().children().index($(this));
+                        Z.P(b, c);
+                        Z.ya(a);
+                        return false
+                    }
+                    if (3 == a.which) return false
+                });
+                d.mouseup(function(a) {
+                    if (1 == a.which && Z.selection) {
+                        a = $(this).data("location");
+                        var b = $(this).parent().children().index($(this));
+                        addCard(Z.selection.data("id"), a, b);
+                        Z.aa();
+                        return false
+                    }
+                });
+                d.on("contextmenu", function() {
+                    var a = $(this).data("location"),
+                        b = $(this).parent().children().index($(this));
+                    Z.P(a, b);
+                    return false
+                });
+                d.data("id", a);
+                d.data("alias", card.A);
+                d.data("location", destination); 
+                if(c === -1) {
+                    k.append(d);
+                    g.push(d);
+                }
+                else {
+                    if(0 === c && 0 == k.children().length) {
+                        k.append(d)
+                    }
+                    else {
+                        k.children().eq(c).before(d);
+                        g.splice(c, 0, d);
+                    };
+                }
+                g = allowedCount(card);
+                3 !== g ? (a = 2 === g ? "banlist-semilimited.png" : 1 === g ? "banlist-limited.png" : "banlist-banned.png", a = $("<img>").attr("src", "assets/images/" + a), d.data("banlist", a), $("#editor-banlist-icons").append(a)) : d.data("banlist", null);
+                Z.Aa(destination);
+                Z.N(destination)
+            }
+        }
+    };
     const removeCardSilent = Z.P;
     const addCard = function (...args) {
         addCardSilent(...args);
-        updateHistory();
+        addEditPoint();
     };
     Z.O = addCard;
     EXT.EDIT_API.addCard = addCard;
@@ -737,7 +904,7 @@ let onStart = function () {
     
     const removeCard = function (...args) {
         removeCardSilent(...args);
-        updateHistory();
+        addEditPoint();
     };
     Z.P = removeCard;
     EXT.EDIT_API.removeCard = removeCard;
@@ -784,81 +951,179 @@ let onStart = function () {
         }
     };
     
+    // for use in undo/redo - replaces the current state with the new state
+    /*
+               TypeError: Z[c][e].appendTo is not a function engine.min.js:144:115
+                ma https://duelingnexus.com/script/engine.min.js?v=187:144
+                restoreVisualState debugger eval code:387
+                updateDeckState debugger eval code:933
+                undo debugger eval code:987
+
+    */
     const updateDeckState = function (newState) {
         let state = currentDeckState();
-        for (let location of ["main", "extra", "side"]) {
-            if(deepEquals(state[location], newState[location])) {
-                continue;
+        clearVisualState();
+        overMainExtraSide((contents, location) => {
+            if(deepEquals(contents, newState[location])) {
+                // console.warn("EXT.EDIT_API.updateDeckState - new and old sections for " + location + " are equal, not updating");
+                return;
             }
             clearLocation(location);
             for (let id of newState[location]) {
                 addCardSilent(id, location, -1);
             }
-        }
+        });
+        restoreVisualState();
     };
     EXT.EDIT_API.updateDeckState = updateDeckState;
-    EXT.EDIT_API.updateDeckState = currentDeckState;
+    EXT.EDIT_API.currentDeckState = currentDeckState;
     EXT.EDIT_API.EDIT_HISTORY = [ currentDeckState() ];
     EXT.EDIT_API.EDIT_LOCATION = 0;
-    // update listener
-    const updateHistory = function () {
-        let userIsBusy = !!Z.selection;
-        if(userIsBusy) {
-            return;
+    
+    const addEditPoint = function () {
+        let state = currentDeckState();
+        let previousState = lastElement(EXT.EDIT_API.EDIT_HISTORY);
+        
+        // do not add a duplicate entry
+        if(previousState && deepEquals(state, previousState)) {
+            return false;
         }
         
-        let state = currentDeckState();
-        let previousState = EXT.EDIT_API.EDIT_HISTORY[EXT.EDIT_API.EDIT_HISTORY.length - 1];
-        if(previousState && deepEquals(state, previousState)) {
-            return;
-        }
+        // remove all entries past the current edit location
         if(EXT.EDIT_API.EDIT_LOCATION >= EXT.EDIT_API.EDIT_HISTORY.length) {
             EXT.EDIT_API.EDIT_HISTORY.splice(EXT.EDIT_API.EDIT_LOCATION);
         }
+        
+        // add the state
         EXT.EDIT_API.EDIT_HISTORY.push(state);
+        
+        // remove a state from the front if we have too many
         if(EXT.EDIT_API.EDIT_HISTORY.length > EXT.MAX_UNDO_RECORD) {
             EXT.EDIT_API.EDIT_HISTORY.shift();
         }
+        
+        // update the edit location
         EXT.EDIT_API.EDIT_LOCATION = EXT.EDIT_API.EDIT_HISTORY.length - 1;
+        
+        // we can no longer redo, but now we can undo
         undoButton.disabled = false;
         redoButton.disabled = true;
+        
+        return true;
     };
-    EXT.EDIT_API.updateHistory = updateHistory;
+    
+    EXT.EDIT_API.addEditPoint = addEditPoint;
     
     const undo = function () {
+        // we can't undo if there's nothing behind us
         if(EXT.EDIT_API.EDIT_LOCATION === 0) {
-            return;
+            console.warn("EXT.EDIT_API.undo function failed - nothing to undo!");
+            return false;
         }
-        console.log("EXT.EDIT_API.EDIT_LOCATION",EXT.EDIT_API.EDIT_LOCATION);
+        
+        // we moved back one
         EXT.EDIT_API.EDIT_LOCATION--;
+        
+        // refresh the deck state
         updateDeckState(EXT.EDIT_API.EDIT_HISTORY[EXT.EDIT_API.EDIT_LOCATION]);
+        
+        // we can now redo
         redoButton.disabled = false;
+        
+        // disable the undo button if there is nothing left to undo
+        if(EXT.EDIT_API.EDIT_LOCATION === 0) {
+            undoButton.disabled = true;
+        }
+        
+        return true;
     }
     EXT.EDIT_API.undo = undo;
     
     const redo = function () {
-        if(EXT.EDIT_API.EDIT_LOCATION === EXT.EDIT_API.EDIT_HISTORY.length) {
-            return;
+        // if we're at the front, we can't redo
+        if(EXT.EDIT_API.EDIT_LOCATION === EXT.EDIT_API.EDIT_HISTORY.length - 1) {
+            console.warn("EXT.EDIT_API.redo function failed - nothing to redo!");
+            return false;
         }
+        
+        // move forward once
         EXT.EDIT_API.EDIT_LOCATION++;
+        
+        // refresh the deck state
         updateDeckState(EXT.EDIT_API.EDIT_HISTORY[EXT.EDIT_API.EDIT_LOCATION]);
+        
+        // we can now undo
+        undoButton.disabled = false;
+        
+        // disable the redo button if there is nothing left to redo
+        if(EXT.EDIT_API.EDIT_LOCATION === EXT.EDIT_API.EDIT_HISTORY.length - 1) {
+            redoButton.disabled = true;
+        }
+        
+        return true;
     }
     EXT.EDIT_API.redo = redo;
     
+    /* reimplementing nexus buttons with edit history enabled */
     const clear = function () {
-        for (let location of ["main", "extra", "side"]) {
-            while(Z[location].length) {
-                removeCardSilent(location, 0);
-            }
-        }
-        updateHistory();
+        clearVisualState();
+        overMainExtraSide((contents, location) => {
+            Z[location] = [];
+        });
+        restoreVisualState();
+        addEditPoint();
     }
     EXT.EDIT_API.clear = clear;
     
     // reset listener for editor's clear button
-    let editorClearButton = document.getElementById("editor-clear-button");
-    $(editorClearButton).unbind();
-    editorClearButton.addEventListener("click", clear);
+    let clearButton = document.getElementById("editor-clear-button");
+    $(clearButton).unbind();
+    clearButton.addEventListener("click", clear);
+    
+    const overMainExtraSide = function (it) {
+        for(let name of ["main", "extra", "side"]) {
+            it(Z[name], name);
+        }
+    };
+    
+    // sorts everything
+    const sort = function () {
+        clearVisualState();
+        // for (var a = ["main", "extra", "side"], b = 0; b < a.length; ++b) {
+            // var c = a[b];
+            // Z[c].sort(function(a, b) {
+                // return Z.fa(X[a.data("id")], X[b.data("id")])
+            // });
+            // Z.N(c);
+        // }
+        overMainExtraSide((contents, location) => {
+            contents.sort((c1, c2) => 
+                Z.fa(X[c1.data("id")], X[c2.data("id")])
+            );
+            Z.N(location);
+        });
+        restoreVisualState();
+        addEditPoint();
+    };
+    
+    // reset listener for editor's sort button
+    let sortButton = document.getElementById("editor-sort-button");
+    $(sortButton).unbind();
+    sortButton.addEventListener("click", sort);
+    
+    const shuffleAll = function () {
+        clearVisualState();
+        overMainExtraSide((contents, location) => {
+            Z.Nb(contents);
+            Z.N(location);
+        });
+        restoreVisualState();
+        addEditPoint();
+    }
+    
+    let shuffleButton = document.getElementById("editor-shuffle-button");
+    $(shuffleButton).unbind();
+    shuffleButton.addEventListener("click", shuffleAll);
     
     // code for Export readable
     const countIn = function (arr, el) {
@@ -1068,8 +1333,6 @@ let onStart = function () {
     }
     let interval = setInterval(updatePaddingHeight, 1);
     console.info("Interval started. ", interval);
-    
-    
     
     const LINK_ARROW_MEANING = {
         "Bottom-Left":      0b000000001,
@@ -1432,7 +1695,7 @@ let onStart = function () {
             throw new Error("Invalid comparator: " + comp);
         }
         
-        console.log("expressionToPredicate", rest, param, fn);
+        // console.log("expressionToPredicate", rest, param, fn);
         
         let tag = {
             value: rest,
@@ -1457,7 +1720,7 @@ let onStart = function () {
         let stack = [];
         for(let token of tokens) {
             if(token.type === TokenTypes.EXPRESSION) {
-                console.log(">>>>EXPRESSION", token);
+                // console.log(">>>>EXPRESSION", token);
                 stack.push(expressionToPredicate(token.raw, param));
             }
             else if(token.type === TokenTypes.OPERATOR) {
