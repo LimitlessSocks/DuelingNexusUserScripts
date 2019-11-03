@@ -419,13 +419,13 @@ let onStart = function () {
     // $(saveButton).unbind();
     // saveButton.addEventListener("click", saveDeck);
     // capture page beforeunload
-    window.addEventListener("beforeunload", function (ev) {
-        if(EXT.EDIT_API.SAVED_INDEX !== EXT.EDIT_API.EDIT_LOCATION) {
-            ev.preventDefault(); // PREFERED METHOD (not supported universally)
-            return event.returnValue = ""; // deprecated
-        }
-        return null;
-    });
+    // window.addEventListener("beforeunload", function (ev) {
+        // if(EXT.EDIT_API.SAVED_INDEX !== EXT.EDIT_API.EDIT_LOCATION) {
+            // ev.preventDefault(); // PREFERED METHOD (not supported universally)
+            // return event.returnValue = ""; // deprecated
+        // }
+        // return null;
+    // });
     
     const engineButton = function (content, id = null) {
         let button = makeElement("button", id, content);
