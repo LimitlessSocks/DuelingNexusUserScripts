@@ -305,3 +305,4 @@ let checkStartUp = function () {
         setTimeout(checkStartUp, 100);
     }
 }
+checkStartUp();
