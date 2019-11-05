@@ -1,6 +1,3 @@
-
-
-
 // ==UserScript==
 // @name         DuelingNexus DeckSort Plugin
 // @namespace    https://duelingnexus.com/
@@ -8,7 +5,10 @@
 // @description  Adds various support for categorizing decks.
 // @author       Sock#3222
 // @grant        none
-// @include      https://duelingnexus.com/
+// @include      https://duelingnexus.com/decks
+// @include      https://duelingnexus.com/home
+// @include      https://duelingnexus.com/duel
+// @include      https://duelingnexus.com/profile
 // ==/UserScript==
 
 const DeckSort = {
@@ -302,8 +302,6 @@ let onStart = function () {
     }
     
     attachListeners();
-    
-    DeckSort.unsorted = false;
 }
 
 let waitFrame = function () {
