@@ -1,3 +1,6 @@
+
+
+
 // ==UserScript==
 // @name         DuelingNexus DeckSort Plugin
 // @namespace    https://duelingnexus.com/
@@ -5,8 +8,12 @@
 // @description  Adds various support for categorizing decks.
 // @author       Sock#3222
 // @grant        none
-// @include      https://duelingnexus.com/decks
+// @include      https://duelingnexus.com/
 // ==/UserScript==
+
+const DeckSort = {
+    
+};
 
 let onStart = function () {
     const MINIMIZE_SYMBOL = "\u2212";
@@ -240,6 +247,7 @@ let onStart = function () {
     const SPECIFIER_REGEX = /^!!/;
     const SPECIFIER_ITEM_REGEX = /(\w+):(.+)/;
     const specifiers = {};
+    console.log(decksByTag);
     while(SPECIFIER_REGEX.test(decksByTag.unsorted[0].row.textContent)) {
         // TODO: find analogue, since we're using sets now
         let specifierRow = decksByTag.unsorted.shift().row;
@@ -257,14 +265,14 @@ let onStart = function () {
             let [, key, value] = match;
             specifiers[key] = value;
         });
-        specifierRow.remove();
+        // specifierRow.remove();
+        specifierRow.style.display = "none";
     }
     
     uniqueTags.forEach(tag => {
         createNewTab(tag, specifiers[tag]);
     });
     
-    // let completed
     const attachListeners = function () {
         let rows = [
             ...document.querySelectorAll("#decks-container tr:not(.tr-folder)")
@@ -274,6 +282,7 @@ let onStart = function () {
             let [deckName, renameButton, copyButton, deleteButton] = row.children;
             let oldTag = isolateTag(deckName);
             deckName.textContent = removeTag(deckName.textContent);
+            // broken rn
             renameButton.addEventListener("click", function () {
                 // alert("NEW DECK!", deckName.textContent);
                 let newTag = isolateTag(deckName);
@@ -293,16 +302,40 @@ let onStart = function () {
     }
     
     attachListeners();
+    
+    DeckSort.unsorted = false;
 }
 
-let checkStartUp = function () {
-    if(document.getElementById("decks-container")) {
-        onStart();
-        // destroy reference; pseudo-closure
-        onStart = null;
-    }
-    else {
-        setTimeout(checkStartUp, 100);
-    }
+let waitFrame = function () {
+    return new Promise(resolve => {
+        requestAnimationFrame(resolve); //faster than set time out
+    });
 }
-checkStartUp();
+
+let waitForElement = async function (selector, source = document) {
+    let query;
+    while ((query = source.querySelector(selector)) === null) {
+        await waitFrame();
+    }
+    return query;
+}
+
+let waitForNoElement = async function (selector, source = document) {
+    while (source.querySelector(selector) !== null) {
+        await waitFrame();
+    }
+    return;
+}
+
+let startUp = async function () {
+    // wait until we have something to manipulate
+    waitForElement("#decks-container td").then((container) => {
+        console.log("Received: ", container.parentNode.parentNode.children);
+        onStart();
+        // now that we're here, we'll wait until we aren't
+        waitForNoElement("#decks-area").then(() => {
+            startUp();
+        });
+    });
+}
+startUp();
