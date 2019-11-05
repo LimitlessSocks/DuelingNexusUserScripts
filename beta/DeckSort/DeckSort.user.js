@@ -1,4 +1,12 @@
-
+// ==UserScript==
+// @name         DuelingNexus DeckSort Plugin
+// @namespace    https://duelingnexus.com/
+// @version      0.1
+// @description  Adds various support for categorizing decks.
+// @author       Sock#3222
+// @grant        none
+// @include      https://duelingnexus.com/decks
+// ==/UserScript==
 
 (function () {
     const MINIMIZE_SYMBOL = "\u2212";
