@@ -8,7 +8,7 @@
 // @include      https://duelingnexus.com/decks
 // ==/UserScript==
 
-(function () {
+let onStart = function () {
     const MINIMIZE_SYMBOL = "\u2212";
     const MAXIMIZE_SYMBOL = "+";
     const loadScript = function (url) {
@@ -136,7 +136,7 @@
             .map(chunk => chunk.toLowerCase())
             .join("-");
     
-    let deckContainer = document.getElementById("decks-container")
+    let deckContainer = document.getElementById("decks-container");
     let tbody = deckContainer.querySelector("tbody");
     let initialRows = [...deckContainer.querySelectorAll("tr")];
     let uniqueTags = new Set();
@@ -293,4 +293,15 @@
     }
     
     attachListeners();
-})();
+}
+
+let checkStartUp = function () {
+    if(document.getElementById("decks-container")) {
+        onStart();
+        // destroy reference; pseudo-closure
+        onStart = null;
+    }
+    else {
+        setTimeout(checkStartUp, 100);
+    }
+}
