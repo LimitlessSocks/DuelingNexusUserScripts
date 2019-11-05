@@ -514,22 +514,22 @@ let onStart = function () {
         else {
             banlistIcon.remove();
         }
-        let container = $("<table width=100% class=rs-ext-card-entry-table><tr><td width=74%></td><td width=13%></td><td width=13%></td></tr></table>");
+        let container = $("<table width=100% class=rs-ext-card-entry-table><tr><td width=74%></td><td width=13% class='table-button engine-button-default'>Add to Main</td><td width=13% class=table-button>Add to Side</td></tr></table>");
         let [ cardTd, mainTd, sideTd ] = container.find("td");
         
         cardTd.append(...template);
         
-        let mainDeckAdd = engineButton("Add to Main");
-        mainDeckAdd.addEventListener("click", function () {
+        // let mainDeckAdd = engineButton("Add to Main");
+        mainTd.addEventListener("click", function () {
             addThisCard(template);
         });
-        mainTd.append(mainDeckAdd);
+        // mainTd.append(mainDeckAdd);
         
-        let sideDeckAdd = engineButton("Add to Side");
-        sideDeckAdd.addEventListener("click", function () {
+        // let sideDeckAdd = engineButton("Add to Side");
+        sideTd.addEventListener("click", function () {
             addThisCard(template, "side");
         });
-        sideTd.append(sideDeckAdd);
+        // sideTd.append(sideDeckAdd);
         
         Z.xa.append(container);
     }

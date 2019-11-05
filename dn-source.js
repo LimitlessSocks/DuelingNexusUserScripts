@@ -1000,10 +1000,21 @@ function wd(a) {
     1 !== a ? ($("#game-room-info-has-custom-cards-per-draw").show(), $("#game-room-info-cards-per-draw").text(a)) : $("#game-room-info-has-custom-cards-per-draw").hide();
     $("#game-chat-area").show();
     $("#game-chat-textbox").keyup(function(a) {
-        13 == a.keyCode && (a = $("#game-chat-textbox").val(), $("#game-chat-textbox").val(""), K({
-            type: "SendChatMessage",
-            message: a
-        }), a = "[" + Hb + "]: " + a, 4 > z ? sd(a) : sd(a, "yellow"))
+        if(13 == a.keyCode) {
+            a = $("#game-chat-textbox").val();
+            $("#game-chat-textbox").val("");
+            K({
+                type: "SendChatMessage",
+                message: a
+            });
+            a = "[" + Hb + "]: " + a;
+            if(4 > z) {
+                sd(a);
+            }
+            else {
+                sd(a, "yellow");
+            }
+        }
     })
 }
 
