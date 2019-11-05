@@ -92,6 +92,23 @@ const NexusGUI = {
         return lines
             .map(line => line.replace(reg, ""))
             .join("\n");
+    },
+    loadScript: function (url, cb = null) {
+        let script = document.createElement("script");
+        script.src = url;
+        if (cb) {
+            script.addEventListener("load", cb);
+        }
+        document.head.appendChild(script);
+    },
+    formatGithubURL: (name, release, path) => `https://github.com/${path}/raw/master/${release}/${name}/${name}.user.js`,
+    loadUserScript: function (
+        name,
+        release = "final",
+        path = "LimitlessSocks/DuelingNexusUserScripts"
+    ) {
+        let url = NexusGUI.formatGithubURL(name, release, path);
+        NexusGUI.loadScript(url);
     }
 };
 
@@ -132,10 +149,7 @@ let onLoad = function () {
 if(!window.jQuery) {
     // the same used by nexus
     const jQueryInstallationURL = "https://code.jquery.com/jquery-3.1.1.min.js";
-    let script = document.createElement("script");
-    script.src = jQueryInstallationURL;
-    script.addEventListener("load", onLoad);
-    document.head.appendChild(script);
+    NexusGUI.loadScript(jQueryInstallationURL, onLoad);
 }
 else {
     onLoad();
