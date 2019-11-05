@@ -5,6 +5,7 @@
 // @description  Adds various support for categorizing decks.
 // @author       Sock#3222
 // @grant        none
+// @include      https://duelingnexus.com
 // @include      https://duelingnexus.com/decks
 // @include      https://duelingnexus.com/home
 // @include      https://duelingnexus.com/duel
