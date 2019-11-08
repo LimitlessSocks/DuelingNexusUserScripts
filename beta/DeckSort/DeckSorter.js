@@ -47,13 +47,6 @@ let onStartDeckSorter = function () {
         return deck;
     };
     
-    const TAG_REGEX = /^\s*\[([^\]]+)\]/;
-    const isolateTag = function (el) {
-        let str = el.textContent;
-        let [, tag] = str.match(TAG_REGEX) || [];
-        return tag || null;
-    };
-    
     const deckToYdk = function (deck) {
         let lines = [
             "#created by RefinedSearch plugin"

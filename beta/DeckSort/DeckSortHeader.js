@@ -5,6 +5,14 @@
 const DeckSort = {
     
 };
+    
+const TAG_REGEX = /^\s*\[([^\]]+)\]/;
+const isolateTag = function (el) {
+    let str = el.textContent || el;
+    let [, tag] = str.match(TAG_REGEX) || [];
+    return tag || null;
+};
+DeckSort.isolateTag = isolateTag;
 
 let waitFrame = function () {
     return new Promise(resolve => {
