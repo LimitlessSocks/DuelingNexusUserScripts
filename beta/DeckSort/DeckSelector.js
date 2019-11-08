@@ -65,5 +65,7 @@ let onStartDeckSelector = function () {
 };
 
 let startUpDeckSelector = function () {
-    waitForElement("#game-deck-selection button", onStartDeckSelector);
+    waitForElement("#game-deck-selection button").then(() => {
+        onStartDeckSelector();
+    });
 };
