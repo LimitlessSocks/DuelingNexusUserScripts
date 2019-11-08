@@ -31,7 +31,6 @@ let onStartDeckSorter = function () {
         };
         
         let content = await requestText("https://duelingnexus.com/editor/" + id);
-        // console.log(content);
         let tree = domParser.parseFromString(content, "text/html");
         let deckScripts = [
             ...tree.querySelectorAll("script")
@@ -143,7 +142,6 @@ let onStartDeckSorter = function () {
         decksByTag[tag].push(obj);
         uniqueTags.add(tag);
     };
-    // console.log(decksByTag);
     
     // color is an optional parameter
     const createNewTab = function (tag, color) {
@@ -186,7 +184,6 @@ let onStartDeckSorter = function () {
             
             for(let deckReference of decksToDownload) {
                 let list = await getDeckList(deckReference.id);
-                // console.log(list);
                 let ydk = deckToYdk(list);
                 zip.file(deckReference.name + ".ydk", ydk);
             }

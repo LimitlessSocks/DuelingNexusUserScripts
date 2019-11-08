@@ -5,10 +5,11 @@
 const DeckSort = {
     
 };
+window.DeckSort = DeckSort;
     
 const TAG_REGEX = /^\s*\[([^\]]+)\]/;
 const isolateTag = function (el) {
-    let str = el.textContent || el;
+    let str = el.textContent === undefined ? el.toString() : el.textContent;
     let [, tag] = str.match(TAG_REGEX) || [];
     return tag || null;
 };
@@ -30,6 +31,21 @@ let waitForElement = async function (selector, source = document) {
 
 let waitForNoElement = async function (selector, source = document) {
     while (source.querySelector(selector) !== null) {
+        await waitFrame();
+    }
+    return;
+};
+
+$.waitForElement = async function (selector, source = $("body")) {
+    let query;
+    while (source.find(selector).length === 0) {
+        await waitFrame();
+    }
+    return query;
+};
+
+$.waitForNoElement = async function (selector, source = $("body")) {
+    while (source.find(selector).length !== 0) {
         await waitFrame();
     }
     return;
