@@ -5,19 +5,19 @@ let onStartDeckSorter = function () {
         let scriptElement = document.createElement("script");
         scriptElement.src = url;
         document.head.appendChild(scriptElement);
-    }
+    };
     
     const requestText = async function (url) {
         let response = await fetch(url);
         let data = await response.text();
         return data;
-    }
+    };
     
     const requestJSON = async function (url) {
         let response = await fetch(url);
         let data = await response.json();
         return data;
-    }
+    };
     
     loadScript("https://cdnjs.cloudflare.com/ajax/libs/jszip/3.2.2/jszip.min.js");
     
@@ -28,7 +28,7 @@ let onStartDeckSorter = function () {
     const getDeckList = async function (id) {
         if(DECK_LIST_MEMO[id]) {
             return DECK_LIST_MEMO[id];
-        }
+        };
         
         let content = await requestText("https://duelingnexus.com/editor/" + id);
         // console.log(content);
@@ -45,14 +45,14 @@ let onStartDeckSorter = function () {
         DECK_LIST_MEMO[id] = deck;
         
         return deck;
-    }
+    };
     
     const TAG_REGEX = /^\s*\[([^\]]+)\]/;
     const isolateTag = function (el) {
         let str = el.textContent;
         let [, tag] = str.match(TAG_REGEX) || [];
         return tag || null;
-    }
+    };
     
     const deckToYdk = function (deck) {
         let lines = [
@@ -65,11 +65,11 @@ let onStartDeckSorter = function () {
         }
         let message = lines.join("\n");
         return message;
-    }
+    };
     
     const removeTag = function (str) {
         return str.replace(TAG_REGEX, "");
-    }
+    };
     
     const USER_SELECTS = [
         "-webkit-touch-callout",
@@ -83,7 +83,7 @@ let onStartDeckSorter = function () {
         USER_SELECTS.forEach(select => {
             el.style[select] = "none";
         });
-    }
+    };
     // based from https://stackoverflow.com/a/30832210/4119004
     const download = function promptSaveFile (data, filename, type) {
         var file = new Blob([data], {type: type});
@@ -101,7 +101,7 @@ let onStartDeckSorter = function () {
                 window.URL.revokeObjectURL(url);  
             }, 0); 
         }
-    }
+    };
     
     const removeFrom = (arr, val) => arr.splice(arr.indexOf(val), 1);
     
@@ -116,7 +116,7 @@ let onStartDeckSorter = function () {
             return;
         }
         return ID_LIST_MEMO.decks;
-    }
+    };
     
     const toggleValue = (val, a, b) => val === a ? b : a;
     
@@ -149,7 +149,7 @@ let onStartDeckSorter = function () {
         decksByTag[tag] = decksByTag[tag] || [];
         decksByTag[tag].push(obj);
         uniqueTags.add(tag);
-    }
+    };
     // console.log(decksByTag);
     
     // color is an optional parameter
@@ -211,7 +211,7 @@ let onStartDeckSorter = function () {
             title.textContent = title.textContent.replace(/\[(.)\]/, function (match, inner) {
                 return "[" + toggleValue(inner, MAXIMIZE_SYMBOL, MINIMIZE_SYMBOL) + "]";
             });
-        }
+        };
         // hide by default, start the rows toggled off
         toggleTaggedRows();
         title.addEventListener("click", toggleTaggedRows);
@@ -224,7 +224,7 @@ let onStartDeckSorter = function () {
             let textCell = row.children[0];
             textCell.style.textIndent = "2em";
         });
-    }
+    };
     
     // remove specifiers from accessible list
     const SPECIFIER_REGEX = /^!!/;
@@ -250,7 +250,7 @@ let onStartDeckSorter = function () {
         });
         // specifierRow.remove();
         specifierRow.style.display = "none";
-    }
+    };
     
     uniqueTags.forEach(tag => {
         createNewTab(tag, specifiers[tag]);
@@ -285,7 +285,7 @@ let onStartDeckSorter = function () {
     }
     
     attachListeners();
-}
+};
 
 let startUpDeckSorter = async function () {
     // wait until we have something to manipulate
@@ -297,4 +297,4 @@ let startUpDeckSorter = async function () {
             startUpDeckSorter();
         });
     });
-}
+};

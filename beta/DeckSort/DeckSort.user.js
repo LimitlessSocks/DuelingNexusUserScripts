@@ -17,6 +17,7 @@
 // ==/UserScript==
 
 // decide which startUp function to run
+;
 (function () {
     let url = window.location.toString();
     const GAME_URL = "https://duelingnexus.com/game";
