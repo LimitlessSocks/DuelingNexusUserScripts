@@ -204,7 +204,7 @@ let onStartDeckSorter = function () {
     const SPECIFIER_ITEM_REGEX = /(\w+):(.+)/;
     const specifiers = {};
     console.log(decksByTag);
-    while(SPECIFIER_REGEX.test(decksByTag.unsorted[0].row.textContent)) {
+    while(decksByTag.unsorted.length && SPECIFIER_REGEX.test(decksByTag.unsorted[0].row.textContent)) {
         // TODO: find analogue, since we're using sets now
         let specifierRow = decksByTag.unsorted.shift().row;
         let specifierText = specifierRow.children[0].textContent;

@@ -57,7 +57,7 @@ const requestJSON = async function (url) {
     return data;
 };
 
-waitForElementJQuery = async function (selector, source = $("body")) {
+const waitForElementJQuery = async function (selector, source = $("body")) {
     let query;
     while (source.find(selector).length === 0) {
         await waitFrame();
@@ -65,7 +65,7 @@ waitForElementJQuery = async function (selector, source = $("body")) {
     return query;
 };
 
-waitForNoElementJQuery = async function (selector, source = $("body")) {
+const waitForNoElementJQuery = async function (selector, source = $("body")) {
     while (source.find(selector).length !== 0) {
         await waitFrame();
     }
