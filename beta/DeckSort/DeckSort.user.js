@@ -10,7 +10,7 @@
 // @include      https://duelingnexus.com/home
 // @include      https://duelingnexus.com/duel
 // @include      https://duelingnexus.com/profile
-// @include      https://duelingnexus.com/game
+// @include      https://duelingnexus.com/game/*
 // @require      DeckSortHeader.js
 // @require      DeckSorter.js
 // @require      DeckSelector.js
