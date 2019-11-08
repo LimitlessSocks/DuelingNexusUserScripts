@@ -1185,6 +1185,7 @@ let onStart = function () {
         for(let kind of ["main", "extra", "side"]) {
             let header = (kind === "side" ? "!" : "#") + kind;
             lines.push(header);
+            // TODO: add option to use card.A rather than card.id
             lines.push(...Deck[kind]);
         }
         let message = lines.join("\n");
