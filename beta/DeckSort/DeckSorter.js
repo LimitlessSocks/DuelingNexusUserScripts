@@ -106,7 +106,9 @@ let onStartDeckSorter = function () {
     let initialRows = [...deckContainer.querySelectorAll("tr")];
     let uniqueTags = new Set();
     let decksById = {};
-    let decksByTag = {};
+    let decksByTag = {
+        unsorted: [],
+    };
     // give each deck its own ID
     for(let row of initialRows) {
         let tag = isolateTag(row) || "unsorted";
