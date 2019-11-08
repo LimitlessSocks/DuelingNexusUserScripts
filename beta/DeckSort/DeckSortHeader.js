@@ -36,7 +36,28 @@ let waitForNoElement = async function (selector, source = document) {
     return;
 };
 
-$.waitForElement = async function (selector, source = $("body")) {
+const loadScript = function (url, cb) {
+    let scriptElement = document.createElement("script");
+    scriptElement.src = url;
+    if(cb) {
+        scriptElement.addEventListener("load", cb);
+    }
+    document.head.appendChild(scriptElement);
+};
+
+const requestText = async function (url) {
+    let response = await fetch(url);
+    let data = await response.text();
+    return data;
+};
+
+const requestJSON = async function (url) {
+    let response = await fetch(url);
+    let data = await response.json();
+    return data;
+};
+
+waitForElementJQuery = async function (selector, source = $("body")) {
     let query;
     while (source.find(selector).length === 0) {
         await waitFrame();
@@ -44,7 +65,7 @@ $.waitForElement = async function (selector, source = $("body")) {
     return query;
 };
 
-$.waitForNoElement = async function (selector, source = $("body")) {
+waitForNoElementJQuery = async function (selector, source = $("body")) {
     while (source.find(selector).length !== 0) {
         await waitFrame();
     }

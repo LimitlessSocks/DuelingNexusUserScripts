@@ -65,7 +65,7 @@ let onStartDeckSelector = function () {
 };
 
 let startUpDeckSelector = function () {
-    $.waitForElement("#game-deck-dropdown:visible").then(() => {
+    waitForElementJQuery("#game-deck-dropdown:visible").then(() => {
         console.log("starting DeckSelector.js!");
         onStartDeckSelector();
     });

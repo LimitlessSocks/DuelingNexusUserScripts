@@ -1,23 +1,6 @@
 let onStartDeckSorter = function () {
     const MINIMIZE_SYMBOL = "\u2212";
     const MAXIMIZE_SYMBOL = "+";
-    const loadScript = function (url) {
-        let scriptElement = document.createElement("script");
-        scriptElement.src = url;
-        document.head.appendChild(scriptElement);
-    };
-    
-    const requestText = async function (url) {
-        let response = await fetch(url);
-        let data = await response.text();
-        return data;
-    };
-    
-    const requestJSON = async function (url) {
-        let response = await fetch(url);
-        let data = await response.json();
-        return data;
-    };
     
     loadScript("https://cdnjs.cloudflare.com/ajax/libs/jszip/3.2.2/jszip.min.js");
     
