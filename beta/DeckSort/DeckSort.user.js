@@ -11,8 +11,8 @@
 // @include      https://duelingnexus.com/duel
 // @include      https://duelingnexus.com/profile
 // @include      https://duelingnexus.com/game
+// @require      DeckSortHeader.js
 // @require      DeckSorter.js
-// @require      DeckEditorSort.js
 // @require      DeckSelector.js
 // ==/UserScript==
 
