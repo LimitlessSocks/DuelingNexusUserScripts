@@ -1,6 +1,7 @@
 let onStartDeckSorter = function () {
     const MINIMIZE_SYMBOL = "\u2212";
     const MAXIMIZE_SYMBOL = "+";
+    const OPTIONS_COG_BASE64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH4wsJBxwcoeWqgAAAAB1pVFh0Q29tbWVudAAAAAAAQ3JlYXRlZCB3aXRoIEdJTVBkLmUHAAACn0lEQVRYw+WXO2hUQRSG/9l1o24SY1BRC40QjU1SKIIpNEVEUBRJYaekEREjWKWy0FRiFcEHiBBQLKy0EUS08AE2SbDQQlMYfIuurCYhLMndnc9most17ubuuhsQD0wznMd/nnNG+t/JVCoIXJe0U1IgKSGp3RgzsyCogT3AJ35TAJyphaF6IOm5P8uf9DpCR1OlxtcB14A+YAuQdvebgBceAD+Aw44naa3dDBwA7gGdZRm31rYAj4uUZ4BLQC9wlWgatdYeAgaAlyFw3XE9XwbcoPr0CmgP20uEL3K5XE7SWA1qN5vP59/PCyCdTgeSnkiaqKLxQNKjVCo1ETcNjTHSYIFC0bEleN8BG3y2Et7pZMyUpOEIfAVJdyV1GmOSxpikpBZJFyXlfP5IGjfGvCmnBdcDQx5PZoHTJeS6gK++CARBsBGoK2XUAN3AKeB5UZjnqADciQH+uAMapm/AeWttD9DgExwCPpTI4wzQFQNACzBSQs8UcB9YHBbMzFN002Wk8HaMuVAfLsJcFduuEJexGMASV7GRvEBrDO+XS1pZCYBWSYOSMhHRSEk6GUPnbkkdnvu8pO+SbklqM8ZMl/KiDxjz5C0L7JinfR945CaBc8CqcmbBiYji+QwcKZ5swAqgx1U3nqn4NMrOIu+rkc0m3HTz0RpJVySNAOOu4NZK2iap2dVReNVrBOqMMbNxve+ISEGlNAUcjf0WSGqX1FbFtmyQtC8WAFcox2qwD2wFdsVNwV4gF9p6vwCjEY/Nr2np9sXxkHweuFDuUnoQeAs8Awbnqt4tqJMRL+WA42kA+oGHrmsuV7oZbw+/XMBSty2H6SOw2qNjfy3+C72hEBeAmwv2nwOageFQBCrqmr/5GzZJqpsbPMaYzD/5O/4JriesdkG3NSwAAAAASUVORK5CYII=";
     
     loadScript("https://cdnjs.cloudflare.com/ajax/libs/jszip/3.2.2/jszip.min.js");
     
@@ -46,6 +47,18 @@ let onStartDeckSorter = function () {
         return str.replace(TAG_REGEX, "");
     };
     
+    // TODO: find less hacky way
+    const refreshDecklists = function () {
+        let [ home, duelZone, deckEditor, settings ] = $("#navbar-middle button");
+        return new Promise(function(resolve, reject) {
+            duelZone.click();
+            setTimeout(function () {
+                deckEditor.click();
+                resolve();
+            }, 100);
+        });
+    };
+    
     const USER_SELECTS = [
         "-webkit-touch-callout",
         "-webkit-user-select",
@@ -77,8 +90,6 @@ let onStartDeckSorter = function () {
             }, 0); 
         }
     };
-    
-    const removeFrom = (arr, val) => arr.splice(arr.indexOf(val), 1);
     
     let ID_LIST_MEMO;
     const loadAllDecks = async function () {
@@ -127,11 +138,12 @@ let onStartDeckSorter = function () {
         decksByTag[tag].push(obj);
         uniqueTags.add(tag);
     };
-    
+    window.decksByTag=decksByTag;
     // color is an optional parameter
     const createNewTab = function (tag, color) {
         // find all rows with that tag
         let taggedRows = function () {
+            // console.log(tag, decksByTag);
             return decksByTag[tag].map(e => e.row);
         }
         let tagTab = document.createElement("tr");
@@ -202,13 +214,14 @@ let onStartDeckSorter = function () {
     };
     
     // remove specifiers from accessible list
-    const SPECIFIER_REGEX = /^!!/;
+    const SPECIFIER_REGEX = /^!! /;
     const SPECIFIER_ITEM_REGEX = /(\w+):(.+)/;
     const specifiers = {};
+    const specifierRows = [];
     console.log(decksByTag);
     while(decksByTag.unsorted.length && SPECIFIER_REGEX.test(decksByTag.unsorted[0].row.textContent)) {
-        // TODO: find analogue, since we're using sets now
         let specifierRow = decksByTag.unsorted.shift().row;
+        specifierRows.push(specifierRow);
         let specifierText = specifierRow.children[0].textContent;
         let items = specifierText.split(/;|\s+/);
         items.forEach(item => {
@@ -237,29 +250,56 @@ let onStartDeckSorter = function () {
         ];
         
         for(let row of rows) {
-            let [deckName, renameButton, copyButton, deleteButton] = row.children;
+            let [ deckName, renameButton, copyButton, deleteButton ] = row.children;
             let oldTag = isolateTag(deckName);
             deckName.textContent = removeTag(deckName.textContent);
-            // broken rn
+            copyButton.addEventListener("click", function () {
+                refreshDecklists();
+            });
+            deleteButton.addEventListener("click", function () {
+                refreshDecklists();
+            });
             renameButton.addEventListener("click", function () {
-                // alert("NEW DECK!", deckName.textContent);
-                let newTag = isolateTag(deckName);
-                if(newTag === oldTag) {
-                    return;
-                }
-                let deckObject = decksById[this.id];
-                removeFrom(decksByTag[oldTag], deckObject);
-                if(!uniqueTags.has(newTag)) {
-                    createNewTab(newTag, specifiers[newTag]);
-                    decksByTag[newTag] = [];
-                }
-                decksByTag[newTag].push(deckObject);
+                refreshDecklists();
             });
         }
         
     }
     
     attachListeners();
+    
+    // add new button to top
+    let options = $("<button data-v-6f705b54=''>Options</button>");
+    let createNewDeck = $("#decks-buttons button")[0];
+    createNewDeck.addEventListener("click", function () {
+        refreshDecklists();
+    });
+    options.insertAfter(createNewDeck);
+    $("#decks-buttons").css("justify-content", "start")
+                       .css("-webkit-box-pack", "start")
+                       .css("display", "flex");
+    let optionsCog = $("<img data-v-6f705b54=''>").attr("src", OPTIONS_COG_BASE64);
+    options.prepend(optionsCog);
+    options.click(function () {
+        let content = "";//specifierRows
+        // TODO: flex stuff
+        console.log(specifierRows);
+        let sorted = [...uniqueTags].sort();
+        let table = $("<table>");
+        for(let tag of sorted) {
+            specifiers[tag] = specifiers[tag] || "#F0F0F0";
+            let color = toHexString(specifiers[tag]);
+            let tr = $("<tr><td>" + tag + "</td><td><input type=color value=" + color + "></td></tr>");
+            table.append(tr);
+            let input = tr.find("input");
+            input.on("change", function (val) {
+                specifiers[tag] = input.val();
+                // TODO: export specifiers
+                refreshDecklists();
+            });
+        }
+        NexusGUI.popup("Modify Colors", table);
+    });
 };
 
 let startUpDeckSorter = async function () {

@@ -56,6 +56,21 @@ const requestJSON = async function (url) {
     let data = await response.json();
     return data;
 };
+    
+const removeFrom = (arr, val) => arr.splice(arr.indexOf(val), 1);
+
+// TODO: expand
+const toHexString = function (color) {
+    if(/^#\d{3}$/.test(color)) {
+        return color.replace(/\d/g, "$&$&");
+    }
+    else if(/^rgb\s*\(\d+\s*(,\d+\s*){2}\)$/.test(color)) {
+        return "#" + color.match(/\d+/g).map(d => parseInt(d).toString(16).padStart(2, "0")).join("");
+    }
+    else {
+        return color;
+    }
+};
 
 const waitForElementJQuery = async function (selector, source = $("body")) {
     let query;
