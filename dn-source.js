@@ -652,11 +652,15 @@ function Xc(a, b, c, d) {
 
 function Vb() {
     var a = $("#card-column").position().top;
-    $("#card-column").css("max-height", $(window).height() - a - 24);
-    $("#game-siding-column").css("max-height", $(window).height() - a - 24);
+    
+    $("#card-column")
+        .css("max-height", $(window).height() - a - 24);
+    $("#game-siding-column")
+        .css("max-height", $(window).height() - a - 24);
+    
     a = 4 === D ? 7 : 6;
     var b = $(window).width() - $("#card-column").width() - 50,
-        c = $(window).height() - $("#game-chat-area").height() - 8 - 48;
+        c = $(window).height();// - $("#game-chat-area").height() - 8 - 48;
     9 * c / a < b ? ($("#game-field").css("height", c + "px"), b = c / a, $("#game-field").css("width", 9 * b + "px")) : ($("#game-field").css("width", b + "px"), b /= 9, $("#game-field").css("height", b * a + "px"));
     $(".game-field-zone").css("width",
         b + "px").css("height", b + "px");

@@ -2,6 +2,7 @@ let onStartDeckSorter = function () {
     const MINIMIZE_SYMBOL = "\u2212";
     const MAXIMIZE_SYMBOL = "+";
     const OPTIONS_COG_BASE64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH4wsJBxwcoeWqgAAAAB1pVFh0Q29tbWVudAAAAAAAQ3JlYXRlZCB3aXRoIEdJTVBkLmUHAAACn0lEQVRYw+WXO2hUQRSG/9l1o24SY1BRC40QjU1SKIIpNEVEUBRJYaekEREjWKWy0FRiFcEHiBBQLKy0EUS08AE2SbDQQlMYfIuurCYhLMndnc9most17ubuuhsQD0wznMd/nnNG+t/JVCoIXJe0U1IgKSGp3RgzsyCogT3AJ35TAJyphaF6IOm5P8uf9DpCR1OlxtcB14A+YAuQdvebgBceAD+Aw44naa3dDBwA7gGdZRm31rYAj4uUZ4BLQC9wlWgatdYeAgaAlyFw3XE9XwbcoPr0CmgP20uEL3K5XE7SWA1qN5vP59/PCyCdTgeSnkiaqKLxQNKjVCo1ETcNjTHSYIFC0bEleN8BG3y2Et7pZMyUpOEIfAVJdyV1GmOSxpikpBZJFyXlfP5IGjfGvCmnBdcDQx5PZoHTJeS6gK++CARBsBGoK2XUAN3AKeB5UZjnqADciQH+uAMapm/AeWttD9DgExwCPpTI4wzQFQNACzBSQs8UcB9YHBbMzFN002Wk8HaMuVAfLsJcFduuEJexGMASV7GRvEBrDO+XS1pZCYBWSYOSMhHRSEk6GUPnbkkdnvu8pO+SbklqM8ZMl/KiDxjz5C0L7JinfR945CaBc8CqcmbBiYji+QwcKZ5swAqgx1U3nqn4NMrOIu+rkc0m3HTz0RpJVySNAOOu4NZK2iap2dVReNVrBOqMMbNxve+ISEGlNAUcjf0WSGqX1FbFtmyQtC8WAFcox2qwD2wFdsVNwV4gF9p6vwCjEY/Nr2np9sXxkHweuFDuUnoQeAs8Awbnqt4tqJMRL+WA42kA+oGHrmsuV7oZbw+/XMBSty2H6SOw2qNjfy3+C72hEBeAmwv2nwOageFQBCrqmr/5GzZJqpsbPMaYzD/5O/4JriesdkG3NSwAAAAASUVORK5CYII=";
+    const DEFAULT_TEXT_COLOR = "#F0F0F0";
     
     loadScript("https://cdnjs.cloudflare.com/ajax/libs/jszip/3.2.2/jszip.min.js");
     
@@ -92,17 +93,80 @@ let onStartDeckSorter = function () {
     };
     
     let ID_LIST_MEMO;
-    const loadAllDecks = async function () {
-        // if(ID_LIST_MEMO) {
-            // return ID_LIST_MEMO;
-        // }
-        ID_LIST_MEMO = requestJSON("https://duelingnexus.com/api/list-decks.php");
+    const loadAllDecks = async function (reload = true) {
+        if(ID_LIST_MEMO && !reload) {
+            return ID_LIST_MEMO;
+        }
+        ID_LIST_MEMO = await requestJSON("https://duelingnexus.com/api/list-decks.php");
         if(!ID_LIST_MEMO.success) {
             alert("Something went wrong getting the list of decks.");
             return;
         }
         return ID_LIST_MEMO.decks;
     };
+    
+    const postData = function (url, ...params) {
+        return function (...data) {
+            let obj = {};
+            params.forEach((param, i) => {
+                let datum = data[i];
+                obj[param] = datum;
+            });
+            return new Promise((resolve, reject) => {
+                $.post(url, obj).done(message => {
+                    let json = JSON.parse(message);
+                    if(json.success) {
+                        resolve(json);
+                    }
+                    else {
+                        reject(json.error || json.err || "generic error");
+                    }
+                });
+            });
+        }
+    }
+    
+    const renameDeck = postData(
+        "https://duelingnexus.com/api/rename-deck.php",
+        "id", "name"
+    );
+    
+    const createDeck = postData(
+        "https://duelingnexus.com/api/create-deck.php",
+        "name"
+    );
+    window.createDeck = createDeck;
+    
+    // const renameDeck = function (id, newName) {
+        // return new Promise((resolve, reject) => {
+            // $.post(, {
+                // id: id,
+                // name: newName,
+            // }).done(msg => {
+                // if(msg.success) {
+                    // resolve(msg);
+                // }
+                // else {
+                    // reject(msg.error);
+                // }
+            // });
+        // });
+    // };
+    
+    // const createDeck = function (name) {
+        // return new Promise((resolve, reject) => {
+            // $.post("https://duelingnexus.com/api/create-deck.php", {
+                // name: newName,
+            // }).done(msg => {
+                // if(msg.success) {
+                    // resolve(msg);
+                // }
+                // else {
+                    // reject(msg.error);
+                // }
+            // });
+        // });
+    // };
     
     const toggleValue = (val, a, b) => val === a ? b : a;
     
@@ -225,12 +289,12 @@ let onStartDeckSorter = function () {
         let specifierText = specifierRow.children[0].textContent;
         let items = specifierText.split(/;|\s+/);
         items.forEach(item => {
-            if(item === "!!") {
+            if(/^(!!\s*)?$/.test(item)) {
                 return;
             }
             let match = item.match(SPECIFIER_ITEM_REGEX);
             if(!match) {
-                console.error("Invalid item specifier: " + item);
+                console.error("Invalid item specifier: " + JSON.stringify(item), item);
                 return;
             }
             let [, key, value] = match;
@@ -268,6 +332,63 @@ let onStartDeckSorter = function () {
     
     attachListeners();
     
+    const MAX_DECK_NAME_SIZE = 64;
+    const exportSpecifiers = async function () {
+        console.log("SPEC", specifiers);
+        // let content = specifierRows
+            // .map(tr => tr.children[0].textContent.slice(3))
+            // .join(";")
+            // .split(";");
+        let content = Object.entries(specifiers).filter(([key, value]) =>
+            value !== DEFAULT_TEXT_COLOR
+        ).map(
+            keyValuePair => keyValuePair.join(":")
+        );
+        let lines = [];
+        let build = "!! ";
+        while(content.length) {
+            let entry = content.pop();
+            if(build.length + entry.length > MAX_DECK_NAME_SIZE) {
+                if(build.length === 3) {
+                    console.error("Entry exceeded max length: " + entry);
+                    continue;
+                }
+                console.log(JSON.stringify(build));
+                lines.push(build);
+                build = "!! ";
+            }
+            build += entry + ";";
+        }
+        if(build) {
+            lines.push(build);
+        }
+        
+        let capacity = specifierRows.length;
+        let deficit = lines.length - capacity;
+        if(deficit > 0) {
+            console.warn("Creating new decks to make up for deficit of " + deficit);
+            console.log({ capacity : capacity, deficit: deficit });
+        }
+        while(deficit > 0) {
+            await createDeck("!! ");
+            deficit--;
+        }
+        let decks = await loadAllDecks();
+        
+        let specifierData = decks.filter(deck => deck.name.startsWith("!! "));
+        
+        lines.forEach(async (line, index) => {
+            line = line.slice(0, -1); // remove trailing ";"
+            let spec = specifierData[index];
+            console.log("renaming!", {
+                from: spec.id,
+                to: line,
+            });
+            await renameDeck(spec.id, line);
+        });
+        console.log(content);
+    }
+    
     // add new button to top
     let options = $("<button data-v-6f705b54=''>Options</button>");
     let createNewDeck = $("#decks-buttons button")[0];
@@ -287,15 +408,15 @@ let onStartDeckSorter = function () {
         let sorted = [...uniqueTags].sort();
         let table = $("<table>");
         for(let tag of sorted) {
-            specifiers[tag] = specifiers[tag] || "#F0F0F0";
+            specifiers[tag] = specifiers[tag] || DEFAULT_TEXT_COLOR;
             let color = toHexString(specifiers[tag]);
             let tr = $("<tr><td>" + tag + "</td><td><input type=color value=" + color + "></td></tr>");
             table.append(tr);
             let input = tr.find("input");
-            input.on("change", function (val) {
+            input.on("change", async function (val) {
                 specifiers[tag] = input.val();
-                // TODO: export specifiers
-                refreshDecklists();
+                await exportSpecifiers();
+                setTimeout(refreshDecklists, 200);
             });
         }
         NexusGUI.popup("Modify Colors", table);
