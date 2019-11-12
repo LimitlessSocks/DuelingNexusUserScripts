@@ -1,3 +1,13 @@
+// ==UserScript==
+// @name         DuelingNexus Chat Improvements Plugin
+// @namespace    https://duelingnexus.com/
+// @version      0.1
+// @description  Adds various support for categorizing decks.
+// @author       Sock#3222
+// @grant        none
+// @match        https://duelingnexus.com/game/*
+// ==/UserScript==
+
 let makeReadOnly = function (obj, prop) {
     let val = obj[prop];
     delete obj[prop];
@@ -16,8 +26,23 @@ let ChatImprovements = {
     showEvents: true,
 };
 makeReadOnly(ChatImprovements, "log");
+window.ChatImprovements = ChatImprovements;
 
-(function () {
+let waitFrame = function () {
+    return new Promise(resolve => {
+        requestAnimationFrame(resolve); //faster than set time out
+    });
+};
+
+const waitForElementJQuery = async function (selector, source = $("body")) {
+    let query;
+    while (source.find(selector).length === 0) {
+        await waitFrame();
+    }
+    return query;
+};
+
+let onload = function () {
     const playSound = Q;
     const sendEvent = K;
     const gameChatContent = $("#game-chat-content");
@@ -110,7 +135,7 @@ makeReadOnly(ChatImprovements, "log");
     ChatImprovements.displayMessage = displayMessage;
     
     // overwrite send message
-    sd = displayMessage;
+    window.sd = displayMessage;
     
     let unifyMessage = function (message) {
         return timestamp() + " " + message;
@@ -123,6 +148,7 @@ makeReadOnly(ChatImprovements, "log");
         let playerId = a.playerId;
         let message = a.message;
         let color;
+        
         if(0 <= playerId && 3 >= playerId) {
             let name = A[playerId].name;
             message = "[" + name + "]: " + message;
@@ -134,8 +160,6 @@ makeReadOnly(ChatImprovements, "log");
         message = unifyMessage(message);
         displayMessage(message, color);
     }
-    
-    Fb.ChatMessageReceived = pd = displayOpponentsMessage;
     
     gameChatTextbox.unbind();
     gameChatTextbox.keyup(function(ev) {
@@ -160,14 +184,16 @@ makeReadOnly(ChatImprovements, "log");
     let minimizeToggle = $("<button class=engine-button title=minimize>&minus;</button>")
         .click(function () {
             gameChatContent.toggle();
+            gameChatTextbox.toggle();
         });
+    
     let muteToggle = $("<button class=engine-button>Mute</button>")
         .click(function () {
             muteToggle.text(ChatImprovements.playSounds ? "Unmute" : "Mute");
             ChatImprovements.playSounds = !ChatImprovements.playSounds;
-            
         })
         .css("float", "right");
+    
     let notificationToggle = $("<button class=engine-button>Hide events</button>")
         .click(function () {
             notificationToggle.text(ChatImprovements.showEvents ? "Show events" : "Hide events");
@@ -294,8 +320,6 @@ makeReadOnly(ChatImprovements, "log");
         // TODO: more
     });
     
-    // remove current resize listener
-    $(window).off("resize", Vb);
     
     // redefine window resizing
     window.Vb = function Vb() {
@@ -336,7 +360,14 @@ makeReadOnly(ChatImprovements, "log");
     }
     
     // re-add listener
-    $(window).resize(Vb);
-    Vb();
-    
-})();
+    // remove current resize listener
+    // $(window).off("resize", Vb);
+    // $(window).resize(Vb);
+    Fb.ChatMessageReceived = window.pd = displayOpponentsMessage;
+    console.info("ChatImprovements plugin loaded!");
+};
+
+waitForElementJQuery("#game-room-container:visible").then(() => {
+    onload();
+});
+// on-load stuff
