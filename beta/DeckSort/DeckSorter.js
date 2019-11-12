@@ -50,6 +50,8 @@ let onStartDeckSorter = function () {
     
     // TODO: find less hacky way
     const refreshDecklists = function () {
+        // get current "expansion" state
+        $("ds-ext-toggle").
         let [ home, duelZone, deckEditor, settings ] = $("#navbar-middle button");
         return new Promise(function(resolve, reject) {
             duelZone.click();
@@ -218,7 +220,10 @@ let onStartDeckSorter = function () {
         title.colSpan = 3;
         title.classList.add("td-big");
         title.classList.add("table-button");
+        title.classList.add("ds-ext-toggle");
+        // rows start toggled on
         title.textContent = "[" + MINIMIZE_SYMBOL + "] " + tag;
+        $(title).data("expanded", true);
         if(color) {
             title.style.color = color;
         }
@@ -260,7 +265,10 @@ let onStartDeckSorter = function () {
                 row.style.display = toggleValue(row.style.display, "none", "table-row");
             });
             title.textContent = title.textContent.replace(/\[(.)\]/, function (match, inner) {
-                return "[" + toggleValue(inner, MAXIMIZE_SYMBOL, MINIMIZE_SYMBOL) + "]";
+                let expanded = $(title).data("expanded");
+                let result = "[" + (expanded ? MAXIMIZE_SYMBOL : MINIMIZE_SYMBOL) + "]";
+                $(title).data("expanded", !expanded);
+                return result;
             });
         };
         // hide by default, start the rows toggled off

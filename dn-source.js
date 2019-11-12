@@ -660,7 +660,8 @@ function Vb() {
     
     a = 4 === D ? 7 : 6;
     var b = $(window).width() - $("#card-column").width() - 50,
-        c = $(window).height();// - $("#game-chat-area").height() - 8 - 48;
+        // c = $(window).height();// - $("#game-chat-area").height() - 8 - 48;
+        c = $(window).height() - 8 - 48;
     9 * c / a < b ? ($("#game-field").css("height", c + "px"), b = c / a, $("#game-field").css("width", 9 * b + "px")) : ($("#game-field").css("width", b + "px"), b /= 9, $("#game-field").css("height", b * a + "px"));
     $(".game-field-zone").css("width",
         b + "px").css("height", b + "px");
