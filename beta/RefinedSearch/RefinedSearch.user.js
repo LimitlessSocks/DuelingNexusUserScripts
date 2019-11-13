@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.6.2
+// @version      0.6.3
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -277,7 +277,7 @@ let onStart = function () {
         this.rscale = (b >> 16) & 0xFF;
     };
     
-    const CARD_LIST_VERSION = 73;
+    const CARD_LIST_VERSION = 78;
     const readCards = function (a) {
         jQuery.ajaxSetup({
             beforeSend: function(a) {
