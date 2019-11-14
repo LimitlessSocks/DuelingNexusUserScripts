@@ -1703,7 +1703,7 @@ let onStart = function () {
         
         let tag = {
             value: rest,
-            param: param,
+            param: param.toUpperCase(),
             comp: fn,
         };
         
