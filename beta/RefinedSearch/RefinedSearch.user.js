@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.7
+// @version      0.7.1
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -252,7 +252,7 @@ let onStart = function () {
     ADVANCED_SETTINGS_HTML_ELS.reverse();
     
     // minified with cssminifier.com
-    const ADVANCED_SETTINGS_CSS_STRING = "#rs-ext-advanced-search-bar{width:100%}.rs-ext-toggle-button{width:3em;height:3em;background:#ddd;border:1px solid #000}.rs-ext-toggle-button:hover{background:#fff}button.rs-ext-selected{background:#00008b;color:#fff}button.rs-ext-selected:hover{background:#55d}.rs-ext-left-float{float:left}.rs-ext-right-float{float:right}.rs-ext-shrinkable{transition:transform .3s ease-out;height:auto;background:#ccc;width:100%;transform:scaleY(1);transform-origin:top;overflow:hidden;z-index:10000}.rs-ext-shrinkable>*{margin:10px}#rs-ext-monster,#rs-ext-spell,#rs-ext-trap,#rs-ext-sort{background:rgba(0,0,0,.7)}.rs-ext-shrunk{transform:scaleY(0);z-index:100}#rs-ext-advanced-pop-outs{position:relative}#rs-ext-advanced-pop-outs>.rs-ext-shrinkable{position:absolute;top:0;left:0}#rs-ext-monster-table th,#rs-ext-sort-table th{text-align:right}.rs-ext-table{padding-right:5px}#rs-ext-spacer{height:0;transition:height .3s ease-out}.engine-button[disabled],.engine-button:disabled{cursor:not-allowed;background:rgb(50,0,0);color:#a0a0a0;font-style:italic;}.rs-ext-card-entry-table button,.rs-ext-fullwidth-wrapper{width:100%;height:100%;}.rs-ext-card-entry-table{border-collapse:collapse;}.rs-ext-card-entry-table tr,.rs-ext-card-entry-table td{height:100%;}.editor-search-description{white-space:normal;}#editor-menu-spacer{width:15%;}.engine-button{cursor:pointer;}@media (min-width:1600px){.editor-search-result{font-size:1em}.editor-search-card{width:12.5%}.editor-search-banlist-icon{width:5%}.editor-search-result{width:100%}}.rs-ext-table-button{padding:8px;text-align:center;border:1px solid #AAAAAA;cursor:pointer;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;}.rs-ext-table-button:active{padding:8px 7px 8px 9px;}.rs-ext-flex{display:flex;width:100%;justify-content:space-between}.rs-ext-flex input{width:48%;}";
+    const ADVANCED_SETTINGS_CSS_STRING = "#rs-ext-advanced-search-bar{width:100%}.rs-ext-toggle-button{width:3em;height:3em;background:#ddd;border:1px solid #000}.rs-ext-toggle-button:hover{background:#fff}button.rs-ext-selected{background:#00008b;color:#fff}button.rs-ext-selected:hover{background:#55d}.rs-ext-left-float{float:left}.rs-ext-right-float{float:right}.rs-ext-shrinkable{transition:transform .3s ease-out;height:auto;background:#ccc;width:100%;transform:scaleY(1);transform-origin:top;overflow:hidden;z-index:10000}.rs-ext-shrinkable>*{margin:10px}#rs-ext-monster,#rs-ext-spell,#rs-ext-trap,#rs-ext-sort{background:rgba(0,0,0,.7)}.rs-ext-shrunk{transform:scaleY(0);z-index:100}#rs-ext-advanced-pop-outs{position:relative}#rs-ext-advanced-pop-outs>.rs-ext-shrinkable{position:absolute;top:0;left:0}#rs-ext-monster-table th,#rs-ext-sort-table th{text-align:right}.rs-ext-table{padding-right:5px}#rs-ext-spacer{height:0;transition:height .3s ease-out}.engine-button[disabled],.engine-button:disabled{cursor:not-allowed;background:rgb(50,0,0);color:#a0a0a0;font-style:italic;}.rs-ext-card-entry-table button,.rs-ext-fullwidth-wrapper{width:100%;height:100%;}.rs-ext-card-entry-table{border-collapse:collapse;}.rs-ext-card-entry-table tr,.rs-ext-card-entry-table td{height:100%;}.editor-search-description{white-space:normal;}#editor-menu-spacer{width:15%;}.engine-button{cursor:pointer;}@media (min-width:1600px){.editor-search-result{font-size:1em}.editor-search-card{width:12.5%}.editor-search-banlist-icon{width:5%}.editor-search-result{width:100%}}.rs-ext-table-button{padding:8px;text-align:center;border:1px solid #AAAAAA;cursor:pointer;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;}.rs-ext-table-button:active{padding:8px 7px 8px 9px;}.rs-ext-flex{display:flex;width:100%;justify-content:space-between}.rs-ext-flex input{width:48%;}input::placeholder{font-style:italic;text-align:center;}";
     
     // disable default listener (Z.Pb)
     $("#editor-search-text").off("input");
@@ -1838,16 +1838,6 @@ let onStart = function () {
                         ensureCompareText(card);
                         let cardMatchesName = compareName.indexOf(searchableInput) !== -1;
                         let cardMatchesEffect = card.compareText.indexOf(uppercaseText) !== -1;
-                        if(window.debugRS) {
-                            console.log("Found match:");
-                            console.log(card);
-                            console.log(searchableInput);
-                            console.log(cardMatchesName);
-                            console.log(uppercaseText);
-                            console.log(cardMatchesEffect);
-                            
-                            window.debugRS = false;
-                        }
                         if(cardMatchesName && cardMatchesEffect) {
                             fuzzyMatches.push(card);
                         }
@@ -1919,7 +1909,7 @@ let onStart = function () {
     };
     
     // add new input function
-    $("#editor-search-text").on("input", updateSearchContents);
+    $("#editor-search-text").on("input", updateSearchContents)
     updateSearchContents();
     
     // add search by effect
@@ -1928,6 +1918,10 @@ let onStart = function () {
     let editorSearchByEffect = $("<input type=text class=engine-text-box id=editor-search-effect></input>");
     searchWrapper.append(editorSearchByEffect);
     editorSearchByEffect.on("input", updateSearchContents);
+    
+    // update attributes
+    $("#editor-search-text").attr("placeholder", "Search by name/query");
+    editorSearchByEffect.attr("placeholder", "Search by effect");
     
     // add relevant listeners
     let allInputs = [
