@@ -3752,6 +3752,13 @@ function qg(a, b, c, d) {
 
 function Yc(a) {
     var b = Math.floor(5 * Cb / (a.c[O.j].length + 1)) - E - 1;
-    3 < b && (b = 3);
-    for (var c = 0; c < a.c[O.j].length; ++c) a.c[O.j][c].a.css("margin-left", (c == (0 == a.o ? 0 : a.c[O.j].length - 1) ? 0 : b) + "px"), a.c[O.j][c].a.css("height", Math.floor(Db) + "px")
+    if(b > 3) b = 3;
+    for (var c = 0; c < a.c[O.j].length; ++c) {
+        let v = c == (0 == a.o ? 0 : a.c[O.j].length - 1) ? 0 : b;
+        a.c[O.j][c].a.css("margin-left", v + "px");
+        let height = Math.floor(Db);
+        let width = Math.floor(height * 0.6967);
+        a.c[O.j][c].a.css("height", height + "px");
+        a.c[O.j][c].a.css("width", width + "px");
+    }
 };

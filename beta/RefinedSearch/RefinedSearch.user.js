@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.7.1
+// @version      0.7.2
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -49,12 +49,20 @@ const FN = {
     and: function (x, y) {
         return x && y;
     },
+    add: function (x, y) {
+        return x + y;
+    },
+    fold: function (f, xs, seed = 0) {
+        return xs.reduce(f, seed);
+    },
+    sum: function (xs) {
+        return FN.fold(FN.add, xs);
+    },
     // I heard you like obfuscation
     xor: function (x, y) {
         return x ? y ? 0 : 1 : y;
     },
 };
-
 
 const TokenTypes = {
     OPERATOR: Symbol("TokenTypes.OPERATOR"),
@@ -246,13 +254,13 @@ class SearchInputShunter {
 
 let onStart = function () {
     // minified with https://kangax.github.io/html-minifier/
-    const ADVANCED_SETTINGS_HTML_STRING = '<div id=rs-ext-advanced-search-bar><button id=rs-ext-monster-toggle class="engine-button engine-button-default">monster</button> <button id=rs-ext-spell-toggle class="engine-button engine-button-default">spell</button> <button id=rs-ext-trap-toggle class="engine-button engine-button-default">trap</button> <button id=rs-ext-sort-toggle class="engine-button engine-button-default rs-ext-right-float">sort</button><div id=rs-ext-advanced-pop-outs><div id=rs-ext-spell class="rs-ext-shrinkable rs-ext-shrunk"><p><b>Spell Card Type: </b><select id=rs-ext-spell-type><option><option>Normal<option>Quick-play<option>Field<option>Continuous<option>Ritual<option>Equip</select></div><div id=rs-ext-trap class="rs-ext-shrinkable rs-ext-shrunk"><p><b>Trap Card Type: </b><select id=rs-ext-trap-type><option><option>Normal<option>Continuous<option>Counter</select></div><div id=rs-ext-sort class="rs-ext-shrinkable rs-ext-shrunk"><p>Currently unimplemented. Stay tuned!</p><table id=rs-ext-sort-table class=rs-ext-table><tr><th>Sort By</th><td><select class=rs-ext-input id=rs-ext-sort-by><option>Name</option><option>ATK</option><option>DEF</option></select></td></tr><tr><th>Sort Order</th><td><select class=rs-ext-input id=rs-ext-sort-order><option>Ascending</option><option>Descending</option></select></td></tr></table></div><div id=rs-ext-monster class="rs-ext-shrinkable rs-ext-shrunk"><table class="rs-ext-left-float rs-ext-table"id=rs-ext-link-arrows><tr><th colspan=3>Link Arrows<tr><td><button class=rs-ext-toggle-button>↖</button><td><button class=rs-ext-toggle-button>↑</button><td><button class=rs-ext-toggle-button>↗</button><tr><td><button class=rs-ext-toggle-button>←</button><td><button class=rs-ext-toggle-button id=rs-ext-equals>=</button><td><button class=rs-ext-toggle-button>→</button><tr><td><button class=rs-ext-toggle-button>↙</button><td><button class=rs-ext-toggle-button>↓</button><td><button class=rs-ext-toggle-button>↘</button></table><div id=rs-ext-monster-table class="rs-ext-left-float rs-ext-table"><table><tr><th>Category<td><select class=rs-ext-input id=rs-ext-monster-category><option><option>Normal<option>Effect<option>Non-Effect<option>Link<option>Pendulum<option>Leveled<option>Xyz<option>Synchro<option>Fusion<option>Ritual<option>Gemini<option>Flip<option>Spirit<option>Toon</select><tr><th>Ability<td><select id=rs-ext-monster-ability class=rs-exit-input><option><option>Tuner<option>Toon<option>Spirit<option>Union<option>Gemini<option>Flip<option>Pendulum<tr><th>Type<td><select id=rs-ext-monster-type class=rs-ext-input><option><option>Aqua<option>Beast<option>Beast-Warrior<option>Cyberse<option>Dinosaur<option>Dragon<option>Fairy<option>Fiend<option>Fish<option>Insect<option>Machine<option>Plant<option>Psychic<option>Pyro<option>Reptile<option>Rock<option>Sea Serpent<option>Spellcaster<option>Thunder<option>Warrior<option>Winged Beast<option>Wyrm<option>Zombie<option>Creator God<option>Divine-Beast</select><tr><th>Attribute<td><select id=rs-ext-monster-attribute class=rs-ext-input><option><option>DARK<option>EARTH<option>FIRE<option>LIGHT<option>WATER<option>WIND<option>DIVINE</select><tr><th>Level/Rank/Link Rating<td><input class=rs-ext-input id=rs-ext-level><tr><th>Pendulum Scale<td><input class=rs-ext-input id=rs-ext-scale><tr><th>ATK<td><input class=rs-ext-input id=rs-ext-atk><tr><th>DEF<td><input class=rs-ext-input id=rs-ext-def></table></div></div></div><div id=rs-ext-spacer></div></div>';
+    const ADVANCED_SETTINGS_HTML_STRING = '<div id=rs-ext-advanced-search-bar><button id=rs-ext-monster-toggle class="engine-button engine-button-default">monster</button> <button id=rs-ext-spell-toggle class="engine-button engine-button-default">spell</button> <button id=rs-ext-trap-toggle class="engine-button engine-button-default">trap</button> <button id=rs-ext-sort-toggle class="engine-button engine-button-default rs-ext-right-float">sort</button><div id=rs-ext-advanced-pop-outs><div id=rs-ext-sort class="rs-ext-shrinkable rs-ext-shrunk"><table id=rs-ext-sort-table class=rs-ext-table><tr><th>Sort By</th><td><select class=rs-ext-input id=rs-ext-sort-by><option>Name</option><option>Level</option><option>ATK</option><option>DEF</option></select></td></tr><tr><th>Sort Order</th><td><select class=rs-ext-input id=rs-ext-sort-order><option>Ascending</option><option>Descending</option></select></td></tr><tr><th>Stratify?</th><td><input type=checkbox id=rs-ext-sort-stratify checked></td></tr></table></div><div id=rs-ext-spell class="rs-ext-shrinkable rs-ext-shrunk"><p><b>Spell Card Type: </b><select id=rs-ext-spell-type><option><option>Normal<option>Quick-play<option>Field<option>Continuous<option>Ritual<option>Equip</select></div><div id=rs-ext-trap class="rs-ext-shrinkable rs-ext-shrunk"><p><b>Trap Card Type: </b><select id=rs-ext-trap-type><option><option>Normal<option>Continuous<option>Counter</select></div><div id=rs-ext-monster class="rs-ext-shrinkable rs-ext-shrunk"><table class="rs-ext-left-float rs-ext-table"id=rs-ext-link-arrows><tr><th colspan=3>Link Arrows<tr><td><button class=rs-ext-toggle-button>↖</button><td><button class=rs-ext-toggle-button>↑</button><td><button class=rs-ext-toggle-button>↗</button><tr><td><button class=rs-ext-toggle-button>←</button><td><button class=rs-ext-toggle-button id=rs-ext-equals>=</button><td><button class=rs-ext-toggle-button>→</button><tr><td><button class=rs-ext-toggle-button>↙</button><td><button class=rs-ext-toggle-button>↓</button><td><button class=rs-ext-toggle-button>↘</button></table><div id=rs-ext-monster-table class="rs-ext-left-float rs-ext-table"><table><tr><th>Category<td><select class=rs-ext-input id=rs-ext-monster-category><option><option>Normal<option>Effect<option>Non-Effect<option>Link<option>Pendulum<option>Leveled<option>Xyz<option>Synchro<option>Fusion<option>Ritual<option>Gemini<option>Flip<option>Spirit<option>Toon</select><tr><th>Ability<td><select id=rs-ext-monster-ability class=rs-exit-input><option><option>Tuner<option>Toon<option>Spirit<option>Union<option>Gemini<option>Flip<option>Pendulum<tr><th>Type<td><select id=rs-ext-monster-type class=rs-ext-input><option><option>Aqua<option>Beast<option>Beast-Warrior<option>Cyberse<option>Dinosaur<option>Dragon<option>Fairy<option>Fiend<option>Fish<option>Insect<option>Machine<option>Plant<option>Psychic<option>Pyro<option>Reptile<option>Rock<option>Sea Serpent<option>Spellcaster<option>Thunder<option>Warrior<option>Winged Beast<option>Wyrm<option>Zombie<option>Creator God<option>Divine-Beast</select><tr><th>Attribute<td><select id=rs-ext-monster-attribute class=rs-ext-input><option><option>DARK<option>EARTH<option>FIRE<option>LIGHT<option>WATER<option>WIND<option>DIVINE</select><tr><th>Level/Rank/Link Rating<td><input class=rs-ext-input id=rs-ext-level><tr><th>Pendulum Scale<td><input class=rs-ext-input id=rs-ext-scale><tr><th>ATK<td><input class=rs-ext-input id=rs-ext-atk><tr><th>DEF<td><input class=rs-ext-input id=rs-ext-def></table></div></div></div><div id=rs-ext-spacer></div></div>';
     
     const ADVANCED_SETTINGS_HTML_ELS = jQuery.parseHTML(ADVANCED_SETTINGS_HTML_STRING);
     ADVANCED_SETTINGS_HTML_ELS.reverse();
     
     // minified with cssminifier.com
-    const ADVANCED_SETTINGS_CSS_STRING = "#rs-ext-advanced-search-bar{width:100%}.rs-ext-toggle-button{width:3em;height:3em;background:#ddd;border:1px solid #000}.rs-ext-toggle-button:hover{background:#fff}button.rs-ext-selected{background:#00008b;color:#fff}button.rs-ext-selected:hover{background:#55d}.rs-ext-left-float{float:left}.rs-ext-right-float{float:right}.rs-ext-shrinkable{transition:transform .3s ease-out;height:auto;background:#ccc;width:100%;transform:scaleY(1);transform-origin:top;overflow:hidden;z-index:10000}.rs-ext-shrinkable>*{margin:10px}#rs-ext-monster,#rs-ext-spell,#rs-ext-trap,#rs-ext-sort{background:rgba(0,0,0,.7)}.rs-ext-shrunk{transform:scaleY(0);z-index:100}#rs-ext-advanced-pop-outs{position:relative}#rs-ext-advanced-pop-outs>.rs-ext-shrinkable{position:absolute;top:0;left:0}#rs-ext-monster-table th,#rs-ext-sort-table th{text-align:right}.rs-ext-table{padding-right:5px}#rs-ext-spacer{height:0;transition:height .3s ease-out}.engine-button[disabled],.engine-button:disabled{cursor:not-allowed;background:rgb(50,0,0);color:#a0a0a0;font-style:italic;}.rs-ext-card-entry-table button,.rs-ext-fullwidth-wrapper{width:100%;height:100%;}.rs-ext-card-entry-table{border-collapse:collapse;}.rs-ext-card-entry-table tr,.rs-ext-card-entry-table td{height:100%;}.editor-search-description{white-space:normal;}#editor-menu-spacer{width:15%;}.engine-button{cursor:pointer;}@media (min-width:1600px){.editor-search-result{font-size:1em}.editor-search-card{width:12.5%}.editor-search-banlist-icon{width:5%}.editor-search-result{width:100%}}.rs-ext-table-button{padding:8px;text-align:center;border:1px solid #AAAAAA;cursor:pointer;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;}.rs-ext-table-button:active{padding:8px 7px 8px 9px;}.rs-ext-flex{display:flex;width:100%;justify-content:space-between}.rs-ext-flex input{width:48%;}input::placeholder{font-style:italic;text-align:center;}";
+    const ADVANCED_SETTINGS_CSS_STRING = "#rs-ext-advanced-search-bar{width:100%}.rs-ext-toggle-button{width:3em;height:3em;background:#ddd;border:1px solid #000}.rs-ext-toggle-button:hover{background:#fff}button.rs-ext-selected{background:#00008b;color:#fff}button.rs-ext-selected:hover{background:#55d}.rs-ext-left-float{float:left}.rs-ext-right-float{float:right}.rs-ext-shrinkable{transition-property:transform;transition-duration:.3s;transition-timing-function:ease-out;height:auto;background:#ccc;width:100%;transform:scaleY(1);transform-origin:top;overflow:hidden;z-index:10000}.rs-ext-shrinkable>*{margin:10px}#rs-ext-monster,#rs-ext-spell,#rs-ext-trap,#rs-ext-sort{background:rgba(0,0,0,.7)}.rs-ext-shrunk{transform:scaleY(0);z-index:100}#rs-ext-advanced-pop-outs{position:relative}#rs-ext-advanced-pop-outs>.rs-ext-shrinkable{position:absolute;top:0;left:0}#rs-ext-monster-table th,#rs-ext-sort-table th{text-align:right}.rs-ext-table{padding-right:5px}#rs-ext-spacer{height:0;transition:height .3s ease-out}#rs-ext-sort{transition-property:top,transform}.engine-button[disabled],.engine-button:disabled{cursor:not-allowed;background:rgb(50,0,0);color:#a0a0a0;font-style:italic;}.rs-ext-card-entry-table button,.rs-ext-fullwidth-wrapper{width:100%;height:100%;}.rs-ext-card-entry-table{border-collapse:collapse;}.rs-ext-card-entry-table tr,.rs-ext-card-entry-table td{height:100%;}.editor-search-description{white-space:normal;}#editor-menu-spacer{width:15%;}.engine-button{cursor:pointer;}@media (min-width:1600px){.editor-search-result{font-size:1em}.editor-search-card{width:12.5%}.editor-search-banlist-icon{width:5%}.editor-search-result{width:100%}}.rs-ext-table-button{padding:8px;text-align:center;border:1px solid #AAAAAA;cursor:pointer;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;}.rs-ext-table-button:active{padding:8px 7px 8px 9px;}.rs-ext-flex{display:flex;width:100%;justify-content:space-between}.rs-ext-flex input{width:48%;}input::placeholder{font-style:italic;text-align:center;}";
     
     // disable default listener (Z.Pb)
     $("#editor-search-text").off("input");
@@ -586,6 +594,9 @@ let onStart = function () {
     ].some(fn => fn(card));
     
     const isLevelMonster = (card) => isMonster(card) && !isLinkMonster(card) && !isXyzMonster(card);
+    
+    // non-ritual main deck monster
+    const isBasicMainDeckMonster  = (card) => isMonster(card) && !isRitualMonster(card) && !isExtraDeckMonster(card);
     
     let kindMap = {
         "TRAP": isTrapCard,
@@ -1296,44 +1307,59 @@ let onStart = function () {
     
     let spacer = document.getElementById("rs-ext-spacer");
     
+    // returns `true` if the object is visible, `false` otherwise
+    let toggleShrinkable = function (target, state = null) {
+        let isShrunk = state;
+        if(isShrunk === null) {
+            isShrunk = target.classList.contains("rs-ext-shrunk");
+        }
+        if(isShrunk) {
+            spacer.classList.add("rs-ext-activated");
+            target.classList.remove("rs-ext-shrunk");
+            return true;
+        }
+        else {
+            spacer.classList.remove("rs-ext-activated");
+            target.classList.add("rs-ext-shrunk");
+            return false;
+        }
+        // equiv. `return isShrunk;`, changed for clarity
+    }
+    
     let createToggleOtherListener = function (target, ...others) {
         return function () {
-            if(target.classList.contains("rs-ext-shrunk")) {
-                spacer.classList.add("rs-ext-activated");
-                target.classList.remove("rs-ext-shrunk");
+            let wasShrunk = toggleShrinkable(target);
+            if(wasShrunk) {
                 others.forEach(other => other.classList.add("rs-ext-shrunk"));
-            }
-            else {
-                spacer.classList.remove("rs-ext-activated");
-                target.classList.add("rs-ext-shrunk");
             }
             updateSearchContents();
         }
     };
     
     document.getElementById("rs-ext-monster-toggle")
-            .addEventListener("click", createToggleOtherListener(monsterTab,  spellTab,   trapTab,  sortTab));
+            .addEventListener("click", createToggleOtherListener(monsterTab,  spellTab,   trapTab));
     document.getElementById("rs-ext-spell-toggle")
-            .addEventListener("click", createToggleOtherListener(spellTab,    monsterTab, trapTab,  sortTab));
+            .addEventListener("click", createToggleOtherListener(spellTab,    monsterTab, trapTab));
     document.getElementById("rs-ext-trap-toggle")
-            .addEventListener("click", createToggleOtherListener(trapTab,     monsterTab, spellTab, sortTab));
-    document.getElementById("rs-ext-sort-toggle")
-            .addEventListener("click", createToggleOtherListener(sortTab,     spellTab,   trapTab,  monsterTab));
+            .addEventListener("click", createToggleOtherListener(trapTab,     monsterTab, spellTab));
     
-    const currentSection = function () {
-        return [monsterTab, spellTab, trapTab, sortTab].find(el => !el.classList.contains("rs-ext-shrunk")) || null;
+    
+    document.getElementById("rs-ext-sort-toggle").addEventListener("click", function () {
+        toggleShrinkable(sortTab);
+    });
+    
+    const currentSections = function () {
+        return [monsterTab, spellTab, trapTab, sortTab].filter(el => !el.classList.contains("rs-ext-shrunk")) || null;
     }
     
     const updatePaddingHeight = function () {
-        let section = currentSection();
-        let height;
-        if(section) {
-            height = section.clientHeight;
-        }
-        else {
-            height = 0;
-        }
+        let sections = currentSections();
+        let height = FN.sum(sections.map(section => section.clientHeight));
         spacer.style.height = height + "px";
+        // update top position of sort, if necessary
+        if(!sortTab.classList.contains("rs-ext-shrunk")) {
+            sortTab.style.top = (height - sortTab.clientHeight) + "px";
+        }
     }
     let interval = setInterval(updatePaddingHeight, 1);
     console.info("Interval started. ", interval);
@@ -1487,7 +1513,7 @@ let onStart = function () {
         }
         
         return tagString;
-    }
+    };
     
     const TRAP_TO_KEYWORD = {
         "Normal": "NORMALST",
@@ -1507,25 +1533,27 @@ let onStart = function () {
     }
     
     const generateSearchFilters = function () {
-        let section = currentSection();
-        switch(section) {
-            case monsterTab:
-                return monsterSectionTags();
-                break;
-                
-            case spellTab:
-                return spellSectionTags();
-                break;
-                
-            case trapTab:
-                return trapSectionTags();
-                break;
-                
-            // case null:
-            default: 
-                return;
-                // break;
+        let tags = "";
+        for(let section of currentSections()) {
+            switch(section) {
+                case monsterTab:
+                    tags += monsterSectionTags();
+                    break;
+                    
+                case spellTab:
+                    tags += spellSectionTags();
+                    break;
+                    
+                case trapTab:
+                    tags += trapSectionTags();
+                    break;
+                    
+                // case null:
+                default: 
+                    break;
+            }
         }
+        return tags;
     }
     
     /* main code */
@@ -1699,8 +1727,6 @@ let onStart = function () {
             throw new Error("Invalid comparator: " + comp);
         }
         
-        // console.log("expressionToPredicate", rest, param, fn);
-        
         let tag = {
             value: rest,
             param: param.toUpperCase(),
@@ -1724,7 +1750,6 @@ let onStart = function () {
         let stack = [];
         for(let token of tokens) {
             if(token.type === TokenTypes.EXPRESSION) {
-                // console.log(">>>>EXPRESSION", token);
                 stack.push(expressionToPredicate(token.raw, param));
             }
             else if(token.type === TokenTypes.OPERATOR) {
@@ -1742,6 +1767,70 @@ let onStart = function () {
             return null;
         }
         return stack.pop();
+    }
+    
+    const compare = (a, b) => (a > b) - (a < b);
+    const compareBy = (f, rev = false) =>
+        (a, b) => compare(f(a), f(b)) * (rev ? -1 : 1);
+    
+    // TODO: put traps always at end
+    const SORT_BY_COMPARATORS = {
+        "Name": compareBy(x => x.name),
+        "Level": compareBy(x => x.level),
+        "ATK": compareBy(x => x.attack),
+        "DEF": compareBy(x => x.i),
+        // TODO: sort each sub-strata? e.g. all level 1s by name
+        // "Level": compareByAlterantives("level", "name"),
+        // "ATK": compareByAlterantives("attack", "name"),
+        // "DEF": compareByAlterantives("i", "name"),
+    };
+    let STRATA_KINDS = {
+        LEVELED: [ isLevelMonster, isXyzMonster, isLinkMonster, isSpellCard, isTrapCard ],
+        DEFAULT: [ isNormalMonster, isBasicMainDeckMonster, isRitualMonster, isFusionMonster, isSynchroMonster, isXyzMonster, isLinkMonster, isLevelMonster, isSpellCard, isTrapCard ],
+    };
+    let formStrata = function (list, by = "DEFAULT") {
+        let fns = STRATA_KINDS[by];
+        let strata = fns.map(e => []);
+        for(let card of list) {
+            let index = fns.findIndex(fn => fn(card));
+            if(index !== -1) {
+                strata[index].push(card);
+            }
+            else {
+                console.error("Index not found in strata array", card);
+            }
+        }
+        return strata;
+    };
+    let sortCardList = function (list, options) {
+        let { methods, reverse, stratify, strataKind } = options;
+        if(!Array.isArray(methods)) {
+            methods = [ methods, "Name", "Level", "ATK", "DEF" ];
+        }
+        if(stratify) {
+            let strata = formStrata(list, strataKind).map(stratum => 
+                sortCardList(stratum, {
+                    methods: methods,
+                    reverse: reverse,
+                    stratify: false,
+                })
+            );
+            return [].concat(...strata);
+        }
+        let cmps = methods.map(method => SORT_BY_COMPARATORS[method]);
+        let sorted = list.sort((a, b) => {
+            for(let cmp of cmps) {
+                let diff = cmp(a, b);
+                if(diff !== 0) {
+                    return diff;
+                }
+            }
+            return 0;
+        });
+        if(reverse) {
+            sorted.reverse();
+        }
+        return sorted;
     }
     
     let ensureCompareText = function (card) {
@@ -1799,7 +1888,6 @@ let onStart = function () {
             return "";
         });
         
-        console.log(input,";",effect,";",tags);
         // needs non-empty input
         if (input.length !== 0 || effect.length !== 0 || tags.length !== 0) {
             let exactMatches = [];
@@ -1845,10 +1933,25 @@ let onStart = function () {
                 }
             }
             
-            // TODO: this is likely where I would have to intercept the sorting function
-            // sort each by "Z.fa", the pecking order function
-            exactMatches.sort(cardCompare);
-            fuzzyMatches.sort(cardCompare);
+            // sort the results
+            let method = $("#rs-ext-sort-by").val();
+            let reverseResults = $("#rs-ext-sort-order").val() === "Descending";
+            let stratify = document.getElementById("rs-ext-sort-stratify").checked;
+            let strataKind;
+            if(method === "Level") {
+                strataKind = "LEVELED";
+                stratify = true;
+            }
+            let params = {
+                methods: method,
+                reverse: reverseResults,
+                stratify: stratify,
+                strataKind: strataKind,
+            };
+            exactMatches = sortCardList(exactMatches, params);
+            fuzzyMatches = sortCardList(fuzzyMatches, params);
+            // exactMatches.sort(cardCompare);
+            // fuzzyMatches.sort(cardCompare);
             
             // display 
             let totalEntryCount = exactMatches.length + fuzzyMatches.length;
@@ -1873,7 +1976,8 @@ let onStart = function () {
                 else {
                     addMessage(STATUS.ERROR, "Your input was too short. Try typing in some text or adding some tags.");
                 }
-            } else {
+            }
+            else {
                 let cache = exactMatches.concat(fuzzyMatches);
                 EXT.Search.cache = cache;
                 // RESULTS_PER_PAGE can change between calculations
@@ -1928,7 +2032,7 @@ let onStart = function () {
         document.querySelectorAll("#rs-ext-monster-table input, #rs-ext-monster-table select"),
         SPELL_TRAP_INPUTS.SPELL,
         SPELL_TRAP_INPUTS.TRAP,
-        document.querySelectorAll("#rs-ext-sort-table select"),
+        document.querySelectorAll("#rs-ext-sort-table input, #rs-ext-sort-table select"),
     ].flat();
     
     for(let input of allInputs) {

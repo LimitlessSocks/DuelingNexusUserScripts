@@ -356,7 +356,7 @@ let onload = function () {
         $("#game-position-def-down").css("width", E);
         $("#game-position-def-down").css("height", Db);
         $(".game-selection-card-image").css("width", E);
-        Ab && Zc()
+        Ab && Zc();
     }
     
     // re-add listener
