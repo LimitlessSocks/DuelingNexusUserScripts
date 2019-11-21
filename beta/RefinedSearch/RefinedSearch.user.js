@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.7.2
+// @version      0.7.3
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -254,7 +254,7 @@ class SearchInputShunter {
 
 let onStart = function () {
     // minified with https://kangax.github.io/html-minifier/
-    const ADVANCED_SETTINGS_HTML_STRING = '<div id=rs-ext-advanced-search-bar><button id=rs-ext-monster-toggle class="engine-button engine-button-default">monster</button> <button id=rs-ext-spell-toggle class="engine-button engine-button-default">spell</button> <button id=rs-ext-trap-toggle class="engine-button engine-button-default">trap</button> <button id=rs-ext-sort-toggle class="engine-button engine-button-default rs-ext-right-float">sort</button><div id=rs-ext-advanced-pop-outs><div id=rs-ext-sort class="rs-ext-shrinkable rs-ext-shrunk"><table id=rs-ext-sort-table class=rs-ext-table><tr><th>Sort By</th><td><select class=rs-ext-input id=rs-ext-sort-by><option>Name</option><option>Level</option><option>ATK</option><option>DEF</option></select></td></tr><tr><th>Sort Order</th><td><select class=rs-ext-input id=rs-ext-sort-order><option>Ascending</option><option>Descending</option></select></td></tr><tr><th>Stratify?</th><td><input type=checkbox id=rs-ext-sort-stratify checked></td></tr></table></div><div id=rs-ext-spell class="rs-ext-shrinkable rs-ext-shrunk"><p><b>Spell Card Type: </b><select id=rs-ext-spell-type><option><option>Normal<option>Quick-play<option>Field<option>Continuous<option>Ritual<option>Equip</select></div><div id=rs-ext-trap class="rs-ext-shrinkable rs-ext-shrunk"><p><b>Trap Card Type: </b><select id=rs-ext-trap-type><option><option>Normal<option>Continuous<option>Counter</select></div><div id=rs-ext-monster class="rs-ext-shrinkable rs-ext-shrunk"><table class="rs-ext-left-float rs-ext-table"id=rs-ext-link-arrows><tr><th colspan=3>Link Arrows<tr><td><button class=rs-ext-toggle-button>↖</button><td><button class=rs-ext-toggle-button>↑</button><td><button class=rs-ext-toggle-button>↗</button><tr><td><button class=rs-ext-toggle-button>←</button><td><button class=rs-ext-toggle-button id=rs-ext-equals>=</button><td><button class=rs-ext-toggle-button>→</button><tr><td><button class=rs-ext-toggle-button>↙</button><td><button class=rs-ext-toggle-button>↓</button><td><button class=rs-ext-toggle-button>↘</button></table><div id=rs-ext-monster-table class="rs-ext-left-float rs-ext-table"><table><tr><th>Category<td><select class=rs-ext-input id=rs-ext-monster-category><option><option>Normal<option>Effect<option>Non-Effect<option>Link<option>Pendulum<option>Leveled<option>Xyz<option>Synchro<option>Fusion<option>Ritual<option>Gemini<option>Flip<option>Spirit<option>Toon</select><tr><th>Ability<td><select id=rs-ext-monster-ability class=rs-exit-input><option><option>Tuner<option>Toon<option>Spirit<option>Union<option>Gemini<option>Flip<option>Pendulum<tr><th>Type<td><select id=rs-ext-monster-type class=rs-ext-input><option><option>Aqua<option>Beast<option>Beast-Warrior<option>Cyberse<option>Dinosaur<option>Dragon<option>Fairy<option>Fiend<option>Fish<option>Insect<option>Machine<option>Plant<option>Psychic<option>Pyro<option>Reptile<option>Rock<option>Sea Serpent<option>Spellcaster<option>Thunder<option>Warrior<option>Winged Beast<option>Wyrm<option>Zombie<option>Creator God<option>Divine-Beast</select><tr><th>Attribute<td><select id=rs-ext-monster-attribute class=rs-ext-input><option><option>DARK<option>EARTH<option>FIRE<option>LIGHT<option>WATER<option>WIND<option>DIVINE</select><tr><th>Level/Rank/Link Rating<td><input class=rs-ext-input id=rs-ext-level><tr><th>Pendulum Scale<td><input class=rs-ext-input id=rs-ext-scale><tr><th>ATK<td><input class=rs-ext-input id=rs-ext-atk><tr><th>DEF<td><input class=rs-ext-input id=rs-ext-def></table></div></div></div><div id=rs-ext-spacer></div></div>';
+    const ADVANCED_SETTINGS_HTML_STRING = '<div id=rs-ext-advanced-search-bar><button id=rs-ext-monster-toggle class="engine-button engine-button-default">monster</button> <button id=rs-ext-spell-toggle class="engine-button engine-button-default">spell</button> <button id=rs-ext-trap-toggle class="engine-button engine-button-default">trap</button> <button id=rs-ext-sort-toggle class="engine-button engine-button-default rs-ext-right-float">sort</button><div id=rs-ext-advanced-pop-outs><div id=rs-ext-sort class="rs-ext-shrinkable rs-ext-shrunk"><table id=rs-ext-sort-table class=rs-ext-table><tr><th>Sort By</th><td><select class=rs-ext-input id=rs-ext-sort-by><option>Name</option><option>Level</option><option>ATK</option><option>DEF</option></select></td></tr><tr><th>Sort Order</th><td><select class=rs-ext-input id=rs-ext-sort-order><option>Ascending</option><option>Descending</option></select></td></tr><tr><th>Stratify?</th><td><input type=checkbox id=rs-ext-sort-stratify checked></td></tr></table></div><div id=rs-ext-spell class="rs-ext-shrinkable rs-ext-shrunk"><p><b>Spell Card Type: </b><select id=rs-ext-spell-type><option><option>Normal<option>Quick-play<option>Field<option>Continuous<option>Ritual<option>Equip</select></div><div id=rs-ext-trap class="rs-ext-shrinkable rs-ext-shrunk"><p><b>Trap Card Type: </b><select id=rs-ext-trap-type><option><option>Normal<option>Continuous<option>Counter</select></div><div id=rs-ext-monster class="rs-ext-shrinkable rs-ext-shrunk"><table class="rs-ext-left-float rs-ext-table"id=rs-ext-link-arrows><tr><th colspan=3>Link Arrows<tr><td><button class=rs-ext-toggle-button>↖</button><td><button class=rs-ext-toggle-button>↑</button><td><button class=rs-ext-toggle-button>↗</button><tr><td><button class=rs-ext-toggle-button>←</button><td><button class=rs-ext-toggle-button id=rs-ext-equals>=</button><td><button class=rs-ext-toggle-button>→</button><tr><td><button class=rs-ext-toggle-button>↙</button><td><button class=rs-ext-toggle-button>↓</button><td><button class=rs-ext-toggle-button>↘</button></table><div id=rs-ext-monster-table class="rs-ext-left-float rs-ext-table"><table><tr><th>Category<td><select class=rs-ext-input id=rs-ext-monster-category><option><option>Normal<option>Effect<option>Non-Effect<option>Link<option>Pendulum<option>Leveled<option>Xyz<option>Synchro<option>Fusion<option>Ritual<option>Gemini<option>Flip<option>Spirit<option>Toon</select><tr><th>Ability<td><select id=rs-ext-monster-ability class=rs-exit-input><option><option>Tuner<option>Toon<option>Spirit<option>Union<option>Gemini<option>Flip<option>Pendulum<tr><th>Type<td><select id=rs-ext-monster-type class=rs-ext-input><option><option>Aqua<option>Beast<option>Beast-Warrior<option>Cyberse<option>Dinosaur<option>Dragon<option>Fairy<option>Fiend<option>Fish<option>Insect<option>Machine<option>Plant<option>Psychic<option>Pyro<option>Reptile<option>Rock<option>Sea Serpent<option>Spellcaster<option>Thunder<option>Warrior<option>Winged Beast<option>Wyrm<option>Zombie<option>Creator God<option>Divine-Beast</select><tr><th>Attribute<td><select id=rs-ext-monster-attribute class=rs-ext-input><option><option>DARK<option>EARTH<option>FIRE<option>LIGHT<option>WATER<option>WIND<option>DIVINE</select><tr><th>Limit</th><td><input class=rs-ext-input id=rs-ext-limit></td></tr><tr><th>Level/Rank/Link Rating<td><input class=rs-ext-input id=rs-ext-level><tr><th>Pendulum Scale<td><input class=rs-ext-input id=rs-ext-scale><tr><th>ATK<td><input class=rs-ext-input id=rs-ext-atk><tr><th>DEF<td><input class=rs-ext-input id=rs-ext-def></table></div></div></div><div id=rs-ext-spacer></div></div>';
     
     const ADVANCED_SETTINGS_HTML_ELS = jQuery.parseHTML(ADVANCED_SETTINGS_HTML_STRING);
     ADVANCED_SETTINGS_HTML_ELS.reverse();
@@ -630,6 +630,7 @@ let onStart = function () {
         "PENDULUM": isPendulumMonster,
         "PEND": isPendulumMonster,
         "LEVELED": isLevelMonster,
+        "EXTRA": isExtraDeckMonster,
     };
     
     
@@ -1413,6 +1414,7 @@ let onStart = function () {
         ATTRIBUTE:  document.getElementById("rs-ext-monster-attribute"),
         LEVEL:      document.getElementById("rs-ext-level"),
         SCALE:      document.getElementById("rs-ext-scale"),
+        LIMIT:      document.getElementById("rs-ext-limit"),
         ATK:        document.getElementById("rs-ext-atk"),
         DEF:        document.getElementById("rs-ext-def"),
         CATEGORY:   document.getElementById("rs-ext-monster-category"),
@@ -1426,6 +1428,7 @@ let onStart = function () {
         ATK: "ATK",
         DEF: "DEF",
         SCALE: "SCALE",
+        LIMIT: "LIMIT",
     };
     const CATEGORY_TO_KEYWORD = {
         "Normal": "NORMAL",
@@ -1654,7 +1657,7 @@ let onStart = function () {
                 return check(cardObject) && tag.comp(cardObject.level, level);
             }
         }
-        else if(tag.param === "LIM") {
+        else if(tag.param === "LIM" || tag.param === "LIMIT") {
             if(/^\d+$/.test(tag.value)) {
                 let value = parseInt(tag.value, 10);
                 return function (cardObject) {
