@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.7.3
+// @version      0.7.4
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -27,6 +27,7 @@ const EXT = {
     // contents defined later
     EDIT_API: {}
 };
+window.EXT = EXT;
 const FN = {
     compose: function (f, g) {
         return function (...inputs) {
@@ -63,6 +64,7 @@ const FN = {
         return x ? y ? 0 : 1 : y;
     },
 };
+window.FN = FN;
 
 const TokenTypes = {
     OPERATOR: Symbol("TokenTypes.OPERATOR"),
