@@ -3448,12 +3448,20 @@ function bf(a) {
 
 // move card or something
 function cf(a, b, c, d, e) {
+    console.log("cf",{
+        a:a,b:b,c:c,d:d,e:e
+    });
     var g = a.a.offset(),
         k = a.location & O.j || c & 5 ? b : 0,
         w = gg(a.controller, a.location, c) - a.va,
         F = false;
-    a.Kb !== k && (F = true);
-    null !== a.b && (a.b.hide(), a.K.hide());
+    if(a.Kb !== k) {
+        F = true;
+    }
+    if(null !== a.b) {
+        a.b.hide();
+        a.K.hide();
+    }
     a.code = b;
     a.position = c;
     $("<div />").animate({
@@ -3462,9 +3470,18 @@ function cf(a, b, c, d, e) {
         duration: d,
         step: function(b, c) {
             b = c.pos;
-            c = "translate(" + (a.ta.left - g.left) * (1 - b) + "px, " + (a.ta.top - g.top) * (1 - b) + "px)";
+            c = "translate(";
+            c += (a.ta.left - g.left) * (1 - b);
+            c += "px, ";
+            c += (a.ta.top - g.top) * (1 - b);
+            c += "px)";
             c += " rotate(" + (a.va + w * b) + "deg)";
-            F && (.5 < b && hg(a, k), c += " scalex(" + Math.abs(1 - 2 * b) + ")");
+            if(F) {
+                if(.5 < b) {
+                    hg(a, k);
+                }
+                c += " scalex(" + Math.abs(1 - 2 * b) + ")";
+            }
             a.a.css("transform", c)
         },
         complete: function() {

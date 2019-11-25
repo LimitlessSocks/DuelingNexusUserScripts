@@ -50,8 +50,8 @@ let onStartDeckSorter = function () {
     
     // TODO: find less hacky way
     const refreshDecklists = function () {
-        // get current "expansion" state
-        $("ds-ext-toggle").
+        // TODO: get current "expansion" state
+        // $("ds-ext-toggle").
         let [ home, duelZone, deckEditor, settings ] = $("#navbar-middle button");
         return new Promise(function(resolve, reject) {
             duelZone.click();

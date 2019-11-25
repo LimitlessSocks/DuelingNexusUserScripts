@@ -320,6 +320,10 @@ let onload = function () {
         // TODO: more
     });
     
+    ChatImprovements.addEventListener("cfReveal", function (code) {
+        notifyEvent("Revealed #@" + code);
+    });
+    
     
     // redefine window resizing
     window.Vb = function Vb() {
@@ -357,6 +361,56 @@ let onload = function () {
         $("#game-position-def-down").css("height", Db);
         $(".game-selection-card-image").css("width", E);
         Ab && Zc();
+    }
+    
+    
+    window.cf = function cf(a, b, c, d, e) {
+        if(listeners["cfReveal"]) {
+            for(let cb of listeners["cfReveal"]) {
+                cb(b);
+            }
+        }
+        var g = a.a.offset(),
+            k = a.location & O.j || c & 5 ? b : 0,
+            w = gg(a.controller, a.location, c) - a.va,
+            F = false;
+        if(a.Kb !== k) {
+            F = true;
+        }
+        if(null !== a.b) {
+            a.b.hide();
+            a.K.hide();
+        }
+        a.code = b;
+        a.position = c;
+        $("<div />").animate({
+            height: 1
+        }, {
+            duration: d,
+            step: function(b, c) {
+                b = c.pos;
+                c = "translate(";
+                c += (a.ta.left - g.left) * (1 - b);
+                c += "px, ";
+                c += (a.ta.top - g.top) * (1 - b);
+                c += "px)";
+                c += " rotate(" + (a.va + w * b) + "deg)";
+                if(F) {
+                    if(.5 < b) {
+                        hg(a, k);
+                    }
+                    c += " scalex(" + Math.abs(1 - 2 * b) + ")";
+                }
+                a.a.css("transform", c)
+            },
+            complete: function() {
+                null !== a.b && (a.b.show(), a.K.show());
+                a.a.css("position",
+                    "");
+                mf(a);
+                e()
+            }
+        })
     }
     
     // re-add listener
