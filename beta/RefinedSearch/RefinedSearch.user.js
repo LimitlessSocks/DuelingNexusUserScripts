@@ -287,7 +287,7 @@ let onStart = function () {
         this.rscale = (b >> 16) & 0xFF;
     };
     
-    const CARD_LIST_VERSION = 78;
+    const CARD_LIST_VERSION = 81;
     const readCards = function (a) {
         jQuery.ajaxSetup({
             beforeSend: function(a) {
