@@ -43,12 +43,45 @@ const waitForElementJQuery = async function (selector, source = $("body")) {
 };
 
 let onload = function () {
+    // css 
+    $("head").append($(`<style>
+    #ci-ext-misc {
+        float: left;
+        width: 25%;
+        overflow-x: hidden;
+        overflow-y: auto;
+        box-sizing: border-box;
+    }
+    #card-column {
+        float: none;
+        width: auto;
+    }
+    
+    #ci-ext-misc-sections > div {
+        overflow-x: hidden;
+        overflow-y: auto;
+        box-sizing: border-box;
+    }
+    
+    #ci-ext-log > p {
+        padding: 0;
+        margin: 3px;
+    }
+    
+    #ci-ext-log {
+        background: rgb(0, 0, 0);
+        background: rgba(0, 0, 0, 0.7);
+    }
+    </style>`));
+    
+    // boilerplate
     const playSound = Q;
     const sendEvent = K;
     const gameChatContent = $("#game-chat-content");
     const gameChatTextbox = $("#game-chat-textbox");
     const gameChatArea = $("#game-chat-area");
     const showCardInColumn = Bc;
+    const SECONDS = 1000;
     
     const monsterTypeMap = {};
     for(let key in Vf) {
@@ -67,11 +100,13 @@ let onload = function () {
     const isSynchroMonster      = (card) => card.type & monsterTypeMap["Synchro"];
     const isNormalMonster       = (card) => card.type & monsterTypeMap["Normal"];
 
-    gameChatContent.css("overflow-y", "auto")
-                   .css("height", "230px")
-                   .css("background-color", "transparent");
-    gameChatArea.css("background-color", "rgba(0, 0, 0)")
-                .css("background-color", "rgba(0, 0, 0, 0.7)");
+    // gameChatContent.css("overflow-y", "auto")
+                   // .css("height", "230px")
+                   // .css("background-color", "transparent");
+    // gameChatArea.css("background-color", "rgba(0, 0, 0)")
+                // .css("background-color", "rgba(0, 0, 0, 0.7)");
+    let chatLog = $("<div id=ci-ext-log>");
+    
     
     let eventTypeList = [
         
@@ -84,6 +119,13 @@ let onload = function () {
             now.getMinutes(),
             now.getSeconds()
         ].map(time => time.toString().padStart(2, "0")).join(":");
+    }
+    
+    const scrollToBottom = function (el) {
+        el = $(el);
+        el.animate({
+            scrollTop: el.prop("scrollHeight")
+        }, 150);
     }
     
     const MESSAGE_PARSE_REGEX = /#@(\d+)|.+?/g;
@@ -122,14 +164,20 @@ let onload = function () {
         if(kind) {
             message.addClass(kind);
         }
-        gameChatContent.append(message);
-        // scroll to message
-        gameChatContent.animate({
-            scrollTop: gameChatContent.prop("scrollHeight")
-        }, 150);
         if(color) {
             message.css("color", color);
         }
+        gameChatContent.append(message);
+        chatLog.append(message.clone());
+        // scroll to message
+        scrollToBottom(chatLog);
+        // handle UI
+        if(gameChatContent.children().length > 10) {
+            gameChatArea.find("p:first").remove();
+        }
+        setTimeout(function() {
+            message.remove();
+        }, 10 * SECONDS);
         return message;
     }
     ChatImprovements.displayMessage = displayMessage;
@@ -180,6 +228,45 @@ let onload = function () {
         }
     });
     
+    // create sections
+    let miscContainer = $("<div id=ci-ext-misc>");
+    let miscSections = $("<div id=ci-ext-misc-sections>");
+    let cardColumn = $("#card-column");
+    let gameContainer = $("#game-container");
+    gameContainer.prepend(miscContainer);
+    
+    let miscSectionButtons = $("<div id=ci-ext-misc-buttons>");
+    
+    const hideMiscBut = function (but) {
+        return function (ev) {
+            for(let child of miscSections.children()) {
+                let isVisible = child.id === but;
+                $(child).toggle(isVisible);
+                if(isVisible) {
+                    scrollToBottom(child);
+                }
+            }
+            gameChatContent.toggle(but !== "ci-ext-log");
+        };
+    };
+    
+    // button toggles for sections
+    let showCardColumn = $("<button id=ci-ext-show-card-column class=engine-button>Card Info</button>");
+    let showChatLog = $("<button id=ci-ext-show-chat-log class=engine-button>Chat Log</button>");
+    
+    showCardColumn.click(hideMiscBut("card-column"));
+    showChatLog.click(hideMiscBut("ci-ext-log"));
+    
+    miscSectionButtons.append(showCardColumn, showChatLog);
+    miscContainer.append(miscSectionButtons);
+    
+    cardColumn.detach();
+    miscSections.append(cardColumn);
+    miscSections.append(chatLog);
+    showCardColumn.click();
+    miscContainer.append(miscSections);
+    
+    /*
     // update ui
     let minimizeToggle = $("<button class=engine-button title=minimize>&minus;</button>")
         .click(function () {
@@ -205,6 +292,7 @@ let onload = function () {
     gameChatArea.prepend(
         minimizeToggle, muteToggle, notificationToggle
     )
+    */
     
     // listeners[type] = [...];
     let listeners = {};
@@ -328,15 +416,16 @@ let onload = function () {
     
     // redefine window resizing
     window.Vb = function Vb() {
-        var a = $("#card-column").position().top;
+        var a = $("#ci-ext-misc-sections").position().top;
         
-        $("#card-column")
-            .css("max-height", $(window).height() - a - 24);
+        // originally: - 24
+        $("#ci-ext-misc-sections div")
+            .css("max-height", $(window).height() - a - 50);
         $("#game-siding-column")
-            .css("max-height", $(window).height() - a - 24);
+            .css("max-height", $(window).height() - a - 50);
         
         a = 4 === D ? 7 : 6;
-        var b = $(window).width() - $("#card-column").width() - 50,
+        var b = $(window).width() - $("#ci-ext-misc").width() - 50,
             // c = $(window).height();// - $("#game-chat-area").height() - 8 - 48;
             c = $(window).height() - 8 - 48;
         9 * c / a < b ? ($("#game-field").css("height", c + "px"), b = c / a, $("#game-field").css("width", 9 * b + "px")) : ($("#game-field").css("width", b + "px"), b /= 9, $("#game-field").css("height", b * a + "px"));
