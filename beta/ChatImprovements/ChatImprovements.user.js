@@ -314,6 +314,7 @@ let onload = function () {
             status = "was activated/set from " + LocationNames[move.previousLocation];
         }
         else {
+            // 2 from 64
             status = "- UNSURE!! " + move.currentLocation + " from " + move.previousLocation;
         }
         notifyEvent(cardName + " " + status);

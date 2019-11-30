@@ -62,6 +62,10 @@ let onStartDeckSelector = function () {
             filterDecks(query);
         }
     });
+    
+    $("#game-deck-dropdown").click(function () {
+        searchDeckInput.focus();
+    });
 };
 
 let startUpDeckSelector = function () {
