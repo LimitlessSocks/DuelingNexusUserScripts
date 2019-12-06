@@ -50,13 +50,24 @@ let onStartDeckSorter = function () {
     
     // TODO: find less hacky way
     const refreshDecklists = function () {
-        // TODO: get current "expansion" state
-        // $("ds-ext-toggle").
         let [ home, duelZone, deckEditor, settings ] = $("#navbar-middle button");
+        let mask = {};
+        for(let row of $(".ds-ext-toggle")) {
+            let el = $(row);
+            mask[el.data("tag")] = el.data("expanded");
+        }
         return new Promise(function(resolve, reject) {
             duelZone.click();
             setTimeout(function () {
                 deckEditor.click();
+                waitForElement("#decks-container td").then(function () {
+                    for(let row of $(".ds-ext-toggle")) {
+                        let el = $(row);
+                        if(mask[el.data("tag")]) {
+                            row.click();
+                        }
+                    }
+                });
                 resolve();
             }, 100);
         });
@@ -224,6 +235,7 @@ let onStartDeckSorter = function () {
         // rows start toggled on
         title.textContent = "[" + MINIMIZE_SYMBOL + "] " + tag;
         $(title).data("expanded", true);
+        $(title).data("tag", tag);
         if(color) {
             title.style.color = color;
         }
@@ -234,7 +246,6 @@ let onStartDeckSorter = function () {
         saveFolder.textContent = "Download";
         tagTab.appendChild(saveFolder);
         
-        // TODO: async
         saveFolder.addEventListener("click", async function () {
             const allDecks = await loadAllDecks();
             let zip = new JSZip();
