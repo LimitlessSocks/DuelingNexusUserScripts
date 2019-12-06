@@ -588,7 +588,7 @@ let onload = function () {
     // remove current resize listener
     // $(window).off("resize", Vb);
     // $(window).resize(Vb);
-    Fb.ChatMessageReceived = window.pd = displayOpponentsMessage;
+    Fb.ChatMessageReceived = window.qd = displayOpponentsMessage;
     console.info("ChatImprovements plugin loaded!");
     
     //
