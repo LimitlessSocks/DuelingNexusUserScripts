@@ -51,22 +51,28 @@ let onStartDeckSorter = function () {
     // TODO: find less hacky way
     const refreshDecklists = function () {
         let [ home, duelZone, deckEditor, settings ] = $("#navbar-middle button");
+        // keep track of which tabs were expanded information
         let mask = {};
         for(let row of $(".ds-ext-toggle")) {
             let el = $(row);
             mask[el.data("tag")] = el.data("expanded");
         }
+        // note the scroll position
+        let oldX = window.scrollX;
+        let oldY = window.scrollY;
         return new Promise(function(resolve, reject) {
             duelZone.click();
             setTimeout(function () {
                 deckEditor.click();
                 waitForElement("#decks-container td").then(function () {
+                    // restore expanded states
                     for(let row of $(".ds-ext-toggle")) {
                         let el = $(row);
                         if(mask[el.data("tag")]) {
                             row.click();
                         }
                     }
+                    window.scrollTo(oldX, oldY);
                 });
                 resolve();
             }, 100);
