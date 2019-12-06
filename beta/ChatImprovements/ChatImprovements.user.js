@@ -91,7 +91,7 @@ let onload = function () {
     const gameChatContent = $("#game-chat-content");
     const gameChatTextbox = $("#game-chat-textbox");
     const gameChatArea = $("#game-chat-area");
-    const showCardInColumn = Bc;
+    const showCardInColumn = Cc;
     const SECONDS = 1000;
     
     const monsterTypeMap = {};
@@ -101,7 +101,8 @@ let onload = function () {
     }
     window.monsterTypeMap = monsterTypeMap;
     const isTrapCard            = (card) => card.type & monsterTypeMap["Trap"];
-    const isSpellCard           = (card) => card.type & monsterTypeMap["Spell"];    const isMonster             = (card) => !isTrapCard(card) && !isSpellCard(card);
+    const isSpellCard           = (card) => card.type & monsterTypeMap["Spell"];
+    const isMonster             = (card) => !isTrapCard(card) && !isSpellCard(card);
     const isToken               = (card) => card.type & monsterTypeMap["Token"];
     const isXyzMonster          = (card) => card.type & monsterTypeMap["Xyz"];
     const isPendulumMonster     = (card) => card.type & monsterTypeMap["Pendulum"];
@@ -445,7 +446,7 @@ let onload = function () {
         cardCodeToSkip = null;
     });
     
-    ChatImprovements.addEventListener("pfTarget", function (code) {
+    ChatImprovements.addEventListener("targetCardAnimation", function (code) {
         if(code) {
             notifyEvent("Targeted #@" + code);
         }
@@ -453,7 +454,7 @@ let onload = function () {
     
     
     // redefine window resizing
-    window.Vb = function Vb() {
+    window.Wb = function Wb() {
         var a = $("#ci-ext-misc-sections").position().top;
         
         // originally: - 24
@@ -473,8 +474,8 @@ let onload = function () {
         Cb = b;
         Db = Math.floor(.95 * b);
         E = 177 * Db / 254;
-        Yc(m[0]);
-        Yc(m[1]);
+        Zc(m[0]);
+        Zc(m[1]);
         $("#game-position-atk-up").css("width", E);
         $("#game-position-atk-up").css("height", Db);
         $("#game-position-atk-up").css("margin-right", Db - E + 3);
@@ -488,12 +489,12 @@ let onload = function () {
         $("#game-position-def-down").css("width", E);
         $("#game-position-def-down").css("height", Db);
         $(".game-selection-card-image").css("width", E);
-        Ab && Zc();
+        Ab && $c();
     }
     
-    window.pf = function pf(a, b) {
-        if(listeners["pfTarget"]) {
-            for(let cb of listeners["pfTarget"]) {
+    window.qf = function qf(a, b) {
+        if(listeners["targetCardAnimation"]) {
+            for(let cb of listeners["targetCardAnimation"]) {
                 cb(a.code);
             }
         }
@@ -534,7 +535,7 @@ let onload = function () {
         });
     };
     
-    window.cf = function cf(a, b, c, d, e) {
+    window.df = function df(a, b, c, d, e) {
         if(listeners["cfReveal"]) {
             for(let cb of listeners["cfReveal"]) {
                 cb(b);
@@ -542,7 +543,7 @@ let onload = function () {
         }
         var g = a.a.offset(),
             k = a.location & O.j || c & 5 ? b : 0,
-            w = gg(a.controller, a.location, c) - a.va,
+            w = hg(a.controller, a.location, c) - a.va,
             F = false;
         if(a.Kb !== k) {
             F = true;
@@ -567,7 +568,7 @@ let onload = function () {
                 c += " rotate(" + (a.va + w * b) + "deg)";
                 if(F) {
                     if(.5 < b) {
-                        hg(a, k);
+                        ig(a, k);
                     }
                     c += " scalex(" + Math.abs(1 - 2 * b) + ")";
                 }
@@ -577,7 +578,7 @@ let onload = function () {
                 null !== a.b && (a.b.show(), a.K.show());
                 a.a.css("position",
                     "");
-                mf(a);
+                nf(a);
                 e()
             }
         })
