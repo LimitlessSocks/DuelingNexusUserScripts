@@ -202,7 +202,7 @@ let onload = function () {
     ChatImprovements.displayMessage = displayMessage;
     
     // overwrite send message
-    window.sd = displayMessage;
+    window.td = displayMessage;
     
     let unifyMessage = function (message) {
         return timestamp() + " " + message;
@@ -237,7 +237,7 @@ let onload = function () {
                 type: "SendChatMessage",
                 message: message
             });
-            message = unifyMessage("[" + Hb + "]: " + message);
+            message = unifyMessage("[" + Ib + "]: " + message);
             if(4 > z) {
                 displayMessage(message);
             }
