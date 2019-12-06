@@ -63,14 +63,25 @@ let onload = function () {
         box-sizing: border-box;
     }
     
-    #ci-ext-log > p {
+    #ci-ext-log > p, #ci-ext-event-log > p {
         padding: 0;
         margin: 3px;
     }
     
-    #ci-ext-log {
+    #ci-ext-log, #ci-ext-event-log {
         background: rgb(0, 0, 0);
         background: rgba(0, 0, 0, 0.7);
+    }
+    @keyframes fullScale {
+        from {
+            transform: scale(1);
+        }
+        to {
+            transform: scale(2);
+        }
+    }
+    .material-preview {
+        margin: 3px;
     }
     </style>`));
     
@@ -106,6 +117,7 @@ let onload = function () {
     // gameChatArea.css("background-color", "rgba(0, 0, 0)")
                 // .css("background-color", "rgba(0, 0, 0, 0.7)");
     let chatLog = $("<div id=ci-ext-log>");
+    let chatEventLog = $("<div id=ci-ext-event-log>");
     
     
     let eventTypeList = [
@@ -168,7 +180,13 @@ let onload = function () {
             message.css("color", color);
         }
         gameChatContent.append(message);
-        chatLog.append(message.clone());
+        let copy = message.clone();
+        if(kind === "notified-event") {
+            chatEventLog.append(copy);
+        }
+        else {
+            chatLog.append(copy);
+        }
         // scroll to message
         scrollToBottom(chatLog);
         // handle UI
@@ -246,23 +264,26 @@ let onload = function () {
                     scrollToBottom(child);
                 }
             }
-            gameChatContent.toggle(but !== "ci-ext-log");
+            gameChatContent.toggle(but !== "ci-ext-log" && but !== "ci-ext-event-log");
         };
     };
     
     // button toggles for sections
     let showCardColumn = $("<button id=ci-ext-show-card-column class=engine-button>Card Info</button>");
     let showChatLog = $("<button id=ci-ext-show-chat-log class=engine-button>Chat Log</button>");
+    let showEventLog = $("<button id=ci-ext-show-event-log class=engine-button>Event Log</button>");
     
     showCardColumn.click(hideMiscBut("card-column"));
     showChatLog.click(hideMiscBut("ci-ext-log"));
+    showEventLog.click(hideMiscBut("ci-ext-event-log"));
     
-    miscSectionButtons.append(showCardColumn, showChatLog);
+    miscSectionButtons.append(showCardColumn, showChatLog, showEventLog);
     miscContainer.append(miscSectionButtons);
     
     cardColumn.detach();
     miscSections.append(cardColumn);
     miscSections.append(chatLog);
+    miscSections.append(chatEventLog);
     showCardColumn.click();
     miscContainer.append(miscSections);
     
@@ -326,6 +347,7 @@ let onload = function () {
     }
     
     const GameLocations = {
+        TOKEN_PILE: 0,
         DECK: 1,
         HAND: 2,
         FIELD_MONSTER: 4,
@@ -337,6 +359,7 @@ let onload = function () {
         XYZ_MATERIAL: 128,
     };
     const LocationNames = {
+        [GameLocations.TOKEN_PILE]: "token pile",
         [GameLocations.DECK]: "the Deck",
         [GameLocations.HAND]: "the hand",
         [GameLocations.FIELD_MONSTER]: "a Monster Zone",
@@ -347,12 +370,17 @@ let onload = function () {
         192: " an Xyz Monster [bugged response, please report!]",
     };
     
+    let cardCodeToSkip = null;
+    
     let movedFromTo = function (move, start, end) {
         return (move.previousLocation & start) !== 0 &&
                (move.currentLocation & end) !== 0;
     }
     ChatImprovements.addEventListener("GameMove", function (move) {
         let cardName = move.cardCode ? "#@" + move.cardCode : "A card";
+        if(move.cardCode) {
+            cardCodeToSkip = move.cardCode;
+        }
         // sent to GY
         console.log(GameLocations.GY);
         if(movedFromTo(move, GameLocations.XYZ_MATERIAL, GameLocations.GY) ||
@@ -403,6 +431,7 @@ let onload = function () {
         }
         else {
             // 2 from 64
+            // 0 from 4 - token being removed
             status = "- UNSURE!! " + move.currentLocation + " from " + move.previousLocation;
         }
         notifyEvent(cardName + " " + status);
@@ -410,7 +439,16 @@ let onload = function () {
     });
     
     ChatImprovements.addEventListener("cfReveal", function (code) {
-        notifyEvent("Revealed #@" + code);
+        if(code && code !== cardCodeToSkip) {
+            notifyEvent("Revealed #@" + code);
+        }
+        cardCodeToSkip = null;
+    });
+    
+    ChatImprovements.addEventListener("pfTarget", function (code) {
+        if(code) {
+            notifyEvent("Targeted #@" + code);
+        }
     });
     
     
@@ -453,6 +491,48 @@ let onload = function () {
         Ab && Zc();
     }
     
+    window.pf = function pf(a, b) {
+        if(listeners["pfTarget"]) {
+            for(let cb of listeners["pfTarget"]) {
+                cb(a.code);
+            }
+        }
+        let originalZ = a.a.css("z-index");
+        a.a.css("z-index", 10000)
+           .css("animation", "fullScale " + (600 * B) + "ms");
+        a.a.animate({
+            opacity: .5
+        }, {
+            duration: 100 * B
+        }).animate({
+            opacity: 1
+        }, {
+            duration: 100 * B
+        }).animate({
+            opacity: .5
+        }, {
+            duration: 100 * B
+        }).animate({
+            opacity: 1
+        }, {
+            duration: 100 * B
+        }).animate({
+            opacity: .5
+        }, {
+            duration: 100 * B
+        }).animate({
+            opacity: 1
+        }, {
+            duration: 100 * B,
+            complete: function () {
+                a.a.css("animation", "")
+                   .css("z-index", originalZ);
+                if(b) {
+                    b();
+                }
+            }
+        });
+    };
     
     window.cf = function cf(a, b, c, d, e) {
         if(listeners["cfReveal"]) {
@@ -509,6 +589,40 @@ let onload = function () {
     // $(window).resize(Vb);
     Fb.ChatMessageReceived = window.pd = displayOpponentsMessage;
     console.info("ChatImprovements plugin loaded!");
+    
+    //
+    let overlayExtension;
+    $(".game-field-zone").on("mouseover", function (ev) {
+        let player = $(this).data("player");
+        let location = $(this).data("location");
+        let index = $(this).data("index");
+        let card = T(player, location, index);
+        if(!card) return;
+        let overlays = card.l;
+        if(!overlayExtension) {
+            overlayExtension = $("<p id=game-tooltip-overlay-extension></p>");
+            $("#game-tooltip .card-if-monster").append(overlayExtension);
+        }
+        if(overlays && overlays.length) {
+            $(overlayExtension).empty();
+            let { width, height } = this.querySelector("img");
+            console.log("width, height:", width, height);
+            let plural = overlays.length === 1 ? "" : "s";
+            let msg = "[" + overlays.length.toString() + " material" + plural + "]\n";
+            $(overlayExtension).append($("<p>" + msg + "</p>"));
+            for(let overlay of overlays) {
+                let imgSrc = ra(overlay.code);
+                let img = $("<img class=material-preview src='" + imgSrc + "' width=" + width + " height=" + height + ">");
+                // img.width = width;
+                // img.height = height;
+                $(overlayExtension).append(img);
+            }
+            $(overlayExtension).show();
+        }
+        else {
+            $(overlayExtension).hide();
+        }
+    });
 };
 
 waitForElementJQuery("#game-room-container:visible").then(() => {

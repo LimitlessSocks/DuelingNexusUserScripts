@@ -418,19 +418,24 @@ function T(a, b, c, d) {
     return d
 }
 
-function Xb(a, b, c) {
-    var d = T(a, b, c);
+
+// player, location, index
+function Xb(player, b, c) {
+    var d = T(player, b, c);
     if (d && 0 !== d.code) {
         var e = $("#game-tooltip");
-        null === ua && e.show();
+        if(ua === null) {
+            e.show();
+        }
         ua = d;
         Bc(d.code);
         Cc(e, d);
         uc();
         if (b & O.g && d.type & U.C) {
-            e = a;
+            e = player;
             a = [];
-            var g = d.wa; - 1 !== e ? (g & Dc && 0 < c && a.push({
+            var g = d.wa;
+            -1 !== e ? (g & Dc && 0 < c && a.push({
                 o: e,
                 location: b,
                 index: c - 1
@@ -518,19 +523,64 @@ function Zb(a, b, c) {
     }), N()) : Pc())) : (d = 0 === a && b === O.f && !ob, (c || d) && Ac(c, a, b))
 }
 
-function Oc(a) {
+/**
+ * @param {cardObject} card
+ * @return {undefined}
+ */
+function Oc(card) {
     if (-1 !== db) {
-        if (-1 !== x.indexOf(a)) {
-            var b = y.indexOf(a); - 1 !== b ? (y.splice(b, 1), Ma ? a.Y.removeClass("game-selected-card") : (a.a.removeClass("game-selected-card"), a.a.addClass("game-selectable-card")), Ea || -1 === fb || zc()) : (y.push(a), Ma ? a.Y.addClass("game-selected-card") : (a.a.addClass("game-selected-card"), a.a.removeClass("game-selectable-card")), Ea || Qc() !== eb && -1 === fb || zc());
-            Ea && (b = [], a = x.indexOf(a), b.push(0 > a ? 0 : a), K({
-                type: "GameSendSelection",
-                indexes: b
-            }), N())
+        if (-1 !== x.indexOf(card)) {
+            var indexInList = y.indexOf(card);
+            if (-1 !== indexInList) {
+                y.splice(indexInList, 1);
+                if (Ma) {
+                    card.Y.removeClass("game-selected-card");
+                } else {
+                    card.a.removeClass("game-selected-card");
+                    card.a.addClass("game-selectable-card");
+                }
+                if (!(Ea || -1 === fb)) {
+                    zc();
+                }
+            } else {
+                y.push(card);
+                if (Ma) {
+                    card.Y.addClass("game-selected-card");
+                } else {
+                    card.a.addClass("game-selected-card");
+                    card.a.removeClass("game-selectable-card");
+                }
+                if (!(Ea || Qc() !== eb && -1 === fb)) {
+                    zc();
+                }
+            }
+            if (Ea) {
+                /** @type {!Array} */
+                indexes = [];
+                index = x.indexOf(card);
+                indexes.push(0 > index ? 0 : index);
+                K({
+                    type: "GameSendSelection",
+                    indexes: indexes
+                });
+                N();
+            }
         }
-    } else if (Oa) Rc(a);
-    else if (Ka || La) Ka ?
-        (M(gc, u.indexOf(a)), N()) : kc(a)
-}
+    } else {
+        if (Oa) {
+            Rc(card);
+        } else {
+            if (Ka || La) {
+                if (Ka) {
+                    M(gc, u.indexOf(card));
+                    N();
+                } else {
+                    kc(card);
+                }
+            }
+        }
+    }
+};
 
 function kc(a) {
     var b = [],
@@ -1987,6 +2037,81 @@ function zf(a, b) {
         d.isAlreadySelected ? (e.a.addClass("game-selected-card"), y.push(e)) : e.a.addClass("game-selectable-card")
     }
 }
+
+/**
+ * @param {!NodeList} cardList
+ * @param {?} b
+ * @return {undefined}
+ */
+function ec(cardList, b) {
+    /** @type {boolean} */
+    Ma = true;
+    var gameSelectionList = $("#game-selection-list");
+    /** @type {number} */
+    var i = 0;
+    for (; i < cardList.length; ++i) {
+        var card = cardList[i];
+        var v = undefined;
+        /** @type {boolean} */
+        var k = false;
+        if (b) {
+            v = cardList[i];
+        } else {
+            v = T(card.controller, card.location, card.sequence, card.position);
+            if (card.sumValue) {
+                v.I = card.sumValue;
+            }
+            if (card.isAlreadySelected) {
+                /** @type {boolean} */
+                k = true;
+            }
+        }
+        var w = wa.clone()
+            .data("card-controller", v.controller)
+            .data("card-location", v.location)
+            .data("card-sequence", v.D)
+            .data("card-subsequence", card.position)
+        .mouseenter(function() {
+            var controller = $(this).data("card-controller");
+            var location = $(this).data("card-location");
+            var sequence = $(this).data("card-sequence");
+            Xb(controller, location, sequence);
+        })
+        .mouseleave(function() {
+            var controller = $(this).data("card-controller");
+            var location = $(this).data("card-location");
+            var sequence = $(this).data("card-sequence");
+            Yb(controller, location, sequence);
+        })
+        .click(function() {
+            var controller = $(this).data("card-controller");
+            var location = $(this).data("card-location");
+            var sequence = $(this).data("card-sequence");
+            var subsequence = $(this).data("card-subsequence");
+            var card = T(controller, location, sequence, subsequence);
+            if (card) {
+                Oc(card);
+            }
+        });
+        if (b) {
+            card = v.code;
+        } else {
+            card = 0 !== card.code ? card.code : v.code;
+            hf(v, card);
+        }
+        l(w.find(".game-selection-card-image"), card);
+        w.find(".game-selection-card-text").text(Af[v.location & ~O.B] + " (" + v.D + ")");
+        w.appendTo(gameSelectionList);
+        v.Y = w.find(".game-selection-card-image");
+        x.push(v);
+        if (k) {
+            y.push(v);
+            v.Y.addClass("game-selected-card");
+        }
+    }
+    $(".game-selection-card-image").css("width", E);
+    $("#game-selection-window").show();
+};
 
 function ec(a, b) {
     Ma = true;

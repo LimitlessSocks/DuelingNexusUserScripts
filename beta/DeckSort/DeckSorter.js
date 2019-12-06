@@ -287,7 +287,7 @@ let onStartDeckSorter = function () {
     
     // remove specifiers from accessible list
     const SPECIFIER_REGEX = /^!! /;
-    const SPECIFIER_ITEM_REGEX = /(\w+):(.+)/;
+    const SPECIFIER_ITEM_REGEX = /\s*([\S:]+?):(.+)/;
     const specifiers = {};
     const specifierRows = [];
     console.log(decksByTag);
