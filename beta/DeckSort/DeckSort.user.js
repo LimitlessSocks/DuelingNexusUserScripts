@@ -13,6 +13,7 @@
 // @include      https://duelingnexus.com/hostgame
 // @include      https://duelingnexus.com/gamelist
 // @include      https://duelingnexus.com/donate
+// @include      https://duelingnexus.com/leaderboard
 // @include      https://duelingnexus.com/login
 // @include      https://duelingnexus.com/game/*
 // @require      DeckSortHeader.js

@@ -217,7 +217,7 @@ let onload = function () {
         let color;
         
         if(0 <= playerId && 3 >= playerId) {
-            let name = A[playerId].name;
+            let name = B[playerId].name;
             message = "[" + name + "]: " + message;
         }
         else {
@@ -325,8 +325,8 @@ let onload = function () {
     }
     // reference
     const log = ChatImprovements.log;
-    sb.shift = function (...args) {
-        let res = Array.prototype.shift.apply(sb, args);
+    rb.shift = function (...args) {
+        let res = Array.prototype.shift.apply(rb, args);
         log.push(res);
         if(typeof res.length !== "undefined") {
             alert("whoa! unexpected arguments passed to sb.shift!");
@@ -421,6 +421,9 @@ let onload = function () {
         else if(movedFromTo(move, GameLocations.FIELD, GameLocations.HAND)) {
             status = "was returned from the field to the hand";
         }
+        else if(movedFromTo(move, GameLocations.EXTRA_DECK, GameLocations.HAND)) {
+            status = "was added to the hand from the face-up Extra Deck";
+        }
         // monster summons
         else if(move.currentLocation === GameLocations.FIELD_MONSTER) {
             status = "was Summoned from " + LocationNames[move.previousLocation];
@@ -430,9 +433,10 @@ let onload = function () {
             // TODO: set vs. activate
             status = "was activated/set from " + LocationNames[move.previousLocation];
         }
+        else if(movedFromTo(move, GameLocations.FIELD, GameLocations.TOKEN_PILE)) {
+            status = "was removed from the field";
+        }
         else {
-            // 2 from 64
-            // 0 from 4 - token being removed
             status = "- UNSURE!! " + move.currentLocation + " from " + move.previousLocation;
         }
         notifyEvent(cardName + " " + status);
@@ -458,15 +462,16 @@ let onload = function () {
         var a = $("#ci-ext-misc-sections").position().top;
         
         // originally: - 24
+        const offset = 24;
         $("#ci-ext-misc-sections div")
-            .css("max-height", $(window).height() - a - 50);
+            .css("max-height", $(window).height() - a - offset);
         $("#game-siding-column")
-            .css("max-height", $(window).height() - a - 50);
+            .css("max-height", $(window).height() - a - offset);
         
-        a = 4 === D ? 7 : 6;
+        a = 4 === Ab ? 7 : 6;
         var b = $(window).width() - $("#ci-ext-misc").width() - 50,
             // c = $(window).height();// - $("#game-chat-area").height() - 8 - 48;
-            c = $(window).height() - 8 - 48;
+            c = $(window).height() - $("#game-chat-textbox").outerHeight() - 8 - 48;
         9 * c / a < b ? ($("#game-field").css("height", c + "px"), b = c / a, $("#game-field").css("width", 9 * b + "px")) : ($("#game-field").css("width", b + "px"), b /= 9, $("#game-field").css("height", b * a + "px"));
         $(".game-field-zone").css("width",
             b + "px").css("height", b + "px");
@@ -489,7 +494,7 @@ let onload = function () {
         $("#game-position-def-down").css("width", E);
         $("#game-position-def-down").css("height", Db);
         $(".game-selection-card-image").css("width", E);
-        Ab && $c();
+        zb && $c();
     }
     
     window.qf = function qf(a, b) {

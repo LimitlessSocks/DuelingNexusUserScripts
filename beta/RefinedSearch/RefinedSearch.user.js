@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.7.4
+// @version      0.7.5
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -318,14 +318,14 @@ let onStart = function () {
     
     readCards();
     
-    const TYPE_HASH = ag;
+    const TYPE_HASH = bg;
     const TYPE_LIST = Object.values(TYPE_HASH);
     
-    const ATTRIBUTE_MASK_HASH = Xf;
+    const ATTRIBUTE_MASK_HASH = Yf;
     
     const ATTRIBUTE_HASH = {};
-    for(obfs in Xf) {
-        let attr = $f[obfs].toUpperCase();
+    for(obfs in ATTRIBUTE_MASK_HASH) {
+        let attr = ag[obfs].toUpperCase();
         ATTRIBUTE_HASH[attr] = ATTRIBUTE_MASK_HASH[obfs];
     }
     
@@ -355,13 +355,13 @@ let onStart = function () {
     }
     
     const monsterType = function (card) {
-        return Df[card.race];
+        return Ef[card.race];
     }
     // U provides a map
     // (a.type & U[c]) => (Vf[U[c]])
     const monsterTypeMap = {};
-    for(let key in Vf) {
-        let value = Vf[key];
+    for(let key in Wf) {
+        let value = Wf[key];
         monsterTypeMap[value] = parseInt(key, 10);
     }
     window.monsterTypeMap = monsterTypeMap;
@@ -369,7 +369,7 @@ let onStart = function () {
     const allowedCount = function (card) {
         // card.A = the source id (e.g. for alt arts)
         // card.id = the actual id
-        return Uf(card.A || card.id);
+        return Vf(card.A || card.id);
     }
     const clearVisualSearchOptions = function () {
         return Z.Db();
@@ -401,6 +401,7 @@ let onStart = function () {
     const lastElement = function (arr) {
         return arr[arr.length - 1];
     }
+    const previewCard = Cc;
     
     // corresponds to EDIT_LOCATION where save was clicked
     // EXT.EDIT_API.SAVED_INDEX = 0;
@@ -485,7 +486,7 @@ let onStart = function () {
         }
         template.data("id", card.id);
         template.mouseover(function () {
-            Bc($(this).data("id"));
+            previewCard($(this).data("id"));
         });
         template.mousedown(function (a) {
             // left mouse - move card to tooltip
@@ -856,7 +857,7 @@ let onStart = function () {
                 d = $("<img>").css("margin-right", Z.ha[destination]).addClass("editor-card-small");
                 l(d, a);
                 d.mouseover(function() {
-                    Bc($(this).data("id"))
+                    previewCard($(this).data("id"));
                 });
                 d.mousedown(function(a) {
                     if (1 == a.which) {
