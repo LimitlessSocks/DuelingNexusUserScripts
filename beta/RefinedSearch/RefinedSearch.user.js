@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.7.5
+// @version      0.7.6
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -469,7 +469,7 @@ let onStart = function () {
             template.find(".template-def").text(card.i);
             // Df - object indexed by powers of 2 containg *type* information
             // card.race = type
-            template.find(".template-race").text(Df[card.race]);
+            template.find(".template-race").text(Ef[card.race]);
             // Ef - object indexed by powers of 2 containing *attribute* information
             // card.H = attribute
             template.find(".template-attribute").text(Ef[card.H]);
@@ -479,7 +479,7 @@ let onStart = function () {
             var types = [];
             for (let n of Object.values(U)) {
                 if(card.type & n) {
-                    types.push(Vf[n]);
+                    types.push(Wf[n]);
                 }
             }
             template.find(".template-types").text(types.join("|"));
