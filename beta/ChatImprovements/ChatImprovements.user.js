@@ -68,6 +68,10 @@ let onload = function () {
         margin: 3px;
     }
     
+    #ci-ext-event-log .interact-name {
+        cursor: pointer;
+    }
+    
     #ci-ext-log, #ci-ext-event-log {
         background: rgb(0, 0, 0);
         background: rgba(0, 0, 0, 0.7);
@@ -163,7 +167,9 @@ let onload = function () {
             if(id && card) {
                 let interactive = $("<span>")
                     .css("color", "white")
-                    .css("background-color", colorOfCard(card));
+                    .css("background-color", colorOfCard(card))
+                    .data("id", id)
+                    .addClass("interact-name");
                 interactive.hover(function () {
                     showCardInColumn(id);
                 });
@@ -181,8 +187,12 @@ let onload = function () {
             message.css("color", color);
         }
         gameChatContent.append(message);
-        let copy = message.clone();
+        let copy = message.clone(true);
         if(kind === "notified-event") {
+            $(".interact-name", copy).unbind().click(function () {
+                showCardInColumn($(this).data("id"));
+                showCardColumn.click();
+            });
             chatEventLog.append(copy);
         }
         else {
@@ -437,6 +447,7 @@ let onload = function () {
             status = "was removed from the field";
         }
         else {
+            // 0 from 4
             status = "- UNSURE!! " + move.currentLocation + " from " + move.previousLocation;
         }
         notifyEvent(cardName + " " + status);
@@ -462,7 +473,7 @@ let onload = function () {
         var a = $("#ci-ext-misc-sections").position().top;
         
         // originally: - 24
-        const offset = 24;
+        const offset = 20;
         $("#ci-ext-misc-sections div")
             .css("max-height", $(window).height() - a - offset);
         $("#game-siding-column")
@@ -505,31 +516,31 @@ let onload = function () {
         }
         let originalZ = a.a.css("z-index");
         a.a.css("z-index", 10000)
-           .css("animation", "fullScale " + (600 * B) + "ms");
+           .css("animation", "fullScale " + (600 * C) + "ms");
         a.a.animate({
             opacity: .5
         }, {
-            duration: 100 * B
+            duration: 100 * C
         }).animate({
             opacity: 1
         }, {
-            duration: 100 * B
+            duration: 100 * C
         }).animate({
             opacity: .5
         }, {
-            duration: 100 * B
+            duration: 100 * C
         }).animate({
             opacity: 1
         }, {
-            duration: 100 * B
+            duration: 100 * C
         }).animate({
             opacity: .5
         }, {
-            duration: 100 * B
+            duration: 100 * C
         }).animate({
             opacity: 1
         }, {
-            duration: 100 * B,
+            duration: 100 * C,
             complete: function () {
                 a.a.css("animation", "")
                    .css("z-index", originalZ);
@@ -599,6 +610,10 @@ let onload = function () {
     //
     let overlayExtension;
     $(".game-field-zone").on("mouseover", function (ev) {
+        $(this).animate({
+            "zoom": "200%",
+            duration: 500,
+        });
         let player = $(this).data("player");
         let location = $(this).data("location");
         let index = $(this).data("index");
@@ -628,6 +643,11 @@ let onload = function () {
         else {
             $(overlayExtension).hide();
         }
+    }).on("mouseout", function (ev) {
+        $(this).animate({
+            "zoom": "100%",
+            duration: 500,
+        });
     });
 };
 

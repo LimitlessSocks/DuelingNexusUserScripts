@@ -472,7 +472,7 @@ let onStart = function () {
             template.find(".template-race").text(Ef[card.race]);
             // Ef - object indexed by powers of 2 containing *attribute* information
             // card.H = attribute
-            template.find(".template-attribute").text(Ef[card.H]);
+            template.find(".template-attribute").text(Gf[card.H]);
         }
         else {
             template.find(".template-if-monster").remove();
