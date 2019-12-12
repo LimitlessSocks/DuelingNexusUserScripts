@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Chat Improvements Plugin
 // @namespace    https://duelingnexus.com/
-// @version      0.1
+// @version      0.2
 // @description  Adds various support for categorizing decks.
 // @author       Sock#3222
 // @grant        none
@@ -610,10 +610,6 @@ let onload = function () {
     //
     let overlayExtension;
     $(".game-field-zone").on("mouseover", function (ev) {
-        $(this).animate({
-            "zoom": "200%",
-            duration: 500,
-        });
         let player = $(this).data("player");
         let location = $(this).data("location");
         let index = $(this).data("index");
@@ -643,11 +639,6 @@ let onload = function () {
         else {
             $(overlayExtension).hide();
         }
-    }).on("mouseout", function (ev) {
-        $(this).animate({
-            "zoom": "100%",
-            duration: 500,
-        });
     });
 };
 
