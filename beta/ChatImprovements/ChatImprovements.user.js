@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Chat Improvements Plugin
 // @namespace    https://duelingnexus.com/
-// @version      0.2
+// @version      0.2.1
 // @description  Adds various support for categorizing decks.
 // @author       Sock#3222
 // @grant        none
@@ -473,7 +473,7 @@ let onload = function () {
         var a = $("#ci-ext-misc-sections").position().top;
         
         // originally: - 24
-        const offset = 20;
+        const offset = 37;
         $("#ci-ext-misc-sections div")
             .css("max-height", $(window).height() - a - offset);
         $("#game-siding-column")
