@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Chat Improvements Plugin
 // @namespace    https://duelingnexus.com/
-// @version      0.2.1
+// @version      0.2.3
 // @description  Adds various support for categorizing decks.
 // @author       Sock#3222
 // @grant        none
@@ -61,6 +61,9 @@ let onload = function () {
         overflow-x: hidden;
         overflow-y: auto;
         box-sizing: border-box;
+    }
+    #ci-ext-misc-sections > div:hover {
+        z-index: 10;
     }
     
     #ci-ext-log > p, #ci-ext-event-log > p {
@@ -248,7 +251,8 @@ let onload = function () {
                 message: message
             });
             message = unifyMessage("[" + Ib + "]: " + message);
-            if(4 > z) {
+            // TODO: assign each person a different color?
+            if(4 > A) {
                 displayMessage(message);
             }
             else {
