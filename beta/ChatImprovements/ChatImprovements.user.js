@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Chat Improvements Plugin
 // @namespace    https://duelingnexus.com/
-// @version      0.3.1
+// @version      0.3.2
 // @description  Adds various support for categorizing decks.
 // @author       Sock#3222
 // @grant        none
@@ -269,9 +269,87 @@ let onload = function () {
     // create sections
     let miscContainer = $("<div id=ci-ext-misc>");
     let miscSections = $("<div id=ci-ext-misc-sections>");
+    let optionsColumn = $("<div id=ci-ext-options>");
     let cardColumn = $("#card-column");
     let gameContainer = $("#game-container");
     gameContainer.prepend(miscContainer);
+    
+    class GameOption {
+        constructor(tag, option, type, info = {}) {
+            this.tag = tag;
+            this.type = type;
+            
+            if(this.type === "range") {
+                
+            }
+        }
+        
+        toElement() {
+            let base = $("<input>");
+        }
+    }
+    
+    // initialize options column
+    let optionsColumnInfo = [
+        [
+            new GameOption(
+                "Sounds volume",
+                "ci-ext-option-volume",
+                "sounds",
+                "range",
+                {
+                    min: 0, max: 100
+                }
+            ),
+            new GameOption(
+                "Music volume",
+                "music",
+                "range",
+                {
+                    min: 0,
+                    max: 100
+                }
+            ),
+            new GameOption(
+                "Animations speed",
+                "speed",
+                "range",
+                {
+                    min: 0,
+                    max: 100
+                }
+            ),
+        ],
+        [
+            new GameOption(
+                "Place monsters automatically",
+                "auto-place-monsters",
+                "checkbox"
+            ),
+            new GameOption(
+                "Place spells automatically",
+                "auto-place-spells",
+                "checkbox"
+            ),
+        ]
+    ];
+    
+    for(let stratum of optionsColumnInfo) {
+        for(let option of stratum) {
+            optionsColumn.append(option.toElement());
+        }
+    }
+    
+    /*.click(function() {
+                var a = $(this).data("option"),
+                b = $(this).val();
+                $("#options-" + a + "-value").text(b + "%");
+                f.options[a] = b;
+                f.save();
+                if(jd) {
+                    jd(a, b);
+                }
+            })*/
     
     let miscSectionButtons = $("<div id=ci-ext-misc-buttons>");
     
@@ -292,26 +370,36 @@ let onload = function () {
     let showCardColumn = $("<button id=ci-ext-show-card-column class=engine-button>Card Info</button>");
     let showChatLog = $("<button id=ci-ext-show-chat-log class=engine-button>Chat Log</button>");
     let showEventLog = $("<button id=ci-ext-show-event-log class=engine-button>Event Log</button>");
+    let showOptions = $("<button id=ci-ext-show-options class=engine-button>Options</button>");
     
     showCardColumn.click(hideMiscBut("card-column"));
     showChatLog.click(hideMiscBut("ci-ext-log"));
     showEventLog.click(hideMiscBut("ci-ext-event-log"));
+    showOptions.click(hideMiscBut("ci-ext-options"));
     
-    miscSectionButtons.append(showCardColumn, showChatLog, showEventLog);
+    miscSectionButtons.append(showCardColumn, showChatLog, showEventLog, showOptions);
     miscContainer.append(miscSectionButtons);
     
     cardColumn.detach();
     miscSections.append(cardColumn);
     miscSections.append(chatLog);
     miscSections.append(chatEventLog);
+    miscSections.append(optionsColumn);
+    
     showCardColumn.click();
+    
     miscContainer.append(miscSections);
     
+    
     // update ui
-    let minimizeToggle = $("<button class=engine-button title=minimize>&minus;</button>")
+    let minimizeToggle = $("<button class=engine-button title=  imize>&minus;</button>")
+        .data("toggled", false)
         .click(function () {
-            gameChatContent.toggle();
-            gameChatTextbox.toggle();
+            let toggled = $(this).data("toggled");
+            gameChatContent.toggle(toggled);
+            gameChatTextbox.toggle(toggled);
+            toggled = !toggled;
+            $(this).data("toggled", toggled);
         });
     
     let muteToggle = $("<button class=engine-button>Mute</button>")
@@ -400,7 +488,6 @@ let onload = function () {
             cardCodeToSkip = move.cardCode;
         }
         // sent to GY
-        console.log(GameLocations.GY);
         if(movedFromTo(move, GameLocations.XYZ_MATERIAL, GameLocations.GY) ||
            movedFromTo(move, GameLocations.XYZ_MATERIAL, GameLocations.BANISHED)) {
             status = "was detached as Xyz Material"
