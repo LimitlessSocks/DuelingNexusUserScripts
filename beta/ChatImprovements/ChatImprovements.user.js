@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Chat Improvements Plugin
 // @namespace    https://duelingnexus.com/
-// @version      0.2.3
+// @version      0.2.4
 // @description  Adds various support for categorizing decks.
 // @author       Sock#3222
 // @grant        none
@@ -91,6 +91,9 @@ let onload = function () {
         margin: 3px;
     }
     </style>`));
+    
+    // TODO: move chaining options on bottom right
+    // TODO: add hide options for sleeves/avatars
     
     // boilerplate
     const playSound = Q;
@@ -646,7 +649,7 @@ let onload = function () {
     });
 };
 
-waitForElementJQuery("#game-room-container:visible").then(() => {
+waitForElementJQuery("#game-room-container:visible, #game-field:visible").then(() => {
     onload();
 });
 // on-load stuff
