@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Chat Improvements Plugin
 // @namespace    https://duelingnexus.com/
-// @version      0.3
+// @version      0.3.1
 // @description  Adds various support for categorizing decks.
 // @author       Sock#3222
 // @grant        none
@@ -325,7 +325,7 @@ let onload = function () {
         .click(function () {
             notificationToggle.text(ChatImprovements.showEvents ? "Show events" : "Hide events");
             ChatImprovements.showEvents = !ChatImprovements.showEvents;
-            $(".notified-event").toggle(ChatImprovements.showEvents);
+            $("#game-chat-area .notified-event").toggle(ChatImprovements.showEvents);
         })
         .css("float", "right");
     // let 
