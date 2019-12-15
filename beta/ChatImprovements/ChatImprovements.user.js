@@ -1,12 +1,14 @@
 // ==UserScript==
 // @name         DuelingNexus Chat Improvements Plugin
 // @namespace    https://duelingnexus.com/
-// @version      0.2.4
+// @version      0.3
 // @description  Adds various support for categorizing decks.
 // @author       Sock#3222
 // @grant        none
 // @match        https://duelingnexus.com/game/*
 // ==/UserScript==
+
+// TODO: add github link
 
 let makeReadOnly = function (obj, prop) {
     let val = obj[prop];
@@ -305,7 +307,6 @@ let onload = function () {
     showCardColumn.click();
     miscContainer.append(miscSections);
     
-    /*
     // update ui
     let minimizeToggle = $("<button class=engine-button title=minimize>&minus;</button>")
         .click(function () {
@@ -330,8 +331,7 @@ let onload = function () {
     // let 
     gameChatArea.prepend(
         minimizeToggle, muteToggle, notificationToggle
-    )
-    */
+    );
     
     // listeners[type] = [...];
     let listeners = {};
