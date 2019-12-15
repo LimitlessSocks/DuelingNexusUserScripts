@@ -6,6 +6,8 @@
 // @author       Sock#3222
 // @grant        none
 // @match        https://duelingnexus.com/game/*
+// @updateURL   https://raw.githubusercontent.com/LimitlessSocks/DuelingNexusUserScripts/master/beta/ChatImprovements/ChatImprovements.user.js
+// @downloadURL https://raw.githubusercontent.com/LimitlessSocks/DuelingNexusUserScripts/master/beta/ChatImprovements/ChatImprovements.user.js
 // ==/UserScript==
 
 // TODO: add github link
