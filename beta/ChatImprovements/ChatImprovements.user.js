@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Chat Improvements Plugin
 // @namespace    https://duelingnexus.com/
-// @version      0.3.3
+// @version      0.3.4
 // @description  Adds various support for categorizing decks.
 // @author       Sock#3222
 // @grant        none
@@ -119,8 +119,8 @@ let onload = function () {
     const SECONDS = 1000;
     
     const monsterTypeMap = {};
-    for(let key in Vf) {
-        let value = Vf[key];
+    for(let key in Wf) {
+        let value = Wf[key];
         monsterTypeMap[value] = parseInt(key, 10);
     }
     window.monsterTypeMap = monsterTypeMap;
