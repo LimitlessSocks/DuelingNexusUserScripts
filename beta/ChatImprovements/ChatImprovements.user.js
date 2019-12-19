@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Chat Improvements Plugin
 // @namespace    https://duelingnexus.com/
-// @version      0.3.4
+// @version      0.4
 // @description  Adds various support for categorizing decks.
 // @author       Sock#3222
 // @grant        none
@@ -26,9 +26,81 @@ let makeReadOnly = function (obj, prop) {
 
 let ChatImprovements = {
     log: [],
+    storage: {
+        _cache: null,
+        get: null,
+        set: null,
+    },
+    // playSounds
+    // showEvents
+};
+
+const LOCAL_STORAGE_KEY = "ChatImprovementsCache";
+
+let updateLocalStorage = function () {
+    let json = JSON.stringify(ChatImprovements.storage._cache);
+    localStorage.setItem("ChatImprovementsCache", json);
+};
+
+let checkCache = function () {
+    if(ChatImprovements.storage._cache) {
+        return;
+    }
+    
+    let localCopy;
+    try {
+        localCopy = localStorage.getItem(LOCAL_STORAGE_KEY);
+        localCopy = JSON.parse(localCopy)
+    }
+    catch(e) {
+        console.error("Error parsing local copy:", localCopy);
+    }
+    
+    ChatImprovements.storage._cache = localCopy || {};
+    
+    updateLocalStorage();
+};
+
+ChatImprovements.storage.set = function (item, value) {
+    checkCache();
+    
+    ChatImprovements.storage._cache[item] = value;
+    
+    updateLocalStorage();
+    
+    return value;
+};
+
+ChatImprovements.storage.get = function (item) {
+    checkCache();
+    
+    return ChatImprovements.storage._cache[item];
+};
+
+// standard getter/setter properties
+
+let defaultProperties = {
     playSounds: true,
     showEvents: true,
 };
+
+for(let [prop, defaultValue] of Object.entries(defaultProperties)) {
+    // define if unset (inital run)
+    if(typeof ChatImprovements.storage.get(prop) === "undefined") {
+        ChatImprovements.storage.set(prop, defaultValue);
+    }
+    
+    // getter & setter
+    Object.defineProperty(ChatImprovements, prop, {
+        get: function () {
+            return ChatImprovements.storage.get(prop);
+        },
+        set: function (value) {
+            return ChatImprovements.storage.set(prop, value);
+        },
+    });
+}
+
 makeReadOnly(ChatImprovements, "log");
 window.ChatImprovements = ChatImprovements;
 
@@ -404,7 +476,7 @@ let onload = function () {
     
     
     // update ui
-    let minimizeToggle = $("<button class=engine-button title=  imize>&minus;</button>")
+    let minimizeToggle = $("<button class=engine-button title=minimize>&minus;</button>")
         .data("toggled", false)
         .click(function () {
             let toggled = $(this).data("toggled");
@@ -414,20 +486,33 @@ let onload = function () {
             $(this).data("toggled", toggled);
         });
     
-    let muteToggle = $("<button class=engine-button>Mute</button>")
+    let updateMuteToggleText;
+    let muteToggle = $("<button class=engine-button></button>")
         .click(function () {
-            muteToggle.text(ChatImprovements.playSounds ? "Unmute" : "Mute");
             ChatImprovements.playSounds = !ChatImprovements.playSounds;
+            updateMuteToggleText();
         })
         .css("float", "right");
+        
+    updateMuteToggleText = function () {
+        muteToggle.text(ChatImprovements.playSounds ? "Unmute" : "Mute");
+    };
+    updateMuteToggleText();
     
-    let notificationToggle = $("<button class=engine-button>Hide events</button>")
+    let updateNotificationToggleText;
+    let notificationToggle = $("<button class=engine-button></button>")
         .click(function () {
-            notificationToggle.text(ChatImprovements.showEvents ? "Show events" : "Hide events");
             ChatImprovements.showEvents = !ChatImprovements.showEvents;
+            updateNotificationToggleText();
             $("#game-chat-area .notified-event").toggle(ChatImprovements.showEvents);
         })
         .css("float", "right");
+    
+    updateNotificationToggleText = function () {
+        notificationToggle.text(ChatImprovements.showEvents ? "Hide events" : "Show events");
+    };
+    updateNotificationToggleText();
+    
     // let 
     gameChatArea.prepend(
         minimizeToggle, muteToggle, notificationToggle
