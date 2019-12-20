@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Chat Improvements Plugin
 // @namespace    https://duelingnexus.com/
-// @version      0.4
+// @version      0.4.1
 // @description  Adds various support for categorizing decks.
 // @author       Sock#3222
 // @grant        none
@@ -495,7 +495,7 @@ let onload = function () {
         .css("float", "right");
         
     updateMuteToggleText = function () {
-        muteToggle.text(ChatImprovements.playSounds ? "Unmute" : "Mute");
+        muteToggle.text(ChatImprovements.playSounds ? "Mute" : "Unmute");
     };
     updateMuteToggleText();
     
