@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Dueling Nexus Notification System
 // @namespace    https://duelingnexus.com/
-// @version      0.1
+// @version      0.2
 // @description  Gives desktop notifications for joining matches.
 // @author       Sock#3222
 // @grant        none
@@ -15,6 +15,7 @@
 // @include      https://duelingnexus.com/donate
 // @include      https://duelingnexus.com/leaderboard
 // @include      https://duelingnexus.com/login
+// @include      https://duelingnexus.com/game/*
 // ==/UserScript==
 
 let waitFrame = function () {
@@ -38,21 +39,55 @@ const waitForNoElement = async function (selector, source = document.body) {
     return;
 };
 
+let formatTime = function(time) {
+    let result = "";
+    result += [time.getMonth() + 1, time.getDate(), time.getFullYear()].join("/");
+    result += " ";
+    result += [time.getHours(), time.getMinutes(), time.getSeconds()].map(e => e.toString().padStart(2, "0")).join(":");
+    return result;
+};
+
 const loadNotifications = function () {
+    /* duel ready notifications */
+    launchDuelReadyNotifications();
+    
+    
+    /* lobby notifications */
+    // NOTE: Might break.
+    window.zd = function zd(a) {
+        B[a.position] = {
+            name: a.name,
+            na: Number(a.avatar),
+            ba: a.customAvatarPath,
+            oa: a.customSleevePath,
+            ready: false
+        };
+        $("#game-room-player" + (a.position + 1) + "-username").text(a.name);
+        if(a.name !== Ib) {
+            let message = "Player \"" + a.name + "\" has joined the lobby.";
+            let notif = new Notification(message);
+            setTimeout(notif.close.bind(notif), 4000);
+        }
+        Ke();
+    };
+};
+
+const launchDuelReadyNotifications = function () {
     // might break easily
     const duelAreaReadyElement = "#duel-area button.bigger-button";
     
     waitForElement(duelAreaReadyElement).then(function (button) {
-        console.info("Match found!");
+        console.info("Match found! " + formatTime(new Date()));
         let notif = new Notification("Your match is ready!");
         let closeNotif = notif.close.bind(notif);
         button.addEventListener("click", closeNotif);
         // may be necessary to remove that listener
         waitForNoElement(duelAreaReadyElement).then(function () {
             closeNotif();
-            loadNotifications();
+            launchDuelReadyNotifications();
         });
     });
+    
 };
 
 console.info = console.info || console.log;

@@ -14,8 +14,8 @@ function ca(a) {
         d = b[c];
         a = a(d);
         a != d && null != a && aa(b, c, {
-            configurable: !0,
-            writable: !0,
+            configurable: true,
+            writable: true,
             value: a
         })
     }
@@ -36,7 +36,7 @@ ca(function(a) {
         return a
     }
 });
-var da = !1,
+var da = false,
     ea, f, fa, ha;
 
 function ia(a) {
@@ -62,13 +62,13 @@ function qa(a) {
 
 function pa(a) {
     function b() {
-        c || (c = !0, a())
+        c || (c = true, a())
     }
-    var c = !1,
+    var c = false,
         d = new Image;
     d.onload = b;
     d.onerror = function() {
-        c || (da = c = !0, a())
+        c || (da = c = true, a())
     };
     d.src = ra(89631139);
     d.complete && b()
@@ -109,27 +109,27 @@ var m = [],
     r = [0, 0],
     za = -1,
     Aa = -1,
-    Ba = !1,
-    t = !1,
-    Ca = !1,
-    Da = !1,
-    Ea = !1,
-    Fa = !1,
-    Ga = !1,
+    Ba = false,
+    t = false,
+    Ca = false,
+    Da = false,
+    Ea = false,
+    Fa = false,
+    Ga = false,
     Ha = {},
     Ia = {},
-    Ja = !1,
-    Ka = !1,
-    La = !1,
-    Ma = !1,
-    Na = !1,
-    Oa = !1,
-    Pa = !1,
+    Ja = false,
+    Ka = false,
+    La = false,
+    Ma = false,
+    Na = false,
+    Oa = false,
+    Pa = false,
     Qa = null,
     Ra = -1,
     Sa = -1,
-    Ta = !1,
-    Ua = !1,
+    Ta = false,
+    Ua = false,
     Va = [],
     u = [],
     Wa = [],
@@ -145,30 +145,30 @@ var m = [],
     cb = -1,
     db = -1,
     eb = -1,
-    gb = !1,
+    gb = false,
     hb = -1,
     ib = -1,
     jb = [],
     kb = 0,
     lb = [],
     mb = 0,
-    nb = !1,
-    z = !1,
+    nb = false,
+    z = false,
     A = 0,
     B = [],
     ob = -1,
     pb = null,
     qb = null,
     rb = [],
-    sb = !1,
+    sb = false,
     C = 1,
     tb = [],
     ub, D, vb, wb, xb, yb, zb, Ab, Bb, Cb, Db, E, Eb, G, Fb, Gb, Hb, Ib, Jb, H, Kb, I, Lb, J, Mb, Nb, Ob, Pb, Qb, Rb;
 
 function Sb() {
-    ub ? Tb() : (ub = !0, Ub(), m.push(new Vb("player")), m.push(new Vb("opponent")), $(window).resize(Wb), Wb(), $("#game-navbar").remove(), $(window.document).contextmenu(function() {
+    ub ? Tb() : (ub = true, Ub(), m.push(new Vb("player")), m.push(new Vb("opponent")), $(window).resize(Wb), Wb(), $("#game-navbar").remove(), $(window.document).contextmenu(function() {
             Xb();
-            return !1
+            return false
         }), $("#game-cancel-button").click(function() {
             Xb()
         }), $(".game-field-zone").mouseenter(function() {
@@ -189,7 +189,7 @@ function Sb() {
             $b(a, b, c)
         }), $("#game-surrender-button").click(function() {
             ac();
-            Nb || (Nb = !0, K({
+            Nb || (Nb = true, K({
                 type: "Surrender"
             }))
         }), n = {}, n[L.ia] = $("#game-dp-button"), n[L.ka] = $("#game-sp-button"), n[L.ja] = $("#game-mp1-button"), n[L.J] = $("#game-bp-button"), n[L.X] = $("#game-mp2-button"), n[L.R] = $("#game-ep-button"), n[L.J].click(function() {
@@ -203,22 +203,22 @@ function Sb() {
             ac()
         }), $("#game-action-view").click(function() {
             ac();
-            fc(m[D.controller].c[D.location], !0);
-            vb = !0
+            fc(m[D.controller].c[D.location], true);
+            vb = true
         }), $("#game-action-view-materials").click(function() {
             ac();
-            fc(D.l, !0);
-            vb = !0
+            fc(D.l, true);
+            vb = true
         }), $("#game-action-summon").click(function() {
             M(gc, Va.indexOf(D));
             N()
         }), $("#game-action-sp-summon").click(function() {
             if (D.location ===
                 O.f || D.location === O.h || D.location === O.v || D.location === O.u) {
-                Ka = !0;
+                Ka = true;
                 for (var a = [], b = 0; b < u.length; ++b) u[b].location === D.location && a.push(u[b]);
                 ac();
-                fc(a, !0)
+                fc(a, true)
             } else M(hc, u.indexOf(D)), N()
         }), $("#game-action-repos").click(function() {
             M(ic, Wa.indexOf(D));
@@ -232,10 +232,10 @@ function Sb() {
         }), $("#game-action-activate").click(function() {
             if (D.location === O.f || D.location === O.h || D.location === O.v || D.location ===
                 O.u) {
-                La = !0;
+                La = true;
                 for (var a = [], b = 0; b < v.length; ++b) v[b].location === D.location && a.push(v[b]);
                 ac();
-                fc(a, !0)
+                fc(a, true)
             } else ac(), lc(D)
         }), $("#game-action-attack").click(function() {
             M(mc, $a.indexOf(D));
@@ -258,8 +258,8 @@ function Sb() {
         }), $("#game-yesno-no-button").click(function() {
             P(Ja ? -1 : 0);
             N()
-        }), $("#game-announce-card-text").on("input", sc), $("#game-timer-bar-player").hide(), $("#game-timer-player").hide(), $("#game-timer-bar-opponent").hide(), $("#game-timer-opponent").hide(), wb = new Audio(h("musics/14-seal-of-orichalcos.mp3")), wb.loop = !0, tc("music"), $("#game-field").on("dragstart", function() {
-            return !1
+        }), $("#game-announce-card-text").on("input", sc), $("#game-timer-bar-player").hide(), $("#game-timer-player").hide(), $("#game-timer-bar-opponent").hide(), $("#game-timer-opponent").hide(), wb = new Audio(h("musics/14-seal-of-orichalcos.mp3")), wb.loop = true, tc("music"), $("#game-field").on("dragstart", function() {
+            return false
         }), $("#game-force-chain-button").click(function() {
             mb = (mb + 1) % 3;
             0 === mb ? $("#game-force-chain-button").text("Chaining: Auto").removeClass("engine-button-success").removeClass("engine-button-danger").addClass("engine-button-default") :
@@ -283,9 +283,9 @@ function Q(a) {
 function xc(a, b) {
     if (0 >= a) b();
     else {
-        var c = !1,
+        var c = false,
             d = function() {
-                c || (c = !0, b())
+                c || (c = true, b())
             },
             e = new Image;
         e.onload = d;
@@ -319,13 +319,13 @@ function vc() {
 
 function Xb() {
     if (!R())
-        if (Ka || La) Ka = La = Ma = !1, $("#game-selection-list").empty(), $("#game-selection-window").hide();
-        else if (Na) Na = !1, $("#game-option-list").empty(), $("#game-option-window").hide();
+        if (Ka || La) Ka = La = Ma = false, $("#game-selection-list").empty(), $("#game-selection-window").hide();
+        else if (Na) Na = false, $("#game-option-list").empty(), $("#game-option-window").hide();
     else if (Ea) {
         if (Ga || Fa) P(-1), N()
     } else if (t) {
-        var a = !1;
-        !Oa && Ac() ? a = !1 : Fa && (P(-1), a = !0);
+        var a = false;
+        !Oa && Ac() ? a = false : Fa && (P(-1), a = true);
         a && N()
     } else Oa && Fa && (P(-1), N())
 }
@@ -473,7 +473,7 @@ function lc(a) {
         index: c,
         qa: Za[c]
     }); while (-1 !== c);
-    1 == b.length ? (M(p === L.J ? Tc : Uc, v.indexOf(a)), N()) : 1 < b.length && (Na = !0, Vc(b, !0, !0))
+    1 == b.length ? (M(p === L.J ? Tc : Uc, v.indexOf(a)), N()) : 1 < b.length && (Na = true, Vc(b, true, true))
 }
 
 function Ac() {
@@ -481,14 +481,14 @@ function Ac() {
         if (-1 !== eb) {
             if (Wc()) {
                 Xc();
-                var a = !0
-            } else a = !1;
+                var a = true
+            } else a = false;
             return a
         }
         a = Rc();
-        if (a >= cb && a <= db) return Ja ? Sc(y[0]) : (Xc(), N()), !0
+        if (a >= cb && a <= db) return Ja ? Sc(y[0]) : (Xc(), N()), true
     }
-    return !1
+    return false
 }
 
 function Rc() {
@@ -507,7 +507,7 @@ function Sc(a) {
             index: c,
             qa: Za[c]
         }); while (-1 !== c);
-        1 === b.length ? (P(x.indexOf(a)), N()) : 1 < b.length && (Na = !0, Vc(b, !0, !0))
+        1 === b.length ? (P(x.indexOf(a)), N()) : 1 < b.length && (Na = true, Vc(b, true, true))
     } else P(x.indexOf(a)), N()
 }
 
@@ -539,16 +539,16 @@ function Wc() {
         d = bb.length,
         e = [];
     if (0 < db) {
-        if (a < b + d || a > c + d) return !1;
+        if (a < b + d || a > c + d) return false;
         b = [];
         for (c = 0; c < d; ++c) b[c] = bb[c].I;
         for (c = d; c < a; ++c) {
             var g = x.indexOf(y[c]);
-            if (0 > g || e[g]) return !1;
-            e[g] = !0;
+            if (0 > g || e[g]) return false;
+            e[g] = true;
             b[c] = x[g].I
         }
-        return Yc(b, a, 0, eb) ? !0 : !1
+        return Yc(b, a, 0, eb) ? true : false
     }
     c = b = 0;
     g = 2147483647;
@@ -563,8 +563,8 @@ function Wc() {
     }
     for (; d < a; ++d) {
         k = x.indexOf(y[d]);
-        if (0 > k || e[k]) return !1;
-        e[k] = !0;
+        if (0 > k || e[k]) return false;
+        e[k] = true;
         F = x[k].I;
         k = F & 65535;
         F >>= 16;
@@ -574,11 +574,11 @@ function Wc() {
         w < g && (g = w)
     }
     return c < eb || b - g >= eb ?
-        !1 : !0
+        false : true
 }
 
 function Yc(a, b, c, d) {
-    if (0 == d || c == b) return !1;
+    if (0 == d || c == b) return false;
     var e = a[c] & 65535,
         g = a[c] >> 16;
     return c == b - 1 ? d == e || d == g : d > e && Yc(a, b, c + 1, d - e) || 0 < g && d > g && Yc(a, b, c + 1, d - g)
@@ -656,8 +656,8 @@ function cd() {
     hd("sounds", 0, 100, 50);
     hd("music", 0, 100, 20);
     hd("speed", 20, 300, 100);
-    id("auto-place-monsters", !1);
-    id("auto-place-spells", !0);
+    id("auto-place-monsters", false);
+    id("auto-place-spells", true);
     f.save();
     tc("sounds");
     tc("speed");
@@ -672,13 +672,13 @@ function cd() {
             deckId: ob
         }), K({
             type: "RoomReadyChange",
-            isReady: !0
+            isReady: true
         }))
     });
     $("#game-ready-button").click(function() {
         K({
             type: "RoomReadyChange",
-            isReady: !1
+            isReady: false
         })
     });
     $("#game-start-button").click(function() {
@@ -754,7 +754,7 @@ function od() {
     G = new WebSocket("wss://" + window.Host + "/gameserver/");
     G.onopen = function() {
         $("#game-loading-text").text("Connected, authenticating...");
-        Ta = !0;
+        Ta = true;
         K({
             type: "Authenticate",
             token: window.GameInfo.token
@@ -762,7 +762,7 @@ function od() {
     };
     G.onclose = function() {
         G = null;
-        Ta && (Ta = !1, N(), pd("Error!", "You have been disconnected from the server."), $("#game-chat-textbox").remove())
+        Ta && (Ta = false, N(), pd("Error!", "You have been disconnected from the server."), $("#game-chat-textbox").remove())
     };
     G.onerror = function() {
         $("#game-loading-text").text("Could not connect to the server. Please check your internet connection or try again later.")
@@ -809,8 +809,8 @@ function rd(a) {
 function sd() {}
 
 function W() {
-    sb = !0;
-    if (0 === rb.length) sb = !1;
+    sb = true;
+    if (0 === rb.length) sb = false;
     else {
         t && N();
         var a = rb.shift();
@@ -884,7 +884,7 @@ function W() {
             GameAnnounceNumber: Ie,
             GameAnnounceCard: Je
         });
-        Ba && "TimeLimit" !== a.type && (Ba = !1, $("#game-waiting-window").hide());
+        Ba && "TimeLimit" !== a.type && (Ba = false, $("#game-waiting-window").hide());
         tb.push(a);
         10 < tb.length && tb.splice(0, 1);
         var b = Gb[a.type];
@@ -1017,10 +1017,10 @@ function zd(a) {
         na: Number(a.avatar),
         ba: a.customAvatarPath,
         oa: a.customSleevePath,
-        ready: !1
+        ready: false
     };
     $("#game-room-player" + (a.position + 1) + "-username").text(a.name);
-    Ke()
+    Ke();
 }
 
 function Ad(a) {
@@ -1041,9 +1041,9 @@ function Bd(a) {
     a: {
         for (a = 0; a < B.length; ++a)
             if (!B[a] || !B[a].ready) {
-                a = !1;
+                a = false;
                 break a
-            } a = !0
+            } a = true
     }
     a ? $("#game-start-button").removeClass("engine-button-disabled") : $("#game-start-button").addClass("engine-button-disabled")
 }
@@ -1054,7 +1054,7 @@ function Cd() {
         $("#game-siding-column-2").hide();
         $("#game-container").hide();
         $("#game-column").show();
-        zb = !1;
+        zb = false;
         for (var a = ["main", "extra", "side"], b = 0; b < a.length; ++b) {
             for (var c = a[b], d = 0; d < I[c].length; ++d) I[c][d].remove();
             I[c] = []
@@ -1077,7 +1077,7 @@ function Pe() {
 }
 
 function Ed() {
-    Jb ? ($("#game-rps-rock").show(), $("#game-rps-paper").show(), $("#game-rps-scissors").show()) : (Jb = !0, $("#game-rps-container").show(), $("#game-rps-first").hide(), $("#game-rps-second").hide(), $("#game-rps-rock").click(function() {
+    Jb ? ($("#game-rps-rock").show(), $("#game-rps-paper").show(), $("#game-rps-scissors").show()) : (Jb = true, $("#game-rps-container").show(), $("#game-rps-first").hide(), $("#game-rps-second").hide(), $("#game-rps-rock").click(function() {
         Qe();
         Re(2)
     }), $("#game-rps-paper").click(function() {
@@ -1090,7 +1090,7 @@ function Ed() {
 }
 
 function Fd(a) {
-    Jb || (Jb = !0, $("#game-rps-container").show(), $("#game-rps-first").hide(), $("#game-rps-second").hide());
+    Jb || (Jb = true, $("#game-rps-container").show(), $("#game-rps-first").hide(), $("#game-rps-second").hide());
     Qe();
     var b = h("images/scissors.png");
     2 === a.move ? b = h("images/rock.png") : 3 === a.move && (b = h("images/paper.png"));
@@ -1103,7 +1103,7 @@ function Fd(a) {
         $("#game-rps-result").hide();
         W()
     }, 1500);
-    return !0
+    return true
 }
 
 function Gd() {
@@ -1114,10 +1114,10 @@ function Gd() {
     $("#game-rps-first").show();
     $("#game-rps-second").show();
     $("#game-rps-first").click(function() {
-        Se(!0)
+        Se(true)
     });
     $("#game-rps-second").click(function() {
-        Se(!1)
+        Se(false)
     })
 }
 
@@ -1146,8 +1146,8 @@ function Hd(a) {
 }
 
 function Id(a) {
-    zb = !0;
-    Ua = !1;
+    zb = true;
+    Ua = false;
     H = {
         main: a.main,
         extra: a.extra,
@@ -1190,8 +1190,8 @@ function Te() {
     Ue("extra");
     Ue("side");
     $c();
-    Mb || (Mb = !0, $(window).on("mouseup", function(a) {
-        if (1 === a.which && J) return Ve(), !1
+    Mb || (Mb = true, $(window).on("mouseup", function(a) {
+        if (1 === a.which && J) return Ve(), false
     }))
 }
 
@@ -1204,7 +1204,7 @@ function Ue(a) {
             a = J.data("id");
             var b = $(this).data("location");
             Xe(a, b) ? (We(a, b, -1), J && (J.remove(), J = null), Ye()) : Ve();
-            return !1
+            return false
         }
     })
 }
@@ -1220,10 +1220,10 @@ function Ye() {
 
 function Xe(a, b) {
     a = X[a];
-    if (a.type & U.U) return !1;
-    var c = !1;
-    if (a.type & U.S || a.type & U.T || a.type & U.G || a.type & U.C) c = !0;
-    return c && "main" === b || !c && "extra" === b || I[b].length >= ("main" === b ? 64 : 18) ? !1 : !0
+    if (a.type & U.U) return false;
+    var c = false;
+    if (a.type & U.S || a.type & U.T || a.type & U.G || a.type & U.C) c = true;
+    return c && "main" === b || !c && "extra" === b || I[b].length >= ("main" === b ? 64 : 18) ? false : true
 }
 
 function We(a, b, c) {
@@ -1250,9 +1250,9 @@ function We(a, b, c) {
             J.appendTo($("body"));
             uc();
             Ye();
-            return !1
+            return false
         }
-        if (3 == a.which) return !1
+        if (3 == a.which) return false
     });
     k.mouseup(function(a) {
         if (1 == a.which && J) {
@@ -1260,19 +1260,19 @@ function We(a, b, c) {
             var b = $(this).data("location"),
                 c = $(this).parent().children().index($(this));
             Xe(a, b) ? (We(a, b, c), J && (J.remove(), J = null), Ye()) : Ve();
-            return !1
+            return false
         }
     });
     k.on("contextmenu", function() {
-        if (null !== J) return !1;
+        if (null !== J) return false;
         var a = $(this).data("id"),
             b = $(this).data("location"),
             c = X[a],
-            d = !1;
-        if (c.type & U.S || c.type & U.T || c.type & U.G || c.type & U.C) d = !0;
+            d = false;
+        if (c.type & U.S || c.type & U.T || c.type & U.G || c.type & U.C) d = true;
         c = "side" === b ? d ? "extra" : "main" : "side";
         Xe(a, c) && (d = $(this).parent().children().index($(this)), Ze(b, d), We(a, c, -1), Ye());
-        return !1
+        return false
     });
     k.data("id", a);
     k.data("alias", d.A);
@@ -1312,7 +1312,7 @@ function $e(a) {
 }
 
 function Kd(a) {
-    Nb = !1;
+    Nb = false;
     $("#game-rps-container").hide();
     $("#game-container").show();
     $("#game-menu-container").show();
@@ -1336,7 +1336,7 @@ function Ld(a) {
     yc(a.cards, function() {
         bf(a)
     });
-    return !0
+    return true
 }
 
 function bf(a) {
@@ -1346,8 +1346,8 @@ function bf(a) {
             Q("draw");
             var d = T(a.player, O.f, -1);
             cf(d);
-            m[d.controller].P(d, !0);
-            S(d, a.player, O.j, -1, !0);
+            m[d.controller].P(d, true);
+            S(d, a.player, O.j, -1, true);
             df(d, a.cards[c], d.position, 200 * C, function() {
                 b(c + 1)
             })
@@ -1390,18 +1390,18 @@ function ef(a) {
 function Od(a) {
     Q("next-turn");
     ef(0 == a.player ? "Your turn" : "Opponent turn");
-    return !0
+    return true
 }
 
 function Pd(a) {
-    if (p !== a.phase) return -1 !== p && n[p] && n[p].removeClass("engine-button-success").addClass("engine-button-default"), p = a.phase, n[p] && n[p].addClass("engine-button-default").addClass("engine-button-success"), Q("next-phase"), (a = ff[p]) && ef(a), !0
+    if (p !== a.phase) return -1 !== p && n[p] && n[p].removeClass("engine-button-success").addClass("engine-button-default"), p = a.phase, n[p] && n[p].addClass("engine-button-default").addClass("engine-button-success"), Q("next-phase"), (a = ff[p]) && ef(a), true
 }
 
 function Qd(a) {
     xc(a.cardCode, function() {
         gf(a)
     });
-    return !0
+    return true
 }
 
 function gf(a) {
@@ -1413,7 +1413,7 @@ function gf(a) {
         m[b.controller].P(b, void 0);
         W()
     })) : (b = T(a.previousController, a.previousLocation, a.previousSequence, a.previousPosition), a.previousLocation & O.da && a.previousLocation != a.currentLocation && (b.F = {}), cf(b), m[b.controller].P(b,
-        !0), S(b, a.currentController, a.currentLocation, a.currentSequence, !0), df(b, a.cardCode, a.currentPosition, 300 * C, W))
+        true), S(b, a.currentController, a.currentLocation, a.currentSequence, true), df(b, a.cardCode, a.currentPosition, 300 * C, W))
 }
 
 function Rd(a) {
@@ -1422,7 +1422,7 @@ function Rd(a) {
         cf(b);
         df(b, a.cardCode, a.currentPosition, 250 * C, W)
     });
-    return !0
+    return true
 }
 
 function Sd(a) {
@@ -1440,7 +1440,7 @@ function Ud(a) {
         Q("summon");
         kf(a.cardCode)
     });
-    return !0
+    return true
 }
 
 function Vd(a) {
@@ -1448,7 +1448,7 @@ function Vd(a) {
         Q("summon-special");
         kf(a.cardCode)
     });
-    return !0
+    return true
 }
 
 function Wd(a) {
@@ -1456,7 +1456,7 @@ function Wd(a) {
         Q("summon-flip");
         kf(a.cardCode)
     });
-    return !0
+    return true
 }
 
 function Xd(a) {
@@ -1464,7 +1464,7 @@ function Xd(a) {
         Q("activate");
         kf(a.cardCode)
     });
-    return !0
+    return true
 }
 
 function kf(a) {
@@ -1536,7 +1536,7 @@ function Yd(a) {
     af();
     Q("life-damage");
     lf(a.player, -a.amount);
-    return !0
+    return true
 }
 
 function Zd(a) {
@@ -1544,7 +1544,7 @@ function Zd(a) {
     af();
     Q("life-recover");
     lf(a.player, a.amount);
-    return !0
+    return true
 }
 
 function $d(a) {
@@ -1583,7 +1583,7 @@ function be(a) {
             W()
         }
     });
-    return !0
+    return true
 }
 
 function ce() {}
@@ -1627,16 +1627,16 @@ function ee(a) {
     yc(a.extraCodes.concat(a.handCodes), function() {
         of (a)
     });
-    return !0
+    return true
 }
 
 function of (a) {
     var b = a.player;
     qb[b] = 1 - qb[b];
     ad();
-    pf(m[b], O.f, !0);
-    pf(m[b], O.h, !0);
-    pf(m[b], O.j, !0);
+    pf(m[b], O.f, true);
+    pf(m[b], O.h, true);
+    pf(m[b], O.j, true);
     setTimeout(function() {
         for (var c = 0; c < a.deckSize; ++c) S(new Y, b, O.f, -1);
         for (c = 0; c < a.extraSize; ++c) S(new Y(a.extraCodes[c]), b, O.h, -1);
@@ -1646,16 +1646,16 @@ function of (a) {
 }
 
 function ge() {
-    Ba = !0;
+    Ba = true;
     z ? $("#game-waiting-text").text("Waiting for a player...") : Eb ? $("#game-waiting-text").text("Waiting for another player...") : $("#game-waiting-text").text("Waiting for the opponent...");
     $("#game-waiting-window").show()
 }
 
 function Jd() {
-    Ua = !1;
+    Ua = false;
     $("#game-end-window").hide();
     $("#game-end-button").hide();
-    Ba = !0;
+    Ba = true;
     $("#game-waiting-text").text("Waiting for the players to side...");
     $("#game-waiting-window").show()
 }
@@ -1675,13 +1675,13 @@ function ie(a) {
         }
     }
     b(0);
-    return !0
+    return true
 }
 
 function je(a) {
     var b = "No winner.";
     0 === a.player ? b = "You win!" : 1 === a.player && (b = "You lose!");
-    Ua = !1;
+    Ua = false;
     pd(b, "Reason: " + rf[a.reason])
 }
 
@@ -1692,44 +1692,44 @@ function re() {
 
 function pd(a, b) {
     N();
-    Ua || (Ua = !0, $("#game-end-title").text(a), $("#game-end-text").text(b), $("#game-end-button").hide(), $("#game-end-window").show())
+    Ua || (Ua = true, $("#game-end-title").text(a), $("#game-end-text").text(b), $("#game-end-button").hide(), $("#game-end-window").show())
 }
 
 function kd(a, b) {
-    Ob || (Ob = !0, $("#game-alert-title").text(a), $("#game-alert-text").html(b), $("#game-alert-window").show(), $("#game-alert-darkener").show())
+    Ob || (Ob = true, $("#game-alert-title").text(a), $("#game-alert-text").html(b), $("#game-alert-window").show(), $("#game-alert-darkener").show())
 }
 
 function md() {
-    Ob && (Ob = !1, $("#game-alert-window").hide(), $("#game-alert-darkener").hide())
+    Ob && (Ob = false, $("#game-alert-window").hide(), $("#game-alert-darkener").hide())
 }
 
 function ke(a) {
     Q("coin-flip");
     for (var b = ta("Coin", a.coins.length) + " landed on:<br>", c = 0; c < a.coins.length; ++c) 0 !== c && (b += ", "), b += sf[a.coins[c] ? 60 : 61];
     tf(b, 1500 * C, W);
-    return !0
+    return true
 }
 
 function le(a) {
     Q("dice-roll");
     for (var b = (1 == a.dice.length ? "Die" : "Dice") + " landed on:<br>", c = 0; c < a.dice.length; ++c) 0 !== c && (b += ", "), b += "[" + a.dice[c] + "]";
     tf(b, 1500 * C, W);
-    return !0
+    return true
 }
 
 function me(a) {
-    return uf(a, !1)
+    return uf(a, false)
 }
 
 function ne(a) {
-    return uf(a, !0)
+    return uf(a, true)
 }
 
 function oe(a) {
     zc(a.cards, function() {
         vf(a)
     });
-    return !0
+    return true
 }
 
 function vf(a) {
@@ -1755,7 +1755,7 @@ function pe(a) {
     yc(a.cards, function() {
         wf(a)
     });
-    return !0
+    return true
 }
 
 function qe(a) {
@@ -1765,7 +1765,7 @@ function qe(a) {
             d = 0 < c ? nc : oc;
         (b = T(b, O.f, m[b].c[O.f].length - 1 - a.index)) ? (cf(b), jf(b, c), df(b, c, d, 200 * C, W)) : W()
     });
-    return !0
+    return true
 }
 
 function wf(a) {
@@ -1794,17 +1794,17 @@ function uf(a, b) {
     d && (a += (b ? " from " : " on ") + d);
     Q("counter");
     tf(a, 1500 * C, W);
-    return !0
+    return true
 }
 
 function tf(a, b, c) {
     $("#game-message-content").html(a);
-    $("#game-message-window").stop(!0, !0).show("fast").delay(b).hide("fast", c)
+    $("#game-message-window").stop(true, true).show("fast").delay(b).hide("fast", c)
 }
 
 function se(a) {
     R();
-    t = !0;
+    t = true;
     a.canBattlePhase && n[L.J].removeClass("engine-button-disabled").addClass("engine-button-primary");
     a.canEndPhase && n[L.R].removeClass("engine-button-disabled").addClass("engine-button-primary");
     for (var b = 0; b < a.summonableCards.length; ++b) {
@@ -1813,7 +1813,7 @@ function se(a) {
     }
     for (b = 0; b < a.specialSummonableCards.length; ++b) {
         c = a.specialSummonableCards[b];
-        if (c.location === O.v || c.location === O.u || c.location === O.h || c.location === O.f) Ha[c.location] = !0;
+        if (c.location === O.v || c.location === O.u || c.location === O.h || c.location === O.f) Ha[c.location] = true;
         var d = T(c.controller, c.location, c.sequence);
         jf(d, c.code);
         u.push(d)
@@ -1824,7 +1824,7 @@ function se(a) {
     for (b = 0; b < a.activableCards.length; ++b) {
         c = a.activableCards[b];
         if (c.location === O.v || c.location ===
-            O.u || c.location === O.h || c.location === O.f) Ia[c.location] = !0;
+            O.u || c.location === O.h || c.location === O.f) Ia[c.location] = true;
         d = T(c.controller, c.location, c.sequence);
         jf(d, c.code);
         v.push(d);
@@ -1844,7 +1844,7 @@ function se(a) {
 
 function te(a) {
     R();
-    t = !0;
+    t = true;
     a.canMainPhase2 && n[L.X].removeClass("engine-button-disabled").addClass("engine-button-primary");
     a.canEndPhase && n[L.R].removeClass("engine-button-disabled").addClass("engine-button-primary");
     for (var b = 0; b < a.attackingCards.length; ++b) {
@@ -1857,21 +1857,21 @@ function te(a) {
 }
 
 function ue(a) {
-    return yf(a, !1, !1)
+    return yf(a, false, false)
 }
 
 function xe(a) {
-    return yf(a, !0, !1)
+    return yf(a, true, false)
 }
 
 function ve(a) {
-    return yf(a, !1, !0)
+    return yf(a, false, true)
 }
 
 function yf(a, b, c) {
     R();
-    t = !0;
-    Ga = c ? a.isSubmittable : !1;
+    t = true;
+    Ga = c ? a.isSubmittable : false;
     Fa = a.isCancellable;
     cb = a.min;
     db = a.max;
@@ -1883,23 +1883,23 @@ function yf(a, b, c) {
         for (var e = 0; e < a.selectableCards.length; ++e) c.push(a.selectableCards[e]);
         for (e = 0; e < a.selectedCards.length; ++e) {
             var g = a.selectedCards[e];
-            g.isAlreadySelected = !0;
+            g.isAlreadySelected = true;
             c.push(g)
         }
-        d ? fc(c, !1) : Af(c, b)
-    } else d ? fc(a.cards, !1) : Af(a.cards, b)
+        d ? fc(c, false) : Af(c, b)
+    } else d ? fc(a.cards, false) : Af(a.cards, b)
 }
 
 function zf(a) {
     for (var b = 0; b < a.length; ++b) {
         var c = a[b].location;
-        if (c === O.f || c === O.h || c === O.v || c === O.u || c & O.B) return !0
+        if (c === O.f || c === O.h || c === O.v || c === O.u || c & O.B) return true
     }
-    return !1
+    return false
 }
 
 function we(a) {
-    a.isChain && 1 !== mb ? P(-1) : (R(), Fa = t = !0, db = cb = a.cards.length, Da = !0, fc(a.cards, !1))
+    a.isChain && 1 !== mb ? P(-1) : (R(), Fa = t = true, db = cb = a.cards.length, Da = true, fc(a.cards, false))
 }
 
 function Af(a, b) {
@@ -1914,12 +1914,12 @@ function Af(a, b) {
 }
 
 function fc(a, b) {
-    Ma = !0;
+    Ma = true;
     for (var c = $("#game-selection-list"), d = 0; d < a.length; ++d) {
         var e = a[d],
             g = void 0,
-            k = !1;
-        b ? g = a[d] : (g = T(e.controller, e.location, e.sequence, e.position), e.sumValue && (g.I = e.sumValue), e.isAlreadySelected && (k = !0));
+            k = false;
+        b ? g = a[d] : (g = T(e.controller, e.location, e.sequence, e.position), e.sumValue && (g.I = e.sumValue), e.isAlreadySelected && (k = true));
         var w = wa.clone().data("card-controller", g.controller).data("card-location", g.location).data("card-sequence", g.D).data("card-subsequence", e.position).mouseenter(function() {
             var a = $(this).data("card-controller"),
                 b = $(this).data("card-location"),
@@ -1979,18 +1979,18 @@ function Ae(a) {
         if (0 !== mb || a.forced || 0 !== a.cards.length && 0 !== a.specialCount)
             if (a.forced && 1 === a.cards.length) P(0);
             else {
-                Ja = !0;
-                Pb = !1;
+                Ja = true;
+                Pb = false;
                 for (var b = 0; b < a.cards.length; ++b)
                     if (a.cards[b].location === O.f || a.cards[b].location === O.h || a.cards[b].location === O.v || a.cards[b].location === O.u || a.cards[b].location & O.B) {
-                        Pb = !0;
+                        Pb = true;
                         break
                     } for (b = 0; b < a.cards.length; ++b) {
                     var c = a.cards[b];
                     ab.push(T(c.controller, c.location, c.sequence));
                     Za.push(c.effect)
                 }
-                a.forced ? rc() : (Fa = !0, $("#game-yesno-title").text("Activate a card? " +
+                a.forced ? rc() : (Fa = true, $("#game-yesno-title").text("Activate a card? " +
                     a.cards.length + " " + ta("effect", a.cards.length) + " can be chained."), $("#game-yesno-window").fadeIn(250))
             }
     else P(-1);
@@ -1998,9 +1998,9 @@ function Ae(a) {
 }
 
 function rc() {
-    if (Pb) Oa = !0, fc(ab, !0);
+    if (Pb) Oa = true, fc(ab, true);
     else {
-        t = !0;
+        t = true;
         db = cb = 1;
         for (var a = 0; a < ab.length; ++a) x.push(ab[a]), ab[a].a.addClass("game-selectable-card")
     }
@@ -2018,8 +2018,8 @@ function Be(a) {
 
 function Ce(a) {
     R();
-    t = !0;
-    Vc(a.options, !0, !1)
+    t = true;
+    Vc(a.options, true, false)
 }
 
 function Vc(a, b, c) {
@@ -2037,13 +2037,13 @@ function Vc(a, b, c) {
 
 function De(a) {
     R();
-    t = !0;
+    t = true;
     eb = a.sumValue;
     cb = a.selectMin;
     db = a.selectMax;
-    for (var b = !1, c = 0; c < a.cards.length; ++c)
+    for (var b = false, c = 0; c < a.cards.length; ++c)
         if (a.cards[c].location === O.f || a.cards[c].location === O.h || a.cards[c].location === O.v || a.cards[c].location === O.u || a.cards[c].location & O.B) {
-            b = !0;
+            b = true;
             break
         } for (c = 0; c < a.mustSelectCards.length; ++c) {
         var d = a.mustSelectCards[c],
@@ -2054,7 +2054,7 @@ function De(a) {
         y.push(e);
         bb.push(e)
     }
-    if (b) fc(a.cards, !1);
+    if (b) fc(a.cards, false);
     else
         for (c = 0; c < a.cards.length; ++c) d =
             a.cards[c], e = T(d.controller, d.location, d.sequence), d.code && jf(e, d.code), e.I = d.sumValue, e.a.addClass("game-selectable-card"), x.push(e)
@@ -2064,40 +2064,40 @@ function Ee(a) {
     hb = a.count;
     ib = a.filter;
     if (a = !a.isDisfield && 1 === a.count) {
-        for (var b = a = !1, c = 0; 2 > c; ++c) {
+        for (var b = a = false, c = 0; 2 > c; ++c) {
             for (var d = 0; d < (4 === Ab ? 7 : 5); ++d)
                 if (Oc(c, O.g, d)) {
-                    a = !0;
+                    a = true;
                     break
                 } for (d = 0; 8 > d; ++d)
                 if (Oc(c, O.m, d)) {
-                    b = !0;
+                    b = true;
                     break
                 }
         }
         if (a && !b && bd("auto-place-monsters") || !a && b && bd("auto-place-spells")) {
             a = ib;
             d = c = b = -1;
-            var e = !1;
+            var e = false;
             if (a & 127) {
                 b = 0;
                 c = O.g;
                 var g = a & 127
-            } else a & 7936 ? (b = 0, c = O.m, g = a >> 8 & 31) : a & 49152 ? (b = 0, c = O.m, g = a >> 14 & 3, e = !0) : a & 8323072 ? (b = 1, c = O.g, g = a >> 16 & 127) : a & 520093696 ? (b = 1, c = O.m, g = a >> 24 & 31) : a & 3221225472 && (b = 1, c = O.m, g = a >> 30 & 3, e = !0);
-            e ? g & 1 ? d = 6 : g & 2 && (d = 7) : g & 64 ? d = 6 : g & 32 ? d = 5 : g & 4 ? d = 2 : g & 2 ? d = 1 : g & 8 ? d = 3 : g & 1 ? d = 0 : g & 16 && (d = 4); - 1 === b || -1 === c || -1 === d ? g = !1 : (K({
+            } else a & 7936 ? (b = 0, c = O.m, g = a >> 8 & 31) : a & 49152 ? (b = 0, c = O.m, g = a >> 14 & 3, e = true) : a & 8323072 ? (b = 1, c = O.g, g = a >> 16 & 127) : a & 520093696 ? (b = 1, c = O.m, g = a >> 24 & 31) : a & 3221225472 && (b = 1, c = O.m, g = a >> 30 & 3, e = true);
+            e ? g & 1 ? d = 6 : g & 2 && (d = 7) : g & 64 ? d = 6 : g & 32 ? d = 5 : g & 4 ? d = 2 : g & 2 ? d = 1 : g & 8 ? d = 3 : g & 1 ? d = 0 : g & 16 && (d = 4); - 1 === b || -1 === c || -1 === d ? g = false : (K({
                 type: "GameSendZones",
                 zones: [{
                     player: b,
                     location: c,
                     sequence: d
                 }]
-            }), g = !0)
-        } else g = !1;
+            }), g = true)
+        } else g = false;
         a = g
     }
     if (a) ib = hb = -1;
     else
-        for (R(), gb = !0, g = 0; 2 > g; ++g) {
+        for (R(), gb = true, g = 0; 2 > g; ++g) {
             for (a = 0; a < (4 === Ab ? 7 : 5); ++a) Oc(g, O.g, a) && $(Mc(g, O.g, a)).addClass("game-field-zone-selectable");
             for (a = 0; 8 > a; ++a) Oc(g, O.m, a) && $(m[g].namespace + "spell" + (a + 1)).addClass("game-field-zone-selectable")
         }
@@ -2112,7 +2112,7 @@ function Fe(a) {
         c = a.counterCount;
     a = a.cards;
     R();
-    Pa = !0;
+    Pa = true;
     Qa = b;
     Sa = Ra = c;
     Bb = [];
@@ -2138,20 +2138,20 @@ function Qc() {
 
 function Ge(a) {
     R();
-    t = !0;
+    t = true;
     Qb = a.count;
     Rb = {};
     $("#game-announce-title").text("Select " + (1 == a.count ? "an " : a.count + " ") + ta("attribute", a.count));
-    Df(a.availableAttributes, !1)
+    Df(a.availableAttributes, false)
 }
 
 function He(a) {
     R();
-    t = !0;
+    t = true;
     Qb = a.count;
     Rb = {};
     $("#game-announce-title").text("Select " + (1 == a.count ? "a " : a.count + " ") + ta("race", a.count));
-    Df(a.availableRaces, !0)
+    Df(a.availableRaces, true)
 }
 
 function Df(a, b) {
@@ -2176,13 +2176,13 @@ function Df(a, b) {
 
 function Ie(a) {
     R();
-    t = !0;
-    Vc(a.numbers, !1, !1)
+    t = true;
+    Vc(a.numbers, false, false)
 }
 
 function Je(a) {
     R();
-    t = !0;
+    t = true;
     kb = a.declarableType;
     lb = a.opcodes;
     $("#game-announce-card-window").fadeIn(250)
@@ -2203,7 +2203,7 @@ function sc() {
 }
 
 function Gf(a) {
-    if (0 < a.A || a.type & U.U || 0 !== kb && !(a.type & kb)) return !1;
+    if (0 < a.A || a.type & U.U || 0 !== kb && !(a.type & kb)) return false;
     if (lb && 0 < lb.length) {
         for (var b = lb, c = [], d = 0; d < b.length; ++d) {
             var e = b[d];
@@ -2245,11 +2245,11 @@ function Gf(a) {
                         g = c.pop();
                         e = g & 4095;
                         g &= 61440;
-                        for (var k = !1, w = 0; w < a.za.length; ++w) {
+                        for (var k = false, w = 0; w < a.za.length; ++w) {
                             var F = a.za[w],
                                 fb = F & 61440;
                             if ((F & 4095) === e && (0 === g || fb & g)) {
-                                k = !0;
+                                k = true;
                                 break
                             }
                         }
@@ -2270,9 +2270,9 @@ function Gf(a) {
                     c.push(e)
             }
         }
-        if (1 !== c.length || 0 === c[0]) return !1
+        if (1 !== c.length || 0 === c[0]) return false
     }
-    return !0
+    return true
 }
 
 function Hf(a, b) {
@@ -2283,14 +2283,14 @@ function Hf(a, b) {
 }
 
 function R() {
-    return vb ? (vb = Ma = !1, x = [], $("#game-selection-list").empty(), $("#game-selection-window").hide(), Nc(), !0) : !1
+    return vb ? (vb = Ma = false, x = [], $("#game-selection-list").empty(), $("#game-selection-window").hide(), Nc(), true) : false
 }
 
 function N() {
     if (Ma)
         for (var a = 0; a < x.length; ++a) x[a].Y = null;
     Nc();
-    vb = Na = Oa = Ma = La = Ka = Ja = Fa = Ga = Da = Ea = Ca = t = !1;
+    vb = Na = Oa = Ma = La = Ka = Ja = Fa = Ga = Da = Ea = Ca = t = false;
     for (var b in n) n[b].addClass("engine-button-disabled").removeClass("engine-button-primary");
     Ha = {};
     Ia = {};
@@ -2324,12 +2324,12 @@ function N() {
     bb = [];
     ab = [];
     eb = db = cb = -1;
-    gb = !1;
+    gb = false;
     ib = hb = -1;
     jb = [];
     $(".game-field-zone-selectable").removeClass("game-field-zone-selectable");
     $(".game-field-zone-selected").removeClass("game-field-zone-selected");
-    Pa = !1;
+    Pa = false;
     Qa = null;
     Sa = Ra = -1
 }
@@ -2448,7 +2448,7 @@ var Z = {
         $("#editor-shuffle-button").click(Z.Mb);
         $("#editor-search-text").on("input", Z.Pb);
         $(window).on("mouseup", function(a) {
-            if (1 === a.which && Z.selection) return Z.aa(), !1
+            if (1 === a.which && Z.selection) return Z.aa(), false
         });
         $(window).mousemove(function(a) {
             Z.Ib = a.pageX;
@@ -2474,8 +2474,8 @@ var Z = {
     O: function(a, b, c, d) {
         var e = X[a];
         if (e && !(e.type & U.U)) {
-            var g = !1;
-            if (e.type & U.S || e.type & U.T || e.type & U.G || e.type & U.C) g = !0;
+            var g = false;
+            if (e.type & U.S || e.type & U.T || e.type & U.G || e.type & U.C) g = true;
             if (!(g && "main" === b || !g && "extra" === b || Z[b].length >= ("main" === b ? 60 : 15) || (g = d ? 3 : Vf(0 !== e.A ? e.A : e.id), g = 3, Z.Eb(e.A ? e.A : e.id) >= g))) {
                 g = Z[b];
                 var k = $("#editor-" + b + "-deck");
@@ -2491,9 +2491,9 @@ var Z = {
                             c = $(this).parent().children().index($(this));
                         Z.P(b, c);
                         Z.ya(a);
-                        return !1
+                        return false
                     }
-                    if (3 == a.which) return !1
+                    if (3 == a.which) return false
                 });
                 d.mouseup(function(a) {
                     if (1 == a.which && Z.selection) {
@@ -2501,14 +2501,14 @@ var Z = {
                         var b = $(this).parent().children().index($(this));
                         Z.O(Z.selection.data("id"), a, b);
                         Z.aa();
-                        return !1
+                        return false
                     }
                 });
                 d.on("contextmenu", function() {
                     var a = $(this).data("location"),
                         b = $(this).parent().children().index($(this));
                     Z.P(a, b);
-                    return !1
+                    return false
                 });
                 d.data("id", a);
                 d.data("alias", e.A);
@@ -2546,12 +2546,12 @@ var Z = {
         Z.selection && (Z.selection.remove(), Z.selection = null)
     },
     ga: function(a) {
-        for (var b = 0; b < Deck[a].length; ++b) Z.O(Deck[a][b], a, -1, !0);
+        for (var b = 0; b < Deck[a].length; ++b) Z.O(Deck[a][b], a, -1, true);
         b = $("#editor-" + a + "-deck");
         b.data("location", a);
         b.mouseup(function(a) {
             if (Z.selection && 1 == a.which) return a = $(this).data("location"), Z.O(Z.selection.data("id"),
-                a, -1), Z.aa(), !1
+                a, -1), Z.aa(), false
         })
     },
     Pb: function() {
@@ -2571,7 +2571,7 @@ var Z = {
         }
     },
     ua: function(a) {
-        return a.type & U.U ? !1 : !0
+        return a.type & U.U ? false : true
     },
     la: function(a) {
         var b = X[a];
@@ -2594,8 +2594,8 @@ var Z = {
         });
         a.mousedown(function(a) {
             if (1 ==
-                a.which) return a = $(this).data("id"), Z.ya(a), !1;
-            if (3 == a.which) return !1
+                a.which) return a = $(this).data("id"), Z.ya(a), false;
+            if (3 == a.which) return false
         });
         a.on("contextmenu", function() {
             var a = $(this).data("id");
@@ -2603,7 +2603,7 @@ var Z = {
             var b = "main";
             if (a.type & U.S || a.type & U.T || a.type & U.G || a.type & U.C) b = "extra";
             Z.O($(this).data("id"), b, -1);
-            return !1
+            return false
         });
         var e = a.find(".editor-search-banlist-icon");
         b = Vf(0 !== b.A ? b.A : b.id);
@@ -3296,9 +3296,9 @@ function Dc(a, b) {
         if ((c = X[b.code]) ? a.find(".card-name").text(c.name) : a.find(".card-name").text("id: " + b.code), b.type & U.L ? (a.find(".card-if-monster").show(), a.find(".card-race").text(Ef[b.race]), a.find(".card-attribute").text(Ff[b.H]), a.find(".card-attack").text(b.attack), a.find(".card-defence").text(b.type & U.C ? "LINK-" + b.V : b.i), a.find(".card-level").html(b.type & U.G ? b.W : b.level)) : a.find(".card-if-monster").hide(), b.type & U.C ? a.find(".card-if-not-link").hide() : a.find(".card-if-not-link").show(),
             0 < Object.keys(b.F).length) {
             c = "";
-            var d = !0,
+            var d = true,
                 e;
-            for (e in b.F) d || (c += "<br>"), d = !1, c += b.F[e] + " \u00d7 " + xf[e];
+            for (e in b.F) d || (c += "<br>"), d = false, c += b.F[e] + " \u00d7 " + xf[e];
             a.find(".card-counters").text(c).show()
         } else a.find(".card-counters").hide()
 };
@@ -3311,7 +3311,7 @@ function Y(a, b) {
     this.location = O.f;
     this.D = 0;
     this.position = b || nc;
-    this.sa = !1;
+    this.sa = false;
     this.l = [];
     this.F = {};
     this.wa = this.V = 0;
@@ -3337,8 +3337,8 @@ function df(a, b, c, d, e) {
     var g = a.a.offset(),
         k = a.location & O.j || c & 5 ? b : 0,
         w = hg(a.controller, a.location, c) - a.va,
-        F = !1;
-    a.Kb !== k && (F = !0);
+        F = false;
+    a.Kb !== k && (F = true);
     null !== a.b && (a.b.hide(), a.K.hide());
     a.code = b;
     a.position = c;
@@ -3468,7 +3468,7 @@ function og(a) {
 }
 
 function pg(a, b) {
-    ng(a, !1);
+    ng(a, false);
     if (-1 !== a.controller) {
         a.M = mf(m[a.controller], a.location & ~O.B, a.D);
         a.M.append(a.a);
@@ -3547,13 +3547,13 @@ function Vb(a) {
     rg(this, O.m, "spell", 4 <= Ab ? 6 : 8)
 }
 Vb.prototype.clear = function() {
-    pf(this, O.j, !1);
-    pf(this, O.f, !1);
-    pf(this, O.h, !1);
-    pf(this, O.v, !1);
-    pf(this, O.u, !1);
-    pf(this, O.g, !1);
-    pf(this, O.m, !1)
+    pf(this, O.j, false);
+    pf(this, O.f, false);
+    pf(this, O.h, false);
+    pf(this, O.v, false);
+    pf(this, O.u, false);
+    pf(this, O.g, false);
+    pf(this, O.m, false)
 };
 Vb.prototype.O = function(a, b, c, d) {
     a.controller = this.o;
