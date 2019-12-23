@@ -182,6 +182,7 @@ let onload = function () {
     // TODO: add hide options for sleeves/avatars
     
     // boilerplate
+    const globalOptions = f;
     const playSound = Q;
     const sendEvent = K;
     const gameChatContent = $("#game-chat-content");
@@ -359,26 +360,78 @@ let onload = function () {
     gameContainer.prepend(miscContainer);
     
     class GameOption {
-        constructor(tag, option, type, info = {}) {
+        constructor(tag, id, option, type, info = {}) {
             this.tag = tag;
+            this.id = id;
+            this.option = option;
             this.type = type;
             
-            if(this.type === "range") {
-                
+            if(this.isRange) {
+                this.min = info.min;
+                this.max = info.max;
             }
         }
         
-        toElement() {
+        get isRange() {
+            return this.type === "range";
+        }
+        
+        get isCheckbox() {
+            return this.type === "checkbox";
+        }
+        
+        toElement(formatTable = true) {
             let base = $("<input>");
+            
+            base.attr("id", id)
+                .attr("type", this.type);
+            
+            if(this.isRange) {
+                base.attr("min", this.min)
+                    .attr("max", this.max);
+            }
+            
+            let currentValue = globalOptions.options[this.option];
+            
+            if(this.isCheckbox) {
+                base.prop("checked", currentValue);
+            }
+            else {
+                base.val(currentValue);
+            }
+            
+            base.data("option", this.option);
+            
+            base.change(() => {
+                let option = this.option;
+                let value = this.isCheckbox ? base.prop("checked") : base.val();
+                globalOptions.options[option] = value;
+                globalOptions.save();
+                // NOTE: can break
+                jd && jd(option, value);
+            });
+            
+            if(!formatTable) {
+                return base;
+            }
+            
+            let tr = $("<tr>");
         }
     }
-    
+    /*
+        var a = $(this).data("option"),
+        b = $(this).val();
+        $("#options-" + a + "-value").text(b + "%");
+        f.options[a] = b;
+        f.save();
+        jd && jd(a, b)
+    */
     // initialize options column
     let optionsColumnInfo = [
         [
             new GameOption(
                 "Sounds volume",
-                "ci-ext-option-volume",
+                "ci-ext-option-sounds-volume",
                 "sounds",
                 "range",
                 {
@@ -387,6 +440,7 @@ let onload = function () {
             ),
             new GameOption(
                 "Music volume",
+                "ci-ext-option-music-volume",
                 "music",
                 "range",
                 {
@@ -396,6 +450,7 @@ let onload = function () {
             ),
             new GameOption(
                 "Animations speed",
+                "ci-ext-option-animation-speed",
                 "speed",
                 "range",
                 {
@@ -407,11 +462,13 @@ let onload = function () {
         [
             new GameOption(
                 "Place monsters automatically",
+                "ci-ext-option-auto-place-monsters",
                 "auto-place-monsters",
                 "checkbox"
             ),
             new GameOption(
                 "Place spells automatically",
+                "ci-ext-option-auto-place-spells",
                 "auto-place-spells",
                 "checkbox"
             ),
@@ -476,6 +533,7 @@ let onload = function () {
     
     
     // update ui
+    // TODO: toggle even newly inserted buttons
     let minimizeToggle = $("<button class=engine-button title=minimize>&minus;</button>")
         .data("toggled", false)
         .click(function () {
