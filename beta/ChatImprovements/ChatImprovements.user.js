@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Chat Improvements Plugin
 // @namespace    https://duelingnexus.com/
-// @version      0.4.1
+// @version      0.5
 // @description  Adds various support for categorizing decks.
 // @author       Sock#3222
 // @grant        none
@@ -82,6 +82,8 @@ ChatImprovements.storage.get = function (item) {
 let defaultProperties = {
     playSounds: true,
     showEvents: true,
+    temporaryChat: true,
+    showOptions: false,
 };
 
 for(let [prop, defaultValue] of Object.entries(defaultProperties)) {
@@ -151,7 +153,7 @@ let onload = function () {
         cursor: pointer;
     }
     
-    #ci-ext-log, #ci-ext-event-log {
+    #ci-ext-log, #ci-ext-event-log, #ci-ext-options {
         background: rgb(0, 0, 0);
         background: rgba(0, 0, 0, 0.7);
     }
@@ -294,12 +296,14 @@ let onload = function () {
         // scroll to message
         scrollToBottom(chatLog);
         // handle UI
-        if(gameChatContent.children().length > 10) {
-            gameChatArea.find("p:first").remove();
+        if(ChatImprovements.temporaryChat) {
+            if(gameChatContent.children().length > 10) {
+                gameChatArea.find("p:first").remove();
+            }
+            setTimeout(function() {
+                message.remove();
+            }, 10 * SECONDS);
         }
-        setTimeout(function() {
-            message.remove();
-        }, 10 * SECONDS);
         return message;
     }
     ChatImprovements.displayMessage = displayMessage;
@@ -366,6 +370,15 @@ let onload = function () {
             this.option = option;
             this.type = type;
             
+            this.isBaseOption = !!info.isBaseOption;
+            this.showValue = !!info.showValue;
+            this.decoration = info.decoration || (() => "");
+            
+            this.resolve = info.resolve;
+            if(this.resolve) {
+                this.resolve = this.resolve.bind(this);
+            }
+            
             if(this.isRange) {
                 this.min = info.min;
                 this.max = info.max;
@@ -391,7 +404,13 @@ let onload = function () {
                     .attr("max", this.max);
             }
             
-            let currentValue = globalOptions.options[this.option];
+            let currentValue;
+            if(this.isBaseOption) {
+                currentValue = globalOptions.options[this.option];
+            }
+            else {
+                currentValue = ChatImprovements[this.option];
+            }
             
             if(this.isCheckbox) {
                 base.prop("checked", currentValue);
@@ -402,20 +421,61 @@ let onload = function () {
             
             base.data("option", this.option);
             
-            base.change(() => {
+            let onValueChange = () => {
                 let option = this.option;
                 let value = this.isCheckbox ? base.prop("checked") : base.val();
-                globalOptions.options[option] = value;
-                globalOptions.save();
-                // NOTE: can break
-                jd && jd(option, value);
-            });
+                
+                if(this.isBaseOption) {
+                    globalOptions.options[option] = value;
+                    globalOptions.save();
+                    // NOTE: can break
+                    jd && jd(option, value);
+                }
+                else {
+                    ChatImprovements[option] = value;
+                }
+                
+                if(updateValueTd) {
+                    updateValueTd.text(this.decoration(value));
+                }
+                if(this.resolve) {
+                    this.resolve(value);
+                }
+            };
+            
+            let updateValueTd;
+            if(this.showValue) {
+                updateValueTd = $("<td>");
+                // DRY broken here a bit
+                updateValueTd.text(this.decoration(currentValue))
+                             .css("cursor", "pointer");
+                
+                updateValueTd.click(() => {
+                    let newValue = prompt("Enter the new value for \"" + this.tag + "\":");
+                    
+                    if(newValue !== null) {
+                        base.val(newValue);
+                        onValueChange();
+                    }
+                });
+            }
+            
+            base.change(onValueChange);
             
             if(!formatTable) {
                 return base;
             }
             
             let tr = $("<tr>");
+            
+            tr.append($("<td>").text(this.tag));
+            tr.append($("<td>").append(base));
+            
+            if(this.showValue) {
+                tr.append(updateValueTd);
+            }
+            
+            return tr;
         }
     }
     /*
@@ -435,7 +495,11 @@ let onload = function () {
                 "sounds",
                 "range",
                 {
-                    min: 0, max: 100
+                    min: 0,
+                    max: 100,
+                    isBaseOption: true,
+                    showValue: true,
+                    decoration: (x) => `${x}%`,
                 }
             ),
             new GameOption(
@@ -445,7 +509,10 @@ let onload = function () {
                 "range",
                 {
                     min: 0,
-                    max: 100
+                    max: 100,
+                    isBaseOption: true,
+                    showValue: true,
+                    decoration: (x) => `${x}%`,
                 }
             ),
             new GameOption(
@@ -455,7 +522,10 @@ let onload = function () {
                 "range",
                 {
                     min: 0,
-                    max: 100
+                    max: 500,
+                    isBaseOption: true,
+                    showValue: true,
+                    decoration: (x) => `${x}%`,
                 }
             ),
         ],
@@ -464,21 +534,58 @@ let onload = function () {
                 "Place monsters automatically",
                 "ci-ext-option-auto-place-monsters",
                 "auto-place-monsters",
-                "checkbox"
+                "checkbox",
+                {
+                    isBaseOption: true,
+                }
             ),
             new GameOption(
                 "Place spells automatically",
                 "ci-ext-option-auto-place-spells",
                 "auto-place-spells",
-                "checkbox"
+                "checkbox",
+                {
+                    isBaseOption: true,
+                }
             ),
+            new GameOption(
+                "Temporary chat",
+                "ci-ext-option-temporary-chat",
+                "temporaryChat",
+                "checkbox",
+                {
+                    resolve: function () {
+                        // TODO: hide existing chat
+                    }
+                }
+            ),
+            new GameOption(
+                "Play chat sounds",
+                "ci-ext-option-chat-sounds",
+                "playSounds",
+                "checkbox",
+            ),
+            new GameOption(
+                "Show options",
+                "ci-ext-option-show-options",
+                "showOptions",
+                "checkbox",
+                {
+                    resolve: function (value) {
+                        $("#options-show-button").toggle(value);
+                        return this;
+                    },
+                }
+            ).resolve(),
         ]
     ];
     
     for(let stratum of optionsColumnInfo) {
+        let table = $("<table>");
         for(let option of stratum) {
-            optionsColumn.append(option.toElement());
+            table.append(option.toElement(true));
         }
+        optionsColumn.append(table);
     }
     
     /*.click(function() {
@@ -544,18 +651,18 @@ let onload = function () {
             $(this).data("toggled", toggled);
         });
     
-    let updateMuteToggleText;
-    let muteToggle = $("<button class=engine-button></button>")
-        .click(function () {
-            ChatImprovements.playSounds = !ChatImprovements.playSounds;
-            updateMuteToggleText();
-        })
-        .css("float", "right");
+    // let updateMuteToggleText;
+    // let muteToggle = $("<button class=engine-button></button>")
+        // .click(function () {
+            // ChatImprovements.playSounds = !ChatImprovements.playSounds;
+            // updateMuteToggleText();
+        // })
+        // .css("float", "right");
         
-    updateMuteToggleText = function () {
-        muteToggle.text(ChatImprovements.playSounds ? "Mute" : "Unmute");
-    };
-    updateMuteToggleText();
+    // updateMuteToggleText = function () {
+        // muteToggle.text(ChatImprovements.playSounds ? "Mute" : "Unmute");
+    // };
+    // updateMuteToggleText();
     
     let updateNotificationToggleText;
     let notificationToggle = $("<button class=engine-button></button>")
@@ -573,7 +680,7 @@ let onload = function () {
     
     // let 
     gameChatArea.prepend(
-        minimizeToggle, muteToggle, notificationToggle
+        minimizeToggle, /*muteToggle,*/ notificationToggle
     );
     
     // listeners[type] = [...];
@@ -888,6 +995,9 @@ let onload = function () {
         else {
             $(overlayExtension).hide();
         }
+    });
+    $(".game-field-zone").on("mouseout", function (ev) {
+        $(overlayExtension).hide();
     });
 };
 
