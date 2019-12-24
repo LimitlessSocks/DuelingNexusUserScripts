@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Chat Improvements Plugin
 // @namespace    https://duelingnexus.com/
-// @version      0.5
+// @version      0.6
 // @description  Adds various support for categorizing decks.
 // @author       Sock#3222
 // @grant        none
@@ -31,8 +31,6 @@ let ChatImprovements = {
         get: null,
         set: null,
     },
-    // playSounds
-    // showEvents
 };
 
 const LOCAL_STORAGE_KEY = "ChatImprovementsCache";
@@ -77,13 +75,23 @@ ChatImprovements.storage.get = function (item) {
     return ChatImprovements.storage._cache[item];
 };
 
+ChatImprovements.storage.clear = function (item) {
+    checkCache();
+    
+    ChatImprovements.storage._cache = {};
+    
+    updateLocalStorage();
+};
+
 // standard getter/setter properties
 
 let defaultProperties = {
     playSounds: true,
-    showEvents: true,
     temporaryChat: true,
     showOptions: false,
+    
+    showNormalEvents: true,
+    showChainEvents: true,
 };
 
 for(let [prop, defaultValue] of Object.entries(defaultProperties)) {
@@ -211,7 +219,7 @@ let onload = function () {
     const isSynchroMonster      = (card) => card.type & monsterTypeMap["Synchro"];
     const isNormalMonster       = (card) => card.type & monsterTypeMap["Normal"];
 
-    // gameChatContent.css("overflow-y", "auto")
+    gameChatContent.css("overflow-y", "auto")
                    // .css("height", "230px")
                    // .css("background-color", "transparent");
     // gameChatArea.css("background-color", "rgba(0, 0, 0)")
@@ -219,6 +227,97 @@ let onload = function () {
     let chatLog = $("<div id=ci-ext-log>");
     let chatEventLog = $("<div id=ci-ext-event-log>");
     
+    /**/
+    Gb.GameSet = window.Td = function Td(a) {
+        Q("set");
+        // console.log("Td", a);
+    };
+
+    Gb.GameSummoning = window.Ud = function Ud(a) {
+        xc(a.cardCode, function() {
+            Q("summon");
+            // console.log("Ud", a);
+            kf(a.cardCode);
+        });
+        return true;
+    }
+
+    Gb.GameSpSummoning = window.Vd = function Vd(a) {
+        xc(a.cardCode, function() {
+            Q("summon-special");
+            // console.log("Vd", a);
+            kf(a.cardCode);
+        });
+        return true;
+    }
+
+    Gb.GameFlipSummoning = window.Wd = function Wd(a) {
+        xc(a.cardCode, function() {
+            Q("summon-flip");
+            // console.log("Wd", a);
+            kf(a.cardCode);
+        });
+        return true;
+    }
+    
+    const CHAIN_SYMBOL = "\uD83D\uDD17";
+    Gb.GameChaining = window.Xd = function Xd(a) {
+        xc(a.cardCode, function() {
+            Q("activate");
+            let cardName = a.cardCode ? "#@" + a.cardCode : "A card";
+            // console.log("!!!!", cardName);
+            // notifyEvent(" of " + cardName + " was activated (from " + GameLocations[a.location]);
+            let message = `Chain Link ${a.chainCount}: ${cardName}`
+            if(a.chainCount > 1) {
+                message = CHAIN_SYMBOL + " " + message;
+            }
+            notifyEvent(message, Events.CHAIN);
+            kf(a.cardCode);
+        });
+        return true;
+    }
+    
+    /*
+        GameDamage: Yd,
+        GameRecover: Zd,
+        GamePayLpCost: $d,
+        GameLpUpdate: ae,
+        GameAttack: be,
+        GameBattle: ce,
+        GameReloadField: de,
+        GameTagSwap: ee,
+        GameFieldDisabled: fe,
+        GameWaiting: ge,
+        GameEquip: he,
+        GameBecomeTarget: ie,
+        GameWin: je,
+        GameTossCoin: ke,
+        GameTossDice: le,
+        GameAddCounter: me,
+        GameRemoveCounter: ne,
+        GameConfirmCards: oe,
+        GameConfirmDeckTop: pe,
+        GameDeckTop: qe,
+        GameRetry: re,
+        GameSelectIdleCommand: se,
+        GameSelectBattleCommand: te,
+        GameSelectCard: ue,
+        GameSelectUnselect: ve,
+        GameSortCards: we,
+        GameSelectTribute: xe,
+        GameSelectYesNo: ye,
+        GameSelectEffectYesNo: ze,
+        GameSelectChain: Ae,
+        GameSelectPosition: Be,
+        GameSelectOption: Ce,
+        GameSelectSum: De,
+        GameSelectPlace: Ee,
+        GameSelectCounter: Fe,
+        GameAnnounceAttrib: Ge,
+        GameAnnounceRace: He,
+        GameAnnounceNumber: Ie,
+        GameAnnounceCard: Je
+    */
     
     let eventTypeList = [
         
@@ -252,7 +351,7 @@ let onload = function () {
             return "#B83D00";
         }
     }
-    let displayMessage = function (content, color, kind) {
+    let displayMessage = function (content, color, ...kinds) {
         //showCardInColumn
         let matches;
         let message = $("<p>");
@@ -275,7 +374,7 @@ let onload = function () {
                 message.append(matches[0]);
             }
         }
-        if(kind) {
+        for(let kind of kinds) {
             message.addClass(kind);
         }
         if(color) {
@@ -283,7 +382,7 @@ let onload = function () {
         }
         gameChatContent.append(message);
         let copy = message.clone(true);
-        if(kind === "notified-event") {
+        if(kinds.indexOf("notified-event") !== -1) {
             $(".interact-name", copy).unbind().click(function () {
                 showCardInColumn($(this).data("id"));
                 showCardColumn.click();
@@ -295,6 +394,7 @@ let onload = function () {
         }
         // scroll to message
         scrollToBottom(chatLog);
+        scrollToBottom(gameChatContent);
         // handle UI
         if(ChatImprovements.temporaryChat) {
             if(gameChatContent.children().length > 10) {
@@ -374,6 +474,7 @@ let onload = function () {
             this.showValue = !!info.showValue;
             this.decoration = info.decoration || (() => "");
             
+            this.resolveOnLoad = info.resolveOnLoad;
             this.resolve = info.resolve;
             if(this.resolve) {
                 this.resolve = this.resolve.bind(this);
@@ -489,6 +590,7 @@ let onload = function () {
     // initialize options column
     let optionsColumnInfo = [
         [
+            "Game Options",
             new GameOption(
                 "Sounds volume",
                 "ci-ext-option-sounds-volume",
@@ -572,18 +674,44 @@ let onload = function () {
                 "checkbox",
                 {
                     resolve: function (value) {
+                        console.log("Resolving showOptions value", value);
                         $("#options-show-button").toggle(value);
                         return this;
                     },
+                    resolveOnLoad: true,
                 }
-            ).resolve(),
+            ),
+        ],
+        [
+            "Event Filters",
+            new GameOption(
+                "Show normal events",
+                "ci-ext-option-hide-all-events",
+                "showNormalEvents",
+                "checkbox",
+            ),
+            new GameOption(
+                "Show chaining events",
+                "ci-ext-option-hide-all-events",
+                "showChainEvents",
+                "checkbox",
+            ),
         ]
     ];
     
     for(let stratum of optionsColumnInfo) {
         let table = $("<table>");
+        while(stratum.length && typeof stratum[0] === "string") {
+            let title = stratum.shift();
+            optionsColumn.append($("<h2>").text(title));
+        }
         for(let option of stratum) {
-            table.append(option.toElement(true));
+            let tr = option.toElement(true);
+            if(option.resolveOnLoad) {
+                console.log(tr);
+                option.resolve();
+            }
+            table.append(tr);
         }
         optionsColumn.append(table);
     }
@@ -640,7 +768,7 @@ let onload = function () {
     
     
     // update ui
-    // TODO: toggle even newly inserted buttons
+    // TODO: toggle even newly inserted messages
     let minimizeToggle = $("<button class=engine-button title=minimize>&minus;</button>")
         .data("toggled", false)
         .click(function () {
@@ -664,23 +792,23 @@ let onload = function () {
     // };
     // updateMuteToggleText();
     
-    let updateNotificationToggleText;
-    let notificationToggle = $("<button class=engine-button></button>")
-        .click(function () {
-            ChatImprovements.showEvents = !ChatImprovements.showEvents;
-            updateNotificationToggleText();
-            $("#game-chat-area .notified-event").toggle(ChatImprovements.showEvents);
-        })
-        .css("float", "right");
+    // let updateNotificationToggleText;
+    // let notificationToggle = $("<button class=engine-button></button>")
+        // .click(function () {
+            // ChatImprovements.showEvents = !ChatImprovements.showEvents;
+            // updateNotificationToggleText();
+            // $("#game-chat-area .notified-event").toggle(ChatImprovements.showEvents);
+        // })
+        // .css("float", "right");
     
-    updateNotificationToggleText = function () {
-        notificationToggle.text(ChatImprovements.showEvents ? "Hide events" : "Show events");
-    };
-    updateNotificationToggleText();
+    // updateNotificationToggleText = function () {
+        // notificationToggle.text(ChatImprovements.showEvents ? "Hide events" : "Show events");
+    // };
+    // updateNotificationToggleText();
     
     // let 
     gameChatArea.prepend(
-        minimizeToggle, /*muteToggle,*/ notificationToggle
+        minimizeToggle, /*muteToggle,*/ /*notificationToggle*/
     );
     
     // listeners[type] = [...];
@@ -707,12 +835,30 @@ let onload = function () {
         return res;
     }
     
-    const notifyEvent = function (event) {
-        let message = displayMessage("Event: " + event, "#00FF00", "notified-event");
-        if(!ChatImprovements.showEvents) {
-            message.toggle(false);
-        }
-    }
+    const Events = {
+        CHAIN: "chain",
+        NORMAL: "normal",
+    };
+    const notificationColors = {
+        [Events.NORMAL]: "#00FF00",
+        [Events.CHAIN]: "#AAFFAA",
+    };
+    const notificationPrefixes = {
+        [Events.NORMAL]: "Event: ",
+        [Events.CHAIN]: "",
+    };
+    const eventEnabledKeys = {
+        [Events.NORMAL]: "showNormalEvents",
+        [Events.CHAIN]: "showChainEvents",
+    };
+    const notifyEvent = function (event, kind = Events.NORMAL) {
+        let prefix = notificationPrefixes[kind];
+        let color = notificationColors[kind];
+        let message = displayMessage(prefix + event, color, "notified-event", "event-" + kind);
+        
+        let enabledKey = eventEnabledKeys[kind];
+        message.toggle(ChatImprovements[enabledKey]);
+    };
     
     const GameLocations = {
         TOKEN_PILE: 0,
@@ -775,7 +921,7 @@ let onload = function () {
         }
         // sent to hand
         else if(movedFromTo(move, GameLocations.GY, GameLocations.HAND)) {
-            console.log("why??????");
+            // console.log("why??????");
             status = "was returned from the GY to the hand";
         }
         else if(movedFromTo(move, GameLocations.DECK, GameLocations.HAND)) {
@@ -797,6 +943,7 @@ let onload = function () {
         // spell card activations
         else if(move.currentLocation === GameLocations.FIELD_SPELLTRAP) {
             // TODO: set vs. activate
+            console.log(move);
             status = "was activated/set from " + LocationNames[move.previousLocation];
         }
         else if(movedFromTo(move, GameLocations.FIELD, GameLocations.TOKEN_PILE)) {
