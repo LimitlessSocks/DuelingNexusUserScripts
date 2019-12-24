@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Chat Improvements Plugin
 // @namespace    https://duelingnexus.com/
-// @version      0.6.1
+// @version      0.6.2
 // @description  Revamps the chat and visual features of dueling.
 // @author       Sock#3222
 // @grant        none
@@ -738,6 +738,7 @@ let onload = function () {
             gameChatTextbox.toggle(toggled);
             toggled = !toggled;
             $(this).data("toggled", toggled);
+            scrollToBottom(gameChatContent);
         });
     
     const hideMiscBut = function (but) {
