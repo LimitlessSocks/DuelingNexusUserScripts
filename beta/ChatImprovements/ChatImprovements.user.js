@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         DuelingNexus Chat Improvements Plugin
 // @namespace    https://duelingnexus.com/
-// @version      0.6
-// @description  Adds various support for categorizing decks.
+// @version      0.6.1
+// @description  Revamps the chat and visual features of dueling.
 // @author       Sock#3222
 // @grant        none
 // @match        https://duelingnexus.com/game/*
@@ -729,6 +729,17 @@ let onload = function () {
     
     let miscSectionButtons = $("<div id=ci-ext-misc-buttons>");
     
+    // moved earlier for hideMiscBut
+    let minimizeToggle = $("<button class=engine-button title=minimize>&minus;</button>")
+        .data("toggled", false)
+        .click(function () {
+            let toggled = $(this).data("toggled");
+            gameChatContent.toggle(toggled);
+            gameChatTextbox.toggle(toggled);
+            toggled = !toggled;
+            $(this).data("toggled", toggled);
+        });
+    
     const hideMiscBut = function (but) {
         return function (ev) {
             for(let child of miscSections.children()) {
@@ -738,7 +749,7 @@ let onload = function () {
                     scrollToBottom(child);
                 }
             }
-            gameChatContent.toggle(but !== "ci-ext-log" && but !== "ci-ext-event-log");
+            gameChatContent.toggle(but !== "ci-ext-log" && but !== "ci-ext-event-log" && !minimizeToggle.data("toggled"));
         };
     };
     
@@ -769,15 +780,6 @@ let onload = function () {
     
     // update ui
     // TODO: toggle even newly inserted messages
-    let minimizeToggle = $("<button class=engine-button title=minimize>&minus;</button>")
-        .data("toggled", false)
-        .click(function () {
-            let toggled = $(this).data("toggled");
-            gameChatContent.toggle(toggled);
-            gameChatTextbox.toggle(toggled);
-            toggled = !toggled;
-            $(this).data("toggled", toggled);
-        });
     
     // let updateMuteToggleText;
     // let muteToggle = $("<button class=engine-button></button>")
