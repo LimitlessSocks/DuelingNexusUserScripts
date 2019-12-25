@@ -6,6 +6,8 @@
 // @author       Sock#3222
 // @grant        none
 // @include      https://duelingnexus.com/*
+// @updateURL   https://raw.githubusercontent.com/LimitlessSocks/DuelingNexusUserScripts/master/beta/CustomNexusGUI/CustomNexusGUI.user.js
+// @downloadURL https://raw.githubusercontent.com/LimitlessSocks/DuelingNexusUserScripts/master/beta/CustomNexusGUI/CustomNexusGUI.user.js
 // ==/UserScript==
 
 const NexusGUI = {
