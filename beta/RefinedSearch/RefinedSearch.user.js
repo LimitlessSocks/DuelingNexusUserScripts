@@ -1,11 +1,13 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.7.7
+// @version      0.7.9
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
 // @include      https://duelingnexus.com/editor/*
+// @updateURL   https://raw.githubusercontent.com/LimitlessSocks/DuelingNexusUserScripts/master/beta/RefinedSearch/RefinedSearch.user.js
+// @downloadURL https://raw.githubusercontent.com/LimitlessSocks/DuelingNexusUserScripts/master/beta/RefinedSearch/RefinedSearch.user.js
 // ==/UserScript==
 
 // TODO: separate search by name/eff
