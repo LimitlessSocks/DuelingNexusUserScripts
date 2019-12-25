@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CustomNexusGUI API
 // @namespace    https://duelingnexus.com/
-// @version      0.2
+// @version      0.2.1
 // @description  To enable custom GUI elements, such as popups.
 // @author       Sock#3222
 // @grant        none
@@ -107,6 +107,12 @@ const NexusGUI = {
                 resolve(input.val());
                 NexusGUI.closePopup();
             });
+            input.keyup((event) => {
+                if(event.which === 13) {
+                    resolve(input.val());
+                    NexusGUI.closePopup();
+                }
+            });
             cancelButton.click(() => {
                 resolve(null);
                 NexusGUI.closePopup();
@@ -114,6 +120,7 @@ const NexusGUI = {
             NexusGUI.popup(message, content, { style: "minimal" }).then(() => {
                 resolve(null);
             });
+            input.focus();
         });
     },
     q: function (strings, ...subs) {
@@ -166,13 +173,8 @@ let onLoad = function () {
             padding-right: 8px;
             margin: 5px;
         }
-        #nexus-gui-popup-wrapper {
-            z-index: 100000;
-        }
-        #nexus-gui-popup {
-            z-index: 100001;
-        }
         #nexus-gui-popup-background {
+            z-index: 100000;
             width: 100%;
             height: 100%;
             position: fixed;
@@ -182,6 +184,7 @@ let onLoad = function () {
             background: rgba(0, 0, 0, 0.5);
         }
         #nexus-gui-popup {
+            z-index: 100001;
             background: rgba(0, 0, 0, .9);
             position: fixed;
             top: 50%;
