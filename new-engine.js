@@ -1500,18 +1500,37 @@ function af() {
 }
 
 function ud() {
-    0 == za ? ($("#game-timer-bar-player").show(), $("#game-timer-player").show(), $("#game-timer-bar-opponent").hide(), $("#game-timer-opponent").hide()) : 1 == za && ($("#game-timer-bar-player").hide(), $("#game-timer-player").hide(), $("#game-timer-bar-opponent").show(), $("#game-timer-opponent").show());
-    0 > r[0] && (r[0] = 0);
-    0 > r[1] && (r[1] = 0);
+    if(za === 0) {
+        $("#game-timer-bar-player").show();
+        $("#game-timer-player").show();
+        $("#game-timer-bar-opponent").hide();
+        $("#game-timer-opponent").hide();
+    }
+    else if(1 == za) {
+        $("#game-timer-bar-player").hide();
+        $("#game-timer-player").hide();
+        $("#game-timer-bar-opponent").show();
+        $("#game-timer-opponent").show();
+    }
+    if(r[0] < 0) {
+        r[0] = 0;
+    }
+    if(r[1] < 0) {
+        r[1] = 0;
+    }
     $("#game-timer-player").text(r[0]);
     $("#game-timer-opponent").text(r[1]);
-    var a = 100 * r[0] / 240;
-    100 < a && (a = 100);
-    $("#game-timer-bar-player-part").css("width", a + "%");
-    a = 100 *
-        r[1] / 240;
-    100 < a && (a = 100);
-    $("#game-timer-bar-opponent-part").css("width", a + "%")
+    
+    let a0 = 100 * r[0] / 240;
+    if(a0 > 100) {
+        a0 = 100;
+    }
+    $("#game-timer-bar-player-part").css("width", a0 + "%");
+    let a1 = 100 * r[1] / 240;
+    if(a1 > 100) {
+        a1 = 100;
+    }
+    $("#game-timer-bar-opponent-part").css("width", a1 + "%");
 }
 
 function lf(a, b) {

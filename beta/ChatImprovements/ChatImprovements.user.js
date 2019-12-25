@@ -1,13 +1,14 @@
 // ==UserScript==
 // @name         DuelingNexus Chat Improvements Plugin
 // @namespace    https://duelingnexus.com/
-// @version      0.6.2
+// @version      0.6.3
 // @description  Revamps the chat and visual features of dueling.
 // @author       Sock#3222
 // @grant        none
 // @match        https://duelingnexus.com/game/*
 // @updateURL   https://raw.githubusercontent.com/LimitlessSocks/DuelingNexusUserScripts/master/beta/ChatImprovements/ChatImprovements.user.js
 // @downloadURL https://raw.githubusercontent.com/LimitlessSocks/DuelingNexusUserScripts/master/beta/ChatImprovements/ChatImprovements.user.js
+// @require https://raw.githubusercontent.com/LimitlessSocks/DuelingNexusUserScripts/master/beta/CustomNexusGUI/CustomNexusGUI.user.js
 // ==/UserScript==
 
 // TODO: add github link
@@ -552,12 +553,12 @@ let onload = function () {
                              .css("cursor", "pointer");
                 
                 updateValueTd.click(() => {
-                    let newValue = prompt("Enter the new value for \"" + this.tag + "\":");
-                    
-                    if(newValue !== null) {
-                        base.val(newValue);
-                        onValueChange();
-                    }
+                    NexusGUI.prompt("Enter the new value for \"" + this.tag + "\":").then((newValue) => {
+                        if(newValue !== null) {
+                            base.val(newValue);
+                            onValueChange();
+                        }
+                    });
                 });
             }
             
