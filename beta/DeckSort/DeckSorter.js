@@ -307,7 +307,7 @@ let onStartDeckSorter = function () {
     const SPECIFIER_ITEM_REGEX = /\s*([\S:]+?):(.+)/;
     const specifiers = {};
     const specifierRows = [];
-    console.log(decksByTag);
+    // console.log(decksByTag);
     while(decksByTag.unsorted.length && SPECIFIER_REGEX.test(decksByTag.unsorted[0].row.textContent)) {
         let specifierRow = decksByTag.unsorted.shift().row;
         specifierRows.push(specifierRow);
@@ -359,7 +359,7 @@ let onStartDeckSorter = function () {
     
     const MAX_DECK_NAME_SIZE = 64;
     const exportSpecifiers = async function () {
-        console.log("SPEC", specifiers);
+        // console.log("SPEC", specifiers);
         // let content = specifierRows
             // .map(tr => tr.children[0].textContent.slice(3))
             // .join(";")
@@ -378,7 +378,7 @@ let onStartDeckSorter = function () {
                     console.error("Entry exceeded max length: " + entry);
                     continue;
                 }
-                console.log(JSON.stringify(build));
+                // console.log(JSON.stringify(build));
                 lines.push(build);
                 build = "!! ";
             }
@@ -391,8 +391,8 @@ let onStartDeckSorter = function () {
         let capacity = specifierRows.length;
         let deficit = lines.length - capacity;
         if(deficit > 0) {
-            console.warn("Creating new decks to make up for deficit of " + deficit);
-            console.log({ capacity : capacity, deficit: deficit });
+            // console.warn("Creating new decks to make up for deficit of " + deficit);
+            // console.log({ capacity : capacity, deficit: deficit });
         }
         while(deficit > 0) {
             await createDeck("!! ");
@@ -405,13 +405,13 @@ let onStartDeckSorter = function () {
         lines.forEach(async (line, index) => {
             line = line.slice(0, -1); // remove trailing ";"
             let spec = specifierData[index];
-            console.log("renaming!", {
-                from: spec.id,
-                to: line,
-            });
+            // console.log("renaming!", {
+                // from: spec.id,
+                // to: line,
+            // });
             await renameDeck(spec.id, line);
         });
-        console.log(content);
+        // console.log(content);
     }
     
     // add new button to top
@@ -429,7 +429,7 @@ let onStartDeckSorter = function () {
     options.click(function () {
         let content = "";//specifierRows
         // TODO: flex stuff
-        console.log(specifierRows);
+        // console.log(specifierRows);
         let sorted = [...uniqueTags].sort();
         let table = $("<table>");
         for(let tag of sorted) {
@@ -451,7 +451,7 @@ let onStartDeckSorter = function () {
 let startUpDeckSorter = async function () {
     // wait until we have something to manipulate
     waitForElement("#decks-container td").then((container) => {
-        console.log("Received: ", container.parentNode.parentNode.children);
+        // console.log("Received: ", container.parentNode.parentNode.children);
         onStartDeckSorter();
         // now that we're here, we'll wait until we aren't
         waitForNoElement("#decks-area").then(() => {
