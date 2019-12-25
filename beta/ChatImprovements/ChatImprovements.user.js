@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Chat Improvements Plugin
 // @namespace    https://duelingnexus.com/
-// @version      0.6.3
+// @version      0.6.4
 // @description  Revamps the chat and visual features of dueling.
 // @author       Sock#3222
 // @grant        none
@@ -980,13 +980,13 @@ let onload = function () {
         var a = $("#ci-ext-misc-sections").position().top;
         
         // originally: - 24
-        const offset = 37;
+        const offset = 24;
         $("#ci-ext-misc-sections div")
             .css("max-height", $(window).height() - a - offset);
         $("#game-siding-column")
             .css("max-height", $(window).height() - a - offset);
         
-        a = 4 === Ab ? 7 : 6;
+        a = 4 <= Ab ? 7 : 6;
         var b = $(window).width() - $("#ci-ext-misc").width() - 50,
             // c = $(window).height();// - $("#game-chat-area").height() - 8 - 48;
             c = $(window).height() - $("#game-chat-textbox").outerHeight() - 8 - 48;
