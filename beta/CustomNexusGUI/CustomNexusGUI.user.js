@@ -56,7 +56,7 @@ const NexusGUI = {
         
         NexusGUI._popupElementsLoaded = true;
     },
-    _popupStyles: ["wide"],
+    _popupStyles: ["wide", "minimal"],
     popup: function (title, content, options = {}) {
         // reference variable
         const elements = NexusGUI._popupElements;
@@ -75,6 +75,44 @@ const NexusGUI = {
         else if(options.style) {
             console.warn("No such style `" + options.style + "`, ignoring");
         }
+        
+        return new Promise((resolve, reject) => {
+            let cleanUp = () => {
+                resolve();
+                elements.background.unbind("click", cleanUp);
+            };
+            
+            elements.background.bind("click", cleanUp);
+        });
+    },
+    closePopup: function () {
+        const elements = NexusGUI._popupElements;
+        elements.background.trigger("click");
+    },
+    button: (text) => $("<button>").addClass("nexus-gui-button").text(text),
+    prompt: function (message, defaultValue = null) {
+        let content = $("<div>");
+        let input = $("<input type=text>");
+        if(defaultValue !== null) {
+            input.val(defaultValue);
+        }
+        content.append(input);
+        let okButton = NexusGUI.button("OK");
+        let cancelButton = NexusGUI.button("Cancel");
+        content.append($("<div>").append(okButton, cancelButton));
+        return new Promise((resolve, reject) => {
+            okButton.click(() => {
+                resolve(input.val());
+                NexusGUI.closePopup();
+            });
+            cancelButton.click(() => {
+                resolve(null);
+                NexusGUI.closePopup();
+            });
+            NexusGUI.popup(message, content, { style: "minimal" }).then(() => {
+                resolve(null);
+            });
+        });
     },
     q: function (strings, ...subs) {
         let total = strings.raw.map((string, i) => 
@@ -114,6 +152,24 @@ const NexusGUI = {
 
 let onLoad = function () {
     NexusGUI.addCSS(NexusGUI.q`
+        /* mostly a copy of engine-button */
+        .nexus-gui-button {
+            background-color: rgba(0,0,0,0.8);
+            color: #f0f0f0;
+            font-family: "Helvetica Neue", Helvetica, Verdana, Geneva, sans-serif;
+            font-size: 14px;
+            border: 1px solid #f0f0f0;
+            min-height: 32px;
+            padding-left: 8px;
+            padding-right: 8px;
+            margin: 5px;
+        }
+        #nexus-gui-popup-wrapper {
+            z-index: 100000;
+        }
+        #nexus-gui-popup {
+            z-index: 100001;
+        }
         #nexus-gui-popup-background {
             width: 100%;
             height: 100%;
@@ -137,6 +193,11 @@ let onLoad = function () {
         }
         #nexus-gui-popup.wide {
             width: 800px;
+        }
+        #nexus-gui-popup.minimal {
+            width: auto;
+            min-height: 0px;
+            height: auto;
         }
         #nexus-gui-popup-title {
             margin: 0;
