@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.9.1
+// @version      0.9.2
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -1934,7 +1934,7 @@ let onStart = function () {
             if(attributeMask !== undefined) {
                 attributeMask = parseInt(attributeMask, 10);
                 return function (cardObject) {
-                    return attributeOf(cardObject) === attributeMask;
+                    return tag.comp(attributeOf(cardObject), attributeMask);
                 };
             }
             else {
