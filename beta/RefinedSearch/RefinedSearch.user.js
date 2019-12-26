@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.9
+// @version      0.9.1
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
