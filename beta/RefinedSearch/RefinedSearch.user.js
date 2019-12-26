@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.7.9
+// @version      0.8
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -402,6 +402,10 @@ let onStart = function () {
     }
     const lastElement = function (arr) {
         return arr[arr.length - 1];
+    }
+    // modified from https://stackoverflow.com/a/6969486/4119004
+    const escapeRegex = function (string) {
+        return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     }
     const previewCard = Cc;
     
@@ -1849,6 +1853,22 @@ let onStart = function () {
         card.compareText = card.compareText || card.description.toUpperCase();
         return card.compareText;
     };
+    let parseInputQuery = function (text) {
+        let prepend = "";
+        let append = "";
+        let inner = text.toString().trim();
+        if(inner[0] === "^") {
+            prepend = inner[0];
+            inner = inner.slice(1);
+        }
+        if(lastElement(inner) === "$") {
+            append = lastElement(inner);
+            inner = inner.slice(0, -1);
+        }
+        inner = inner.replace(/\\\*/g, ".*");
+        let compiled = prepend + inner + append;
+        return new RegExp(compiled);
+    };
     const ISOLATE_TAG_REGEX = /\{(!?)(\w+)([^\{\}]*?)\}/g;
     let updateSearchContents = function () {
         clearVisualSearchOptions();
@@ -1921,8 +1941,8 @@ let onStart = function () {
             let isFuzzySearch = hasTags || isLongEnough;
             
             let uppercaseInput = input.toUpperCase();
-            let uppercaseText = effect.toUpperCase();// || uppercaseInput;
-            let searchableInput = uppercaseInput.replace(/ /g, "");
+            let uppercaseText = parseInputQuery(effect.toUpperCase());
+            let searchableInput = parseInputQuery(uppercaseInput.replace(/ /g, ""));
             if (0 === fuzzyMatches.length) {
                 // for each card ID
                 for (var e in CARD_LIST) {
@@ -1936,8 +1956,8 @@ let onStart = function () {
                         exactMatches.push(card);
                     } else if(isFuzzySearch) {
                         ensureCompareText(card);
-                        let cardMatchesName = compareName.indexOf(searchableInput) !== -1;
-                        let cardMatchesEffect = card.compareText.indexOf(uppercaseText) !== -1;
+                        let cardMatchesName = compareName.search(searchableInput) !== -1;
+                        let cardMatchesEffect = card.compareText.search(uppercaseText) !== -1;
                         if(cardMatchesName && cardMatchesEffect) {
                             fuzzyMatches.push(card);
                         }
