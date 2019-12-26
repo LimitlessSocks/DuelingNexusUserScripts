@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.8
+// @version      0.9
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -258,7 +258,218 @@ class SearchInputShunter {
 
 let onStart = function () {
     // minified with https://kangax.github.io/html-minifier/
-    const ADVANCED_SETTINGS_HTML_STRING = '<div id=rs-ext-advanced-search-bar><button id=rs-ext-monster-toggle class="engine-button engine-button-default">monster</button> <button id=rs-ext-spell-toggle class="engine-button engine-button-default">spell</button> <button id=rs-ext-trap-toggle class="engine-button engine-button-default">trap</button> <button id=rs-ext-sort-toggle class="engine-button engine-button-default rs-ext-right-float">sort</button><div id=rs-ext-advanced-pop-outs><div id=rs-ext-sort class="rs-ext-shrinkable rs-ext-shrunk"><table id=rs-ext-sort-table class=rs-ext-table><tr><th>Sort By</th><td><select class=rs-ext-input id=rs-ext-sort-by><option>Name</option><option>Level</option><option>ATK</option><option>DEF</option></select></td></tr><tr><th>Sort Order</th><td><select class=rs-ext-input id=rs-ext-sort-order><option>Ascending</option><option>Descending</option></select></td></tr><tr><th>Stratify?</th><td><input type=checkbox id=rs-ext-sort-stratify checked></td></tr></table></div><div id=rs-ext-spell class="rs-ext-shrinkable rs-ext-shrunk"><p><b>Spell Card Type: </b><select id=rs-ext-spell-type><option><option>Normal<option>Quick-play<option>Field<option>Continuous<option>Ritual<option>Equip</select></div><div id=rs-ext-trap class="rs-ext-shrinkable rs-ext-shrunk"><p><b>Trap Card Type: </b><select id=rs-ext-trap-type><option><option>Normal<option>Continuous<option>Counter</select></div><div id=rs-ext-monster class="rs-ext-shrinkable rs-ext-shrunk"><table class="rs-ext-left-float rs-ext-table"id=rs-ext-link-arrows><tr><th colspan=3>Link Arrows<tr><td><button class=rs-ext-toggle-button>↖</button><td><button class=rs-ext-toggle-button>↑</button><td><button class=rs-ext-toggle-button>↗</button><tr><td><button class=rs-ext-toggle-button>←</button><td><button class=rs-ext-toggle-button id=rs-ext-equals>=</button><td><button class=rs-ext-toggle-button>→</button><tr><td><button class=rs-ext-toggle-button>↙</button><td><button class=rs-ext-toggle-button>↓</button><td><button class=rs-ext-toggle-button>↘</button></table><div id=rs-ext-monster-table class="rs-ext-left-float rs-ext-table"><table><tr><th>Category<td><select class=rs-ext-input id=rs-ext-monster-category><option><option>Normal<option>Effect<option>Ritual<option>Fusion<option>Synchro<option>Xyz<option>Pendulum<option>Link<option>Leveled<option>Extra Deck<option>Non-Effect<option>Gemini<option>Flip<option>Spirit<option>Toon</select><tr><th>Ability<td><select id=rs-ext-monster-ability class=rs-exit-input><option><option>Tuner<option>Toon<option>Spirit<option>Union<option>Gemini<option>Flip<option>Pendulum<tr><th>Type<td><select id=rs-ext-monster-type class=rs-ext-input><option><option>Aqua<option>Beast<option>Beast-Warrior<option>Cyberse<option>Dinosaur<option>Dragon<option>Fairy<option>Fiend<option>Fish<option>Insect<option>Machine<option>Plant<option>Psychic<option>Pyro<option>Reptile<option>Rock<option>Sea Serpent<option>Spellcaster<option>Thunder<option>Warrior<option>Winged Beast<option>Wyrm<option>Zombie<option>Creator God<option>Divine-Beast</select><tr><th>Attribute<td><select id=rs-ext-monster-attribute class=rs-ext-input><option><option>DARK<option>EARTH<option>FIRE<option>LIGHT<option>WATER<option>WIND<option>DIVINE</select><tr><th>Limit</th><td><input class=rs-ext-input id=rs-ext-limit></td></tr><tr><th>Level/Rank/Link Rating<td><input class=rs-ext-input id=rs-ext-level><tr><th>Pendulum Scale<td><input class=rs-ext-input id=rs-ext-scale><tr><th>ATK<td><input class=rs-ext-input id=rs-ext-atk><tr><th>DEF<td><input class=rs-ext-input id=rs-ext-def></table></div></div></div><div id=rs-ext-spacer></div></div>';
+    const ADVANCED_SETTINGS_HTML_STRING = `
+        <div id=rs-ext-advanced-search-bar>
+          <button id=rs-ext-monster-toggle class="engine-button engine-button-default">monster</button>
+          <button id=rs-ext-spell-toggle class="engine-button engine-button-default">spell</button>
+          <button id=rs-ext-trap-toggle class="engine-button engine-button-default">trap</button>
+          <button id=rs-ext-sort-toggle class="engine-button engine-button-default rs-ext-right-float">sort</button>
+          <div id=rs-ext-advanced-pop-outs>
+            <div id=rs-ext-sort class="rs-ext-shrinkable rs-ext-shrunk">
+              <table id=rs-ext-sort-table class=rs-ext-table>
+                <tr>
+                  <th>Sort By</th>
+                  <td>
+                    <select class=rs-ext-input id=rs-ext-sort-by>
+                      <option>Name</option>
+                      <option>Level</option>
+                      <option>ATK</option>
+                      <option>DEF</option>
+                    </select>
+                  </td>
+                </tr>
+                <tr>
+                  <th>Sort Order</th>
+                  <td>
+                    <select class=rs-ext-input id=rs-ext-sort-order>
+                      <option>Ascending</option>
+                      <option>Descending</option>
+                    </select>
+                  </td>
+                </tr>
+                <tr>
+                  <th>Stratify?</th>
+                  <td><input type=checkbox id=rs-ext-sort-stratify checked></td>
+                </tr>
+              </table>
+            </div>
+            <div id=rs-ext-spell class="rs-ext-shrinkable rs-ext-shrunk">
+              <table>
+                <tr>
+                  <th>Spell Card Type</th>
+                  <td>
+                    <select id=rs-ext-spell-type>
+                      <option></option>
+                      <option>Normal</option>
+                      <option>Quick-play</option>
+                      <option>Field</option>
+                      <option>Continuous</option>
+                      <option>Ritual</option>
+                      <option>Equip</option>
+                    </select>
+                  </td>
+                </tr>
+                <tr>
+                  <th>Limit</th>
+                  <td><input class=rs-ext-input id=rs-ext-spell-limit></td>
+                </tr>
+              </table>
+            </div>
+            <div id=rs-ext-trap class="rs-ext-shrinkable rs-ext-shrunk">
+              <table>
+                <tr>
+                  <th>Trap Card Type</th>
+                  <td>
+                    <select id=rs-ext-trap-type>
+                      <option></option>
+                      <option>Normal</option>
+                      <option>Continuous</option>
+                      <option>Counter</option>
+                    </select>
+                  </td>
+                </tr>
+                <tr>
+                  <th>Limit</th>
+                  <td><input class=rs-ext-input id=rs-ext-trap-limit></td>
+                </tr>
+              </table>
+            </div>
+            <div id=rs-ext-monster class="rs-ext-shrinkable rs-ext-shrunk">
+              <table class="rs-ext-left-float rs-ext-table"id=rs-ext-link-arrows>
+                <tr>
+                  <th colspan=3>Link Arrows</th>
+                </tr>
+                <tr>
+                  <td><button class=rs-ext-toggle-button>↖</button></td>
+                  <td><button class=rs-ext-toggle-button>↑</button></td>
+                  <td><button class=rs-ext-toggle-button>↗</button></td>
+                </tr>
+                <tr>
+                  <td><button class=rs-ext-toggle-button>←</button></td>
+                  <td><button class=rs-ext-toggle-button id=rs-ext-equals>=</button></td>
+                  <td><button class=rs-ext-toggle-button>→</button></td>
+                </tr>
+                <tr>
+                  <td><button class=rs-ext-toggle-button>↙</button></td>
+                  <td><button class=rs-ext-toggle-button>↓</button></td>
+                  <td><button class=rs-ext-toggle-button>↘</button></td>
+                </tr>
+              </table>
+              <div id=rs-ext-monster-table class="rs-ext-left-float rs-ext-table">
+                <table>
+                  <tr>
+                    <th>Category</th>
+                    <td>
+                      <select class=rs-ext-input id=rs-ext-monster-category>
+                        <option></option>
+                        <option>Normal</option>
+                        <option>Effect</option>
+                        <option>Ritual</option>
+                        <option>Fusion</option>
+                        <option>Synchro</option>
+                        <option>Xyz</option>
+                        <option>Pendulum</option>
+                        <option>Link</option>
+                        <option>Leveled</option>
+                        <option>Extra Deck</option>
+                        <option>Non-Effect</option>
+                        <option>Gemini</option>
+                        <option>Flip</option>
+                        <option>Spirit</option>
+                        <option>Toon</option>
+                      </select>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>Ability</th>
+                    <td>
+                      <select id=rs-ext-monster-ability class=rs-exit-input>
+                        <option></option>
+                        <option>Tuner</option>
+                        <option>Toon</option>
+                        <option>Spirit</option>
+                        <option>Union</option>
+                        <option>Gemini</option>
+                        <option>Flip</option>
+                        <option>Pendulum</option>
+                      </select>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>Type</th>
+                    <td>
+                      <select id=rs-ext-monster-type class=rs-ext-input>
+                        <option></option>
+                        <option>Aqua</option>
+                        <option>Beast</option>
+                        <option>Beast-Warrior</option>
+                        <option>Cyberse</option>
+                        <option>Dinosaur</option>
+                        <option>Dragon</option>
+                        <option>Fairy</option>
+                        <option>Fiend</option>
+                        <option>Fish</option>
+                        <option>Insect</option>
+                        <option>Machine</option>
+                        <option>Plant</option>
+                        <option>Psychic</option>
+                        <option>Pyro</option>
+                        <option>Reptile</option>
+                        <option>Rock</option>
+                        <option>Sea Serpent</option>
+                        <option>Spellcaster</option>
+                        <option>Thunder</option>
+                        <option>Warrior</option>
+                        <option>Winged Beast</option>
+                        <option>Wyrm</option>
+                        <option>Zombie</option>
+                        <option>Creator God</option>
+                        <option>Divine-Beast</option>
+                      </select>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>Attribute</th>
+                    <td>
+                      <select id=rs-ext-monster-attribute class=rs-ext-input>
+                        <option></option>
+                        <option>DARK</option>
+                        <option>EARTH</option>
+                        <option>FIRE</option>
+                        <option>LIGHT</option>
+                        <option>WATER</option>
+                        <option>WIND</option>
+                        <option>DIVINE</option>
+                      </select>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>Limit</th>
+                    <td><input class=rs-ext-input id=rs-ext-monster-limit></td>
+                  </tr>
+                  <tr>
+                    <th>Level/Rank/Link Rating</th>
+                    <td><input class=rs-ext-input id=rs-ext-level></td>
+                  </tr>
+                  <tr>
+                    <th>Pendulum Scale</th>
+                    <td><input class=rs-ext-input id=rs-ext-scale></td>
+                  </tr>
+                  <tr>
+                    <th>ATK</th>
+                    <td><input class=rs-ext-input id=rs-ext-atk></td>
+                  </tr>
+                  <tr>
+                    <th>DEF</th>
+                    <td><input class=rs-ext-input id=rs-ext-def></td>
+                  </tr>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div id=rs-ext-spacer></div>
+        </div>
+    `;
     
     const ADVANCED_SETTINGS_HTML_ELS = jQuery.parseHTML(ADVANCED_SETTINGS_HTML_STRING);
     ADVANCED_SETTINGS_HTML_ELS.reverse();
@@ -1423,7 +1634,7 @@ let onStart = function () {
         ATTRIBUTE:  document.getElementById("rs-ext-monster-attribute"),
         LEVEL:      document.getElementById("rs-ext-level"),
         SCALE:      document.getElementById("rs-ext-scale"),
-        LIMIT:      document.getElementById("rs-ext-limit"),
+        LIMIT:      document.getElementById("rs-ext-monster-limit"),
         ATK:        document.getElementById("rs-ext-atk"),
         DEF:        document.getElementById("rs-ext-def"),
         CATEGORY:   document.getElementById("rs-ext-monster-category"),
@@ -1508,8 +1719,10 @@ let onStart = function () {
     }
     
     const SPELL_TRAP_INPUTS = {
-        SPELL:  document.getElementById("rs-ext-spell-type"),
-        TRAP:   document.getElementById("rs-ext-trap-type"),
+        SPELL:       document.getElementById("rs-ext-spell-type"),
+        SPELL_LIMIT: document.getElementById("rs-ext-spell-limit"),
+        TRAP:        document.getElementById("rs-ext-trap-type"),
+        TRAP_LIMIT:  document.getElementById("rs-ext-trap-limit"),
     };
     const SPELL_TO_KEYWORD = {
         "Normal": "NORMALST",
@@ -1528,6 +1741,11 @@ let onStart = function () {
             tagString += tagStringOf(keyword);
         }
         
+        let limit = SPELL_TRAP_INPUTS.SPELL_LIMIT.value;
+        if(limit) {
+            tagString += tagStringOf("LIM", limit);
+        }
+        
         return tagString;
     };
     
@@ -1543,6 +1761,11 @@ let onStart = function () {
         if(value) {
             let keyword = TRAP_TO_KEYWORD[value];
             tagString += tagStringOf(keyword);
+        }
+        
+        let limit = SPELL_TRAP_INPUTS.TRAP_LIMIT.value;
+        if(limit) {
+            tagString += tagStringOf("LIM", limit);
         }
         
         return tagString;
@@ -2062,8 +2285,7 @@ let onStart = function () {
     // add relevant listeners
     let allInputs = [
         document.querySelectorAll("#rs-ext-monster-table input, #rs-ext-monster-table select"),
-        SPELL_TRAP_INPUTS.SPELL,
-        SPELL_TRAP_INPUTS.TRAP,
+        Object.values(SPELL_TRAP_INPUTS),
         document.querySelectorAll("#rs-ext-sort-table input, #rs-ext-sort-table select"),
     ].flat();
     
