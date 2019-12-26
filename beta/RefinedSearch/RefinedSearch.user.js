@@ -2088,7 +2088,9 @@ let onStart = function () {
             append = lastElement(inner);
             inner = inner.slice(0, -1);
         }
-        inner = inner.replace(/\\\*/g, ".*");
+        inner = escapeRegex(inner);
+        inner = inner.replace(/\\\*/g, ".*")
+                     .replace(/_/g, ".");
         let compiled = prepend + inner + append;
         return new RegExp(compiled);
     };
