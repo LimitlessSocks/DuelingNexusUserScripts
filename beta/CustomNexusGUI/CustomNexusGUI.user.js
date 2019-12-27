@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CustomNexusGUI API
 // @namespace    https://duelingnexus.com/
-// @version      0.2.1
+// @version      0.3
 // @description  To enable custom GUI elements, such as popups.
 // @author       Sock#3222
 // @grant        none
@@ -140,6 +140,48 @@ const NexusGUI = {
             .map(line => line.replace(reg, ""))
             .join("\n");
     },
+    paginatedPopup: function (title, pages) {
+        let content = $("<div>");
+        let current = $("<p>");
+        let previousPage = NexusGUI.button("<");
+        let pagePreview = $("<span></span>");
+        let nextPage = NexusGUI.button(">");
+        let currentPage = 0;
+        let update = () => {
+            if(currentPage < 0) {
+                currentPage = 0;
+            }
+            if(currentPage >= pages.length) {
+                currentPage = pages.length - 1;
+            }
+            previousPage.attr("disabled", currentPage === 0);
+            nextPage.attr("disabled", currentPage === pages.length - 1);
+            
+            pagePreview.text((currentPage + 1) + " / " + pages.length);
+            
+            current.text(pages[currentPage]);
+        };
+        
+        update();
+        
+        nextPage.click(() => {
+            currentPage++;
+            update();
+        });
+        
+        previousPage.click(() => {
+            currentPage--;
+            update();
+        });
+        
+        let pageContainer = $("<div class=nexus-gui-page-container>");
+        pageContainer.append(previousPage, pagePreview, nextPage);
+        
+        content.append(current);
+        content.append(pageContainer);
+        
+        return NexusGUI.popup(title, content);
+    },
     loadScript: function (url, cb = null) {
         let script = document.createElement("script");
         script.src = url;
@@ -161,6 +203,12 @@ const NexusGUI = {
 
 let onLoad = function () {
     NexusGUI.addCSS(NexusGUI.q`
+        .nexus-gui-page-container {
+            position: absolute;
+            bottom: 0.5em;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
         /* mostly a copy of engine-button */
         .nexus-gui-button {
             background-color: rgba(0,0,0,0.8);
@@ -172,6 +220,16 @@ let onLoad = function () {
             padding-left: 8px;
             padding-right: 8px;
             margin: 5px;
+            cursor: pointer;
+        }
+        .nexus-gui-button:hover {
+            background-color: rgba(64, 64, 64);
+            background-color: rgba(64, 64, 64, 0.8);
+        }
+        .nexus-gui-button:disabled,
+        .nexus-gui-button[disabled] {
+            cursor: not-allowed;
+            background: rgba(90, 64, 64, 0.8);
         }
         #nexus-gui-popup-background {
             z-index: 100000;
