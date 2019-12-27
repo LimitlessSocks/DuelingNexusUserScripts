@@ -1,13 +1,14 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.9.2
+// @version      0.10
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
 // @include      https://duelingnexus.com/editor/*
 // @updateURL   https://raw.githubusercontent.com/LimitlessSocks/DuelingNexusUserScripts/master/beta/RefinedSearch/RefinedSearch.user.js
 // @downloadURL https://raw.githubusercontent.com/LimitlessSocks/DuelingNexusUserScripts/master/beta/RefinedSearch/RefinedSearch.user.js
+// @require https://raw.githubusercontent.com/LimitlessSocks/DuelingNexusUserScripts/master/beta/CustomNexusGUI/CustomNexusGUI.user.js
 // ==/UserScript==
 
 // TODO: separate search by name/eff
@@ -547,7 +548,7 @@ let onStart = function () {
     }
     
     const makeSearchable = function (name) {
-        return name.replace(/ /g, "")
+        return name//.replace(/ /g, "")
                    .toUpperCase();
     }
     
@@ -1435,6 +1436,19 @@ let onStart = function () {
         download(message, Deck.name + ".txt", "text");
     });
     
+    let infoButton = makeElement("button", "rs-ext-show-info", "Info");
+    infoButton.classList.add("engine-button", "engine-button", "engine-button-default");
+    infoButton.title = "Help me!!";
+    appendTextNode(editorMenuContent, " ");
+    editorMenuContent.appendChild(infoButton);
+    
+    infoButton.addEventListener("click", function () {
+        let content = NexusGUI.q`
+            hello! nothing here yet!
+        `;
+        NexusGUI.popup("Info", document.createTextNode(content));
+    });
+    
     // add options tile
     let optionsArea = makeElement("div", "options-area"); /* USES NEXUS DEFAULT CSS/ID */
     let options = makeElement("button", "rs-ext-options");
@@ -2077,23 +2091,65 @@ let onStart = function () {
         return card.compareText;
     };
     let parseInputQuery = function (text) {
-        let prepend = "";
-        let append = "";
-        let inner = text.toString().trim();
-        if(inner[0] === "^") {
-            prepend = inner[0];
-            inner = inner.slice(1);
+        let result = {
+            include: [],
+            exclude: []
+        };
+        let i = 0;
+        for(let section of text.split("~")) {
+            for(let combo of section.split("&&")) {
+                let prepend = "";
+                let append = "";
+                let inner = combo.toString().trim();
+                if(inner[0] === "^") {
+                    prepend = inner[0];
+                    inner = inner.slice(1);
+                }
+                if(lastElement(inner) === "$") {
+                    append = lastElement(inner);
+                    inner = inner.slice(0, -1);
+                }
+                inner = escapeRegex(inner);
+                inner = inner.replace(/\\\*/g, ".*")
+                             .replace(/_/g, ".")
+                             .replace(/\\\\([xsn])/g, "\\$1");
+                let compiled = prepend + inner + append;
+                let regex = new RegExp(compiled, "i");
+                
+                let source;
+                if(i === 0) {
+                    source = result.include;
+                }
+                else if(i === 1) {
+                    source = result.exclude;
+                }
+                else {
+                    console.error("No such source index " + i);
+                    source = [];
+                }
+                
+                source.push(regex);
+            }
+            i++;
         }
-        if(lastElement(inner) === "$") {
-            append = lastElement(inner);
-            inner = inner.slice(0, -1);
-        }
-        inner = escapeRegex(inner);
-        inner = inner.replace(/\\\*/g, ".*")
-                     .replace(/_/g, ".");
-        let compiled = prepend + inner + append;
-        return new RegExp(compiled);
+        
+        // TODO: make this a class
+        console.log(result);
+        result.matches = function (text) {
+            return result.exclude.every(exclusion => text.search(exclusion) === -1) &&
+                   result.include.every(inclusion => text.search(inclusion) !== -1);
+        };
+        result.matchesExactly = function (text) {
+            if(result.include.length > 1) {
+                return false;
+            }
+            let include = result.include[0];
+            let [ match ] = text.match(result.include) || [];
+            return match === text;
+        };
+        return result;
     };
+    // window.parseInputQuery=parseInputQuery;
     const ISOLATE_TAG_REGEX = /\{(!?)(\w+)([^\{\}]*?)\}/g;
     let updateSearchContents = function () {
         clearVisualSearchOptions();
@@ -2165,9 +2221,12 @@ let onStart = function () {
             let isLongEnough = input.length >= EXT.MIN_INPUT_LENGTH || effect.length >= EXT.MIN_INPUT_LENGTH;
             let isFuzzySearch = hasTags || isLongEnough;
             
-            let uppercaseInput = input.toUpperCase();
-            let uppercaseText = parseInputQuery(effect.toUpperCase());
-            let searchableInput = parseInputQuery(uppercaseInput.replace(/ /g, ""));
+            // let uppercaseInput = input.toUpperCase();
+            
+            let effectQuery = parseInputQuery(effect);
+            let nameQuery = parseInputQuery(input);
+            // let nameQuery = parseInputQuery(uppercaseInput.replace(/ /g, ""))));
+            
             if (0 === fuzzyMatches.length) {
                 // for each card ID
                 for (var e in CARD_LIST) {
@@ -2176,13 +2235,13 @@ let onStart = function () {
                         continue;
                     }
                     let compareName = searchableCardName(card);
-                    if(compareName === searchableInput) {
+                    if(nameQuery.matchesExactly(compareName)) {
                         // if the search name is the input, push it
                         exactMatches.push(card);
                     } else if(isFuzzySearch) {
                         ensureCompareText(card);
-                        let cardMatchesName = compareName.search(searchableInput) !== -1;
-                        let cardMatchesEffect = card.compareText.search(uppercaseText) !== -1;
+                        let cardMatchesName = nameQuery.matches(compareName);
+                        let cardMatchesEffect = effectQuery.matches(card.compareText);
                         if(cardMatchesName && cardMatchesEffect) {
                             fuzzyMatches.push(card);
                         }
