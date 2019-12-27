@@ -1442,18 +1442,14 @@ let onStart = function () {
     editorMenuContent.appendChild(helpButton);
     
     helpButton.addEventListener("click", function () {
-        let text = [
+        let pages = [
             `By clicking any one of the "monster", "spell", and "trap" tabs, you can open a section which contains various search filters. There are two kinds of inputs: Drop-downs and text inputs. Drop-down lists give you a predefined set of options from which to choose. For example, a Trap may be either "Normal", "Continuous", or "Counter", so a drop-down menu is used. For features such as ATK and Level, you type a specific number, such as "2300" or "8".`,
             `For text inputs, you can put a comparison sign before the number to modify the expression. For example, typing ">=1500" in the "ATK" section will only show you monsters whose ATK value is at least 1500. The available operators are "=" (equality), "!=" (inequality), ">" (greater than), "<" (less than), ">=" (greater than or equal to), and "<=" (less than or equal to).`,
             `When searching by either card name or card effect, there are certain "wildcards" that you can use. The wildcard "_" will match any single character. For example, "b_t" matches "bot" and "bat". The wildcard "*" will match a sequence of any characters. "the*one" matches anything with the word "the" followed by the word "one", e.g., "Curtain of the Dark Ones".`,
             `You can place the "^" character at the beginning of your input to specify that you only want to match cards/effects which start with your given text. For example, "^blue" will match cards that begin with the word "blue", such as "Blue-Eyes White Dragon". Similarly, you can place "$" at the end of your input to specify that you only want to match ones which end with your given text. For example, "turtle$" will match cards that end with the word "turtle", such as "Gora Turtle". You can also use both! "^bat$" will only match "bat". No more, no less.`,
             `You can separate search queries with "&&" to represent that you want to match both queries in no particular order. If you want to search for a card effect that contains both "Tribute" and "GY" where you don't care about the order, you can use "Tribute&&GY", or "GY&&Tribute". You can also have a single "~" in your search query. Everything after that "~" indicates a search query you wish to exclude from your search. For example, if you want all effects which do not have the words "once per turn" in them, you could use "~once per turn". If you want to search for "GY" but not "discard", you could use "GY~discard".`
         ];
-        let content = document.createElement("div");
-        for(let para of text) {
-            content.appendChild(makeElement("p", null, para));
-        }
-        NexusGUI.popup("Help", content);
+        NexusGUI.paginatedPopup("Help", pages);
     });
     
     // add options tile
