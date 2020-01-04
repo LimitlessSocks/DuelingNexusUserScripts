@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.10
+// @version      0.11
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -20,6 +20,7 @@ const EXT = {
     SEARCH_BY_TEXT: true,
     MAX_UNDO_RECORD: 30,
     DECK_SIZE_LIMIT: null,
+    BANLIST_NAME: null,
     Search: {
         cache: [],
         current_page: 1,
@@ -476,7 +477,180 @@ let onStart = function () {
     ADVANCED_SETTINGS_HTML_ELS.reverse();
     
     // minified with cssminifier.com
-    const ADVANCED_SETTINGS_CSS_STRING = "#rs-ext-advanced-search-bar{width:100%}.rs-ext-toggle-button{width:3em;height:3em;background:#ddd;border:1px solid #000}.rs-ext-toggle-button:hover{background:#fff}button.rs-ext-selected{background:#00008b;color:#fff}button.rs-ext-selected:hover{background:#55d}.rs-ext-left-float{float:left}.rs-ext-right-float{float:right}.rs-ext-shrinkable{transition-property:transform;transition-duration:.3s;transition-timing-function:ease-out;height:auto;background:#ccc;width:100%;transform:scaleY(1);transform-origin:top;overflow:hidden;z-index:10000}.rs-ext-shrinkable>*{margin:10px}#rs-ext-monster,#rs-ext-spell,#rs-ext-trap,#rs-ext-sort{background:rgba(0,0,0,.7)}.rs-ext-shrunk{transform:scaleY(0);z-index:100}#rs-ext-advanced-pop-outs{position:relative}#rs-ext-advanced-pop-outs>.rs-ext-shrinkable{position:absolute;top:0;left:0}#rs-ext-monster-table th,#rs-ext-sort-table th{text-align:right}.rs-ext-table{padding-right:5px}#rs-ext-spacer{height:0;transition:height .3s ease-out}#rs-ext-sort{transition-property:top,transform}.engine-button[disabled],.engine-button:disabled{cursor:not-allowed;background:rgb(50,0,0);color:#a0a0a0;font-style:italic;}.rs-ext-card-entry-table button,.rs-ext-fullwidth-wrapper{width:100%;height:100%;}.rs-ext-card-entry-table{border-collapse:collapse;}.rs-ext-card-entry-table tr,.rs-ext-card-entry-table td{height:100%;}.editor-search-description{white-space:normal;}#editor-menu-spacer{width:15%;}.engine-button{cursor:pointer;}@media (min-width:1600px){.editor-search-result{font-size:1em}.editor-search-card{width:12.5%}.editor-search-banlist-icon{width:5%}.editor-search-result{width:100%}}.rs-ext-table-button{padding:8px;text-align:center;border:1px solid #AAAAAA;cursor:pointer;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;}.rs-ext-table-button:active{padding:8px 7px 8px 9px;}.rs-ext-flex{display:flex;width:100%;justify-content:space-between}.rs-ext-flex input{width:48%;}input::placeholder{font-style:italic;text-align:center;}";
+    const ADVANCED_SETTINGS_CSS_STRING = `
+        #rs-ext-advanced-search-bar {
+            width: 100%
+        }
+
+        .rs-ext-toggle-button {
+            width: 3em;
+            height: 3em;
+            background: #ddd;
+            border: 1px solid #000
+        }
+
+        .rs-ext-toggle-button:hover {
+            background: #fff
+        }
+
+        button.rs-ext-selected {
+            background: #00008b;
+            color: #fff
+        }
+
+        button.rs-ext-selected:hover {
+            background: #55d
+        }
+
+        .rs-ext-left-float {
+            float: left
+        }
+
+        .rs-ext-right-float {
+            float: right
+        }
+
+        .rs-ext-shrinkable {
+            transition-property: transform;
+            transition-duration: .3s;
+            transition-timing-function: ease-out;
+            height: auto;
+            background: #ccc;
+            width: 100%;
+            transform: scaleY(1);
+            transform-origin: top;
+            overflow: hidden;
+            z-index: 10000
+        }
+
+        .rs-ext-shrinkable>* {
+            margin: 10px
+        }
+
+        #rs-ext-monster,
+        #rs-ext-spell,
+        #rs-ext-trap,
+        #rs-ext-sort {
+            background: rgba(0, 0, 0, .7)
+        }
+
+        .rs-ext-shrunk {
+            transform: scaleY(0);
+            z-index: 100
+        }
+
+        #rs-ext-advanced-pop-outs {
+            position: relative
+        }
+
+        #rs-ext-advanced-pop-outs>.rs-ext-shrinkable {
+            position: absolute;
+            top: 0;
+            left: 0
+        }
+
+        #rs-ext-monster-table th,
+        #rs-ext-sort-table th {
+            text-align: right
+        }
+
+        .rs-ext-table {
+            padding-right: 5px
+        }
+
+        #rs-ext-spacer {
+            height: 0;
+            transition: height .3s ease-out
+        }
+
+        #rs-ext-sort {
+            transition-property: top, transform
+        }
+
+        .engine-button[disabled],
+        .engine-button:disabled {
+            cursor: not-allowed;
+            background: rgb(50, 0, 0);
+            color: #a0a0a0;
+            font-style: italic;
+        }
+
+        .rs-ext-card-entry-table button,
+        .rs-ext-fullwidth-wrapper {
+            width: 100%;
+            height: 100%;
+        }
+
+        .rs-ext-card-entry-table {
+            border-collapse: collapse;
+        }
+
+        .rs-ext-card-entry-table tr,
+        .rs-ext-card-entry-table td {
+            height: 100%;
+        }
+
+        .editor-search-description {
+            white-space: normal;
+        }
+
+        #editor-menu-spacer {
+            width: 15%;
+        }
+
+        .engine-button {
+            cursor: pointer;
+        }
+
+        @media (min-width:1600px) {
+            .editor-search-result {
+                font-size: 1em
+            }
+            .editor-search-card {
+                width: 12.5%
+            }
+            .editor-search-banlist-icon {
+                width: 5%
+            }
+            .editor-search-result {
+                width: 100%
+            }
+        }
+
+        .rs-ext-table-button {
+            padding: 8px;
+            text-align: center;
+            border: 1px solid #AAAAAA;
+            cursor: pointer;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        .rs-ext-table-button:active {
+            padding: 8px 7px 8px 9px;
+        }
+
+        .rs-ext-flex {
+            display: flex;
+            width: 100%;
+            justify-content: space-between
+        }
+
+        .rs-ext-flex input {
+            width: 48%;
+        }
+
+        input::placeholder {
+            font-style: italic;
+            text-align: center;
+        }
+        
+        #rs-ext-banlist {
+            margin: 5px;
+        }
+    `;
     
     // disable default listener (Z.Pb)
     $("#editor-search-text").off("input");
@@ -571,8 +745,6 @@ let onStart = function () {
     const monsterType = function (card) {
         return Ef[card.race];
     }
-    // U provides a map
-    // (a.type & U[c]) => (Vf[U[c]])
     const monsterTypeMap = {};
     for(let key in Wf) {
         let value = Wf[key];
@@ -580,10 +752,40 @@ let onStart = function () {
     }
     window.monsterTypeMap = monsterTypeMap;
     
-    const allowedCount = function (card) {
+    const banlists = ha.b;
+    const banlistNames = banlists.map(list => list.name);
+    const allowedCount = function (card, index = EXT.BANLIST_NAME) {
         // card.A = the source id (e.g. for alt arts)
         // card.id = the actual id
-        return Vf(card.A || card.id);
+        let ident = card.A || card.id || card;
+        
+        if(typeof index === "string") {
+            index = banlistNames.indexOf(index);
+            if(index < 0) {
+                index = 0;
+            }
+        }
+        
+        let banlist = banlists[index];
+        
+        if(!banlist) {
+            console.warn("Banlist unable to be loaded");
+            return 3;
+        }
+        
+        if(banlist.bannedIds.indexOf(ident) !== -1) {
+            return 0;
+        }
+        
+        if(banlist.limitedIds.indexOf(ident) !== -1) {
+            return 1;
+        }
+        
+        if(banlist.semiLimitedIds.indexOf(ident) !== -1) {
+            return 2;
+        }
+        
+        return 3;
     }
     const clearVisualSearchOptions = function () {
         return Z.Db();
@@ -1120,7 +1322,14 @@ let onStart = function () {
                     };
                 }
                 g = allowedCount(card);
-                3 !== g ? (a = 2 === g ? "banlist-semilimited.png" : 1 === g ? "banlist-limited.png" : "banlist-banned.png", a = $("<img>").attr("src", "assets/images/" + a), d.data("banlist", a), $("#editor-banlist-icons").append(a)) : d.data("banlist", null);
+                if(g !== 3) {
+                    a = 2 === g ? "banlist-semilimited.png" : 1 === g ? "banlist-limited.png" : "banlist-banned.png";
+                    a = $("<img>").attr("src", "assets/images/" + a);
+                    d.data("banlist", a);
+                    $("#editor-banlist-icons").append(a);
+                } else {
+                    d.data("banlist", null);
+                }
                 Z.Aa(destination);
                 Z.N(destination)
             }
@@ -1385,9 +1594,59 @@ let onStart = function () {
     }
     
     /* UPDATE PAGE STRUCTURE */
-    // add new buttons
-    
     let editorMenuContent = document.getElementById("editor-menu-content");
+    let saveButton = document.getElementById("editor-save-button");
+    
+    // remove annoying spacer
+    
+    $("#editor-menu-spacer").toggle(false);
+    
+    // add banlist selection
+    let selector = makeElement("select", "rs-ext-banlist");
+    for(let name of banlistNames) {
+        selector.appendChild(makeElement("option", null, name));
+    }
+    
+    // TODO: "DRY" this.
+    let updateBanlist = function () {
+        console.info("Banlist changed to " + selector.value);
+        EXT.BANLIST_NAME = selector.value;
+        
+        for(let pic of document.querySelectorAll(".editor-card-small")) {
+            let el = $(pic);
+            let id = el.data("id");
+        
+            let banlistIcon = el.find(".editor-search-banlist-icon");
+            let limitStatus = allowedCount(id);
+            console.log(banlistIcon, pic, limitStatus);
+            if(limitStatus !== 3) {
+                if(!el.data("banlist")) {
+                    let img = $("<img>");
+                    el.data("banlist", img);
+                    $("#editor-banlist-icons").append(img);
+                }
+                el.data("banlist").attr("src", "assets/images/" + banlistIcons[limitStatus]);
+            }
+            else {
+                el.data("banlist").remove();
+                el.data("banlist", null);
+            }
+        }
+        // update everything manually
+        Z.N("main");
+        Z.N("extra");
+        Z.N("side");
+        Z.Aa("main");
+        Z.Aa("extra");
+        Z.Aa("side");
+    };
+    
+    selector.addEventListener("change", updateBanlist);
+    updateBanlist();
+    
+    editorMenuContent.insertBefore(selector, saveButton);
+    
+    // add new buttons
     
     let undoButton = makeElement("button", "rs-ext-editor-export-button", "Undo");
     undoButton.classList.add("engine-button", "engine-button", "engine-button-default");
@@ -2137,7 +2396,7 @@ let onStart = function () {
         }
         
         // TODO: make this a class
-        console.log(result);
+        // console.log(result);
         result.matches = function (text) {
             return result.exclude.every(exclusion => text.search(exclusion) === -1) &&
                    result.include.every(inclusion => text.search(inclusion) !== -1);
