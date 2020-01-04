@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.11
+// @version      0.11.1
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -1627,7 +1627,7 @@ let onStart = function () {
                 }
                 el.data("banlist").attr("src", "assets/images/" + banlistIcons[limitStatus]);
             }
-            else {
+            else if(el.data("banlist")) {
                 el.data("banlist").remove();
                 el.data("banlist", null);
             }
