@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.12
+// @version      0.12.1
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -1521,6 +1521,13 @@ let onStart = function () {
     const clear = function () {
         clearVisualState();
         overMainExtraSide((contents, location) => {
+            for(let el of Z[location]) {
+                let banlist = el.data("banlist");
+                if(banlist) {
+                    banlist.remove();
+                }
+                el.remove();
+            }
             Z[location] = [];
         });
         restoreVisualState();
