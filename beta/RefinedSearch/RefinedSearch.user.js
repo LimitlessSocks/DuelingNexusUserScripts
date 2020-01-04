@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.11.1
+// @version      0.11.2
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -1614,11 +1614,11 @@ let onStart = function () {
         
         for(let pic of document.querySelectorAll(".editor-card-small")) {
             let el = $(pic);
-            let id = el.data("id");
+            let id = el.data("alias") || el.data("id");
         
             let banlistIcon = el.find(".editor-search-banlist-icon");
             let limitStatus = allowedCount(id);
-            console.log(banlistIcon, pic, limitStatus);
+            // console.log(banlistIcon, pic, limitStatus);
             if(limitStatus !== 3) {
                 if(!el.data("banlist")) {
                     let img = $("<img>");
@@ -1639,10 +1639,10 @@ let onStart = function () {
         Z.Aa("main");
         Z.Aa("extra");
         Z.Aa("side");
+        updateSearchContents();
     };
     
     selector.addEventListener("change", updateBanlist);
-    updateBanlist();
     
     editorMenuContent.insertBefore(selector, saveButton);
     
@@ -2626,6 +2626,8 @@ let onStart = function () {
     }
     $(leftButton).on("click", previousPage);
     $(rightButton).on("click", nextPage);
+    
+    updateBanlist();
 };
 
 let checkStartUp = function () {
