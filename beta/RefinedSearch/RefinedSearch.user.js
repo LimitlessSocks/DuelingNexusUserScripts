@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.11.2
+// @version      0.12
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -262,10 +262,9 @@ let onStart = function () {
     // minified with https://kangax.github.io/html-minifier/
     const ADVANCED_SETTINGS_HTML_STRING = `
         <div id=rs-ext-advanced-search-bar>
-          <button id=rs-ext-monster-toggle class="engine-button engine-button-default">monster</button>
-          <button id=rs-ext-spell-toggle class="engine-button engine-button-default">spell</button>
-          <button id=rs-ext-trap-toggle class="engine-button engine-button-default">trap</button>
+          <button id=rs-ext-monster-toggle class="engine-button engine-button-default">monster</button><button id=rs-ext-spell-toggle class="engine-button engine-button-default">spell</button><button id=rs-ext-trap-toggle class="engine-button engine-button-default">trap</button>
           <button id=rs-ext-sort-toggle class="engine-button engine-button-default rs-ext-right-float">sort</button>
+          <button id=rs-ext-clear-filter class="engine-button engine-button-default engine-button-danger rs-ext-right-float">clear filter</button>
           <div id=rs-ext-advanced-pop-outs>
             <div id=rs-ext-sort class="rs-ext-shrinkable rs-ext-shrunk">
               <table id=rs-ext-sort-table class=rs-ext-table>
@@ -523,7 +522,7 @@ let onStart = function () {
             z-index: 10000
         }
 
-        .rs-ext-shrinkable>* {
+        .rs-ext-shrinkable > * {
             margin: 10px
         }
 
@@ -650,7 +649,19 @@ let onStart = function () {
         #rs-ext-banlist {
             margin: 5px;
         }
+        
+        #rs-ext-advanced-search-bar > button {
+            margin: 2px;
+        }
     `;
+    
+    // extend jQuery
+    jQuery.fn.tagName = function () {
+        return this.prop("tagName").toLowerCase();
+    };
+    jQuery.fn.tagEquals = function (name) {
+        return this.tagName() === name.toLowerCase();
+    }
     
     // disable default listener (Z.Pb)
     $("#editor-search-text").off("input");
@@ -1859,7 +1870,7 @@ let onStart = function () {
         }
     }
     let interval = setInterval(updatePaddingHeight, 1);
-    console.info("Interval started. ", interval);
+    console.info("Padding height interval started. ", interval);
     
     const LINK_ARROW_MEANING = {
         "Bottom-Left":      0b000000001,
@@ -2607,14 +2618,33 @@ let onStart = function () {
     
     // add relevant listeners
     let allInputs = [
-        document.querySelectorAll("#rs-ext-monster-table input, #rs-ext-monster-table select"),
+        [...document.querySelectorAll("#rs-ext-monster-table input, #rs-ext-monster-table select")],
         Object.values(SPELL_TRAP_INPUTS),
-        document.querySelectorAll("#rs-ext-sort-table input, #rs-ext-sort-table select"),
+        [...document.querySelectorAll("#rs-ext-sort-table input, #rs-ext-sort-table select")],
     ].flat();
     
     for(let input of allInputs) {
         $(input).on("input", updateSearchContents);
     }
+    
+    $("#rs-ext-clear-filter").click(() => {
+        for(let input of allInputs) {
+            let jq = $(input);
+            if(jq.tagEquals("select")) {
+                jq.val(jq.children()[0].text).change();
+            }
+            else if(jq.val) {
+                jq.val("");
+            }
+            else if(jq.hasClass("rs-ext-selected")) {
+                jq.click();
+            }
+        }
+        // shrink existing sections
+        currentSections().forEach(section => toggleShrinkable(section));
+        
+        updateSearchContents();
+    });
     
     let previousPage = function () {
         EXT.Search.current_page = Math.max(1, EXT.Search.current_page - 1);
