@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CustomNexusGUI API
 // @namespace    https://duelingnexus.com/
-// @version      0.3
+// @version      0.4
 // @description  To enable custom GUI elements, such as popups.
 // @author       Sock#3222
 // @grant        none
@@ -253,6 +253,8 @@ let onLoad = function () {
             padding: 0.5em;
             text-align: center;
             border: 1px solid #7A7A7A;
+            max-height: 90%;
+            overflow: auto;
         }
         #nexus-gui-popup.wide {
             width: 800px;
