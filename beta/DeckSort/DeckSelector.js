@@ -20,11 +20,18 @@ let onStartDeckSelector = function () {
         tagColors[tag] = color;
     });
     
+    let selectedDeckName = $("#game-selected-deck-name");
+    let currentTag = isolateTag(selectedDeckName.text().replace(/^Deck: /, ""));
+    
     for(let button of buttons) {
         let tag = isolateTag(button);
-        let color = tagColors[tag];
-        if(color) {
-            $(button).css("color", color);
+        let color = tagColors[tag] || "auto";
+        $(button).css("color", color);
+        $(button).click(() => {
+            selectedDeckName.css("color", color);
+        });
+        if(tag === currentTag) {
+            selectedDeckName.css("color", color);
         }
     }
     
@@ -42,9 +49,18 @@ let onStartDeckSelector = function () {
     
     // add search bar
     let searchDeckInput = $("<input id=ds-ext-search-deck></div>");
+    let randomDeck = $("<button id=ds-ext-random-deck class=engine-button>Random</button>");
     gameDeckSelection.prepend($("<div>").append(
-        $("<span>Search by name: </span>"), searchDeckInput
+        $("<span>Search by name: </span>"), searchDeckInput, randomDeck
     ));
+    
+    randomDeck.click(() => {
+        let shownButtons = buttons.filter(":visible");
+        let count = shownButtons.length;
+        let index = Math.floor(Math.random() * count);
+        let button = shownButtons[index];
+        button.click();
+    });
     
     // modified from https://stackoverflow.com/a/17384341/4119004
     searchDeckInput.on("input propertychange paste", function (ev) {
