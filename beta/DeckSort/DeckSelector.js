@@ -50,6 +50,7 @@ let onStartDeckSelector = function () {
     // add search bar
     let searchDeckInput = $("<input id=ds-ext-search-deck></div>");
     let randomDeck = $("<button id=ds-ext-random-deck class=engine-button>Random</button>");
+    randomDeck.css("margin-left", "5px");
     gameDeckSelection.prepend($("<div>").append(
         $("<span>Search by name: </span>"), searchDeckInput, randomDeck
     ));
