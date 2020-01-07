@@ -241,10 +241,10 @@ let onStartDeckSorter = async function () {
                 NexusGUI.closePopup();
             });
             
-            table.append(colorTr, renameTr);
+            table.append(colorTr);
             
             if(this.name !== "unsorted") {
-                table.append(deleteTr);
+                table.append(renameTr, deleteTr);
             }
             
             content.append(table, saveChangesButton, doneButton);
