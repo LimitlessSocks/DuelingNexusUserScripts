@@ -190,6 +190,14 @@ const NexusGUI = {
         }
         document.head.appendChild(script);
     },
+    loadScriptAsync: async function (url) {
+        return new Promise((resolve, reject) => {
+            let script = document.createElement("script");
+            script.src = url;
+            script.addEventListener("load", resolve);
+            document.head.appendChild(script);
+        });
+    },
     formatGithubURL: (name, release, path) => `https://github.com/${path}/raw/master/${release}/${name}/${name}.user.js`,
     loadUserScript: function (
         name,
