@@ -30,20 +30,6 @@ const versionCompare = (ver1, ver2) => {
     return segment1.length - segment2.length;
 };
 
-let versionDifference = null;
-if(window.NexusGUI) {
-    versionDifference = versionCompare(MY_VERSION, window.NexusGUI.version);
-    if(versionDifference < 0) {
-        // do not update myself if I'm older
-        console.warn("This script version (" + MY_VERSION + ") is outdated, and was not loaded because a newer version was loaded already.");
-        return;
-    }
-    else if(versionDifference === 0) {
-        console.info("Script version " + MY_VERSION + " has already been loaded.");
-        return;
-    }
-}
-
 const NexusGUI = {
     version: MY_VERSION,
     commonCSS: null,
@@ -342,11 +328,23 @@ let onLoad = function () {
             border-bottom: 1px #7A7A7A;
         }
     `);
-    if(versionDifference !== null && versionDifference > 0) {
-        window.NexusGUI = NexusGUI;
-        console.info("CustomNexusGUI API loaded!");
+}
+let versionDifference = null;
+if(window.NexusGUI) {
+    versionDifference = versionCompare(MY_VERSION, window.NexusGUI.version);
+    if(versionDifference < 0) {
+        // do not update myself if I'm older
+        console.warn("This script version (" + MY_VERSION + ") is outdated, and was not loaded because a newer version was loaded already.");
+        return;
+    }
+    else if(versionDifference === 0) {
+        console.info("Script version " + MY_VERSION + " has already been loaded.");
+        return;
     }
 }
+
+window.NexusGUI = NexusGUI;
+console.info("CustomNexusGUI API loaded! Version = " + MY_VERSION);
 if(!window.$) {
     // the same used by nexus
     console.info("Hard loading jQuery");
