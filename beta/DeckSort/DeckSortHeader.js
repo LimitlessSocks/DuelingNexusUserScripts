@@ -9,7 +9,7 @@ window.DeckSort = DeckSort;
     
 const TAG_REGEX = /^\s*\[([^\]]+)\]/;
 const isolateTag = function (el) {
-    let str = el.textContent === undefined ? el.toString() : el.textContent;
+    let str = el.text ? el.text() : el.textContent === undefined ? el.toString() : el.textContent;
     let [, tag] = str.match(TAG_REGEX) || [];
     return tag || null;
 };

@@ -1,128 +1,51 @@
-let onStartDeckSorter = function () {
+let onStartDeckSorter = async function () {
     const MINIMIZE_SYMBOL = "\u2212";
     const MAXIMIZE_SYMBOL = "+";
     const OPTIONS_COG_BASE64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH4wsJBxwcoeWqgAAAAB1pVFh0Q29tbWVudAAAAAAAQ3JlYXRlZCB3aXRoIEdJTVBkLmUHAAACn0lEQVRYw+WXO2hUQRSG/9l1o24SY1BRC40QjU1SKIIpNEVEUBRJYaekEREjWKWy0FRiFcEHiBBQLKy0EUS08AE2SbDQQlMYfIuurCYhLMndnc9most17ubuuhsQD0wznMd/nnNG+t/JVCoIXJe0U1IgKSGp3RgzsyCogT3AJ35TAJyphaF6IOm5P8uf9DpCR1OlxtcB14A+YAuQdvebgBceAD+Aw44naa3dDBwA7gGdZRm31rYAj4uUZ4BLQC9wlWgatdYeAgaAlyFw3XE9XwbcoPr0CmgP20uEL3K5XE7SWA1qN5vP59/PCyCdTgeSnkiaqKLxQNKjVCo1ETcNjTHSYIFC0bEleN8BG3y2Et7pZMyUpOEIfAVJdyV1GmOSxpikpBZJFyXlfP5IGjfGvCmnBdcDQx5PZoHTJeS6gK++CARBsBGoK2XUAN3AKeB5UZjnqADciQH+uAMapm/AeWttD9DgExwCPpTI4wzQFQNACzBSQs8UcB9YHBbMzFN002Wk8HaMuVAfLsJcFduuEJexGMASV7GRvEBrDO+XS1pZCYBWSYOSMhHRSEk6GUPnbkkdnvu8pO+SbklqM8ZMl/KiDxjz5C0L7JinfR945CaBc8CqcmbBiYji+QwcKZ5swAqgx1U3nqn4NMrOIu+rkc0m3HTz0RpJVySNAOOu4NZK2iap2dVReNVrBOqMMbNxve+ISEGlNAUcjf0WSGqX1FbFtmyQtC8WAFcox2qwD2wFdsVNwV4gF9p6vwCjEY/Nr2np9sXxkHweuFDuUnoQeAs8Awbnqt4tqJMRL+WA42kA+oGHrmsuV7oZbw+/XMBSty2H6SOw2qNjfy3+C72hEBeAmwv2nwOageFQBCrqmr/5GzZJqpsbPMaYzD/5O/4JriesdkG3NSwAAAAASUVORK5CYII=";
+    const MOVE_ARROWS_BASE64 = " data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH5AEGBwAAXEWT3QAAAOtJREFUWMPtl8sRhCAQRKm9r1lJPKsRGILZaQBiGL69YC2lDvhhlQN9ZIBp5tPFKHUBQAM06glY5zOaJ53fS0Jwfg+JgPP/kgBa9qNVGRlXCy5gr4HeKboeqK/cuWo1wVYAxlP9BiiEs+EWdftcsBtgAkZAO+ulYzMeAjKJpcgIYQcYPQ+Yo1N5CKxJbCncxgVzzrWHgLZ7ugCBHwlJXqULdtSQ9/ySxCuVtjuSgjJqCiIX4Wj3fA4VYYQ21HZtAoZTbRhJiAbgfVqIDkhxtZDibivsp6Q4IyPpT+mj3/IkBpMkRrMkhtOY4/kX4Mt1ZvM6k7EAAAAASUVORK5CYII=";
     const DEFAULT_TEXT_COLOR = "#F0F0F0";
     
+    NexusGUI.addCSS(NexusGUI.q`
+        .folder-header {
+            text-align: center;
+            background: rgba(125, 125, 125, 0.3);
+            padding: 0.2em;
+            border-radius: 0.4em;
+            cursor: move;
+        }
+        ul.folder-contents {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+            min-height: 1em;
+        }
+        ul.folder-contents li {
+            width: 100%;
+        }
+        .arrow-handle {
+            cursor: move;
+            margin: 5px;
+        }
+        .deck-entry {
+            width: 100%;
+            transition: background 0.3s;
+            cursor: pointer;
+        }
+        .deck-entry .engine-button {
+            width: auto;
+            height: auto;
+            font-size: 0.8em;
+            margin: 5px;
+        }
+        .folder-options {
+            cursor: pointer;
+        }
+        .deck-entry:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+    `);
+    
     loadScript("https://cdnjs.cloudflare.com/ajax/libs/jszip/3.2.2/jszip.min.js");
-    
-    // NOTE: PROBABLY EXPENSIVE
-    const domParser = new DOMParser();
-    // the hackiest part of this code
-    const DECK_LIST_MEMO = {};
-    const getDeckList = async function (id) {
-        if(DECK_LIST_MEMO[id]) {
-            return DECK_LIST_MEMO[id];
-        };
-        
-        let content = await requestText("https://duelingnexus.com/editor/" + id);
-        let tree = domParser.parseFromString(content, "text/html");
-        let deckScripts = [
-            ...tree.querySelectorAll("script")
-        ].filter(e => e.textContent.indexOf("Deck") !== -1);
-        if(deckScripts.length !== 1) {
-            throw new Error("Please notify the maintainer. Unexpected number of deck scripts: " + deckScripts.length);
-        }
-        let deckLoadingScript = deckScripts[0].textContent;
-        let deck = eval("(function() { " + deckLoadingScript + "; return Deck; })()");
-        
-        DECK_LIST_MEMO[id] = deck;
-        
-        return deck;
-    };
-    
-    const deckToYdk = function (deck) {
-        let lines = [
-            "#created by RefinedSearch plugin"
-        ];
-        for(let kind of ["main", "extra", "side"]) {
-            let header = (kind === "side" ? "!" : "#") + kind;
-            lines.push(header);
-            lines.push(...deck[kind]);
-        }
-        let message = lines.join("\n");
-        return message;
-    };
-    
-    const removeTag = function (str) {
-        return str.replace(TAG_REGEX, "");
-    };
-    
-    // TODO: find less hacky way
-    const refreshDecklists = function () {
-        let [ home, duelZone, deckEditor, settings ] = $("#navbar-middle button");
-        // keep track of which tabs were expanded information
-        let mask = {};
-        for(let row of $(".ds-ext-toggle")) {
-            let el = $(row);
-            mask[el.data("tag")] = el.data("expanded");
-        }
-        // note the scroll position
-        let oldX = window.scrollX;
-        let oldY = window.scrollY;
-        return new Promise(function(resolve, reject) {
-            duelZone.click();
-            setTimeout(function () {
-                deckEditor.click();
-                waitForElement("#decks-container td").then(function () {
-                    // restore expanded states
-                    for(let row of $(".ds-ext-toggle")) {
-                        let el = $(row);
-                        if(mask[el.data("tag")]) {
-                            row.click();
-                        }
-                    }
-                    window.scrollTo(oldX, oldY);
-                });
-                resolve();
-            }, 100);
-        });
-    };
-    
-    const USER_SELECTS = [
-        "-webkit-touch-callout",
-        "-webkit-user-select",
-        "-khtml-user-select",
-        "-moz-user-select",
-        "-ms-user-select",
-        "user-select",
-    ];
-    const removeSelectability = function (el) {
-        USER_SELECTS.forEach(select => {
-            el.style[select] = "none";
-        });
-    };
-    // based from https://stackoverflow.com/a/30832210/4119004
-    const download = function promptSaveFile (data, filename, type) {
-        var file = new Blob([data], {type: type});
-        if (window.navigator.msSaveOrOpenBlob) // IE10+
-            window.navigator.msSaveOrOpenBlob(file, filename);
-        else { // Others
-            var a = document.createElement("a"),
-                    url = URL.createObjectURL(file);
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            setTimeout(function() {
-                document.body.removeChild(a);
-                window.URL.revokeObjectURL(url);  
-            }, 0); 
-        }
-    };
-    
-    let ID_LIST_MEMO;
-    const loadAllDecks = async function (reload = true) {
-        if(ID_LIST_MEMO && !reload) {
-            return ID_LIST_MEMO;
-        }
-        ID_LIST_MEMO = await requestJSON("https://duelingnexus.com/api/list-decks.php");
-        if(!ID_LIST_MEMO.success) {
-            alert("Something went wrong getting the list of decks.");
-            return;
-        }
-        return ID_LIST_MEMO.decks;
-    };
     
     const postData = function (url, ...params) {
         return function (...data) {
@@ -143,7 +66,7 @@ let onStartDeckSorter = function () {
                 });
             });
         }
-    }
+    };
     
     const renameDeck = postData(
         "https://duelingnexus.com/api/rename-deck.php",
@@ -154,221 +77,284 @@ let onStartDeckSorter = function () {
         "https://duelingnexus.com/api/create-deck.php",
         "name"
     );
-    window.createDeck = createDeck;
     
-    // const renameDeck = function (id, newName) {
-        // return new Promise((resolve, reject) => {
-            // $.post(, {
-                // id: id,
-                // name: newName,
-            // }).done(msg => {
-                // if(msg.success) {
-                    // resolve(msg);
-                // }
-                // else {
-                    // reject(msg.error);
-                // }
-            // });
-        // });
-    // };
+    const deleteDeck = postData(
+        "https://duelingnexus.com/api/delete-deck.php",
+        "id"
+    );
     
-    // const createDeck = function (name) {
-        // return new Promise((resolve, reject) => {
-            // $.post("https://duelingnexus.com/api/create-deck.php", {
-                // name: newName,
-            // }).done(msg => {
-                // if(msg.success) {
-                    // resolve(msg);
-                // }
-                // else {
-                    // reject(msg.error);
-                // }
-            // });
-        // });
-    // };
+    $("#decks-container table").empty();
     
-    const toggleValue = (val, a, b) => val === a ? b : a;
-    
-    const sanitizeDeckName = (name) =>
-        name.split(/\W+/)
-            .filter(e => e !== "")
-            .map(chunk => chunk.toLowerCase())
-            .join("-");
-    
-    let deckContainer = document.getElementById("decks-container");
-    let tbody = deckContainer.querySelector("tbody");
-    let initialRows = [...deckContainer.querySelectorAll("tr")];
-    let uniqueTags = new Set();
-    let decksById = {};
-    let decksByTag = {
-        unsorted: [],
-    };
-    // give each deck its own ID
-    for(let row of initialRows) {
-        let tag = isolateTag(row) || "unsorted";
-        let name = row.children[0].textContent;
-        let obj = {
-            row: row,
-            name: name,
-            sanitized: row.id,
-            id: null,
-            tag: tag,
-        };
-        
-        row.id = sanitizeDeckName(name);
-        decksById[row.id] = obj;
-        decksByTag[tag] = decksByTag[tag] || [];
-        decksByTag[tag].push(obj);
-        uniqueTags.add(tag);
-    };
-    window.decksByTag=decksByTag;
-    // color is an optional parameter
-    const createNewTab = function (tag, color) {
-        // find all rows with that tag
-        let taggedRows = function () {
-            // console.log(tag, decksByTag);
-            return decksByTag[tag].map(e => e.row);
-        }
-        let tagTab = document.createElement("tr");
-        removeSelectability(tagTab);
-        tagTab.classList.add("tr-folder");
-        
-        let title = document.createElement("td");
-        title.colSpan = 3;
-        title.classList.add("td-big");
-        title.classList.add("table-button");
-        title.classList.add("ds-ext-toggle");
-        // rows start toggled on
-        title.textContent = "[" + MINIMIZE_SYMBOL + "] " + tag;
-        $(title).data("expanded", true);
-        $(title).data("tag", tag);
-        if(color) {
-            title.style.color = color;
-        }
-        tagTab.appendChild(title);
-        
-        let saveFolder = document.createElement("td");
-        saveFolder.classList.add("table-button");
-        saveFolder.textContent = "Download";
-        tagTab.appendChild(saveFolder);
-        
-        saveFolder.addEventListener("click", async function () {
-            const allDecks = await loadAllDecks();
-            let zip = new JSZip();
+    class Folder {
+        constructor(name, color = DEFAULT_TEXT_COLOR, order = Folder.orderedListing.length) {
+            this.name = name;
+            this.children = [];
+            this.order = parseInt(order);
+            this.color = color;
+            this.container = $("<div>");
+            this.listElement = $("<ul class=folder-contents>");
             
-            let decksToDownload = allDecks.filter(deck => {
-                let target = taggedRows().find(row => decksById[row.id].name === deck.name);
-                if(target) {
-                    decksById[target.id].id = deck.id;
-                    return true;
+            this.title = $("<h1 class=folder-header>").text("[" + this.name + "]");
+            
+            this.updateColor();
+            
+            let cog = $("<img class=folder-options>").attr("src", OPTIONS_COG_BASE64).css("float", "right");
+            this.title.append(cog);
+            cog.click(() => {
+                this.optionPrompt();
+            });
+            
+            this.container.append(this.title);
+            this.container.append(this.listElement);
+            
+            this.listElement.sortable({
+                connectWith: ".folder-contents",
+                handle: ".arrow-handle",
+                items: ".deck-entry",
+                update: (event, ui) => {
+                    let item = ui.item;
+                    item.data("deck").move(this.name);
+                    this.resetChildren();
+                },
+            });
+            
+            Folder.roster[this.name] = this;
+            Folder.orderedListing[order] = this;
+        }
+        
+        updateColor() {
+            this.title.css("color", this.color);
+        }
+        
+        optionPrompt() {
+            let isChanged = false;
+            let table = $("<table>");
+            // color tr
+            let colorTr = $("<tr><td>Color</td><td><input type=color value=" + this.color + "></td></tr>");
+            let colorInput = colorTr.find("input");
+            let renameTr = $("<tr><td>Rename</td><td><input value=" + this.name + "></td></tr>");
+            let renameInput = renameTr.find("input");
+            
+            $([colorInput, renameInput]).change(() => {
+                isChanged = true;
+                saveChangesButton.attr("disabled", false);
+            });
+            
+            let saveChange = async () => {
+                if(!isChanged) return;
+                
+                let newColor = colorInput.val();
+                if(this.color !== newColor) {
+                    this.color = newColor;
+                    this.updateColor();
                 }
-                return false;
-            });
+                
+                let newName = renameInput.val();
+                if(this.name !== newName) {
+                    // this.name = newName;
+                    // TODO: update name
+                }
+                
+                isChanged = false;
+                saveChangesButton.attr("disabled", true);
+                
+                await exportMetaInfo();
+            };
             
-            for(let deckReference of decksToDownload) {
-                let list = await getDeckList(deckReference.id);
-                let ydk = deckToYdk(list);
-                zip.file(deckReference.name + ".ydk", ydk);
-            }
+            let saveChangesButton = NexusGUI.button("Save Changes");
+            saveChangesButton.attr("disabled", true);
+            let doneButton = NexusGUI.button("Done");
             
-            zip.generateAsync({ type: "blob" })
-            .then(function(content) {
-                download(content, tag + ".zip", "application/zip");
-            });
-        });
-        
-        const toggleTaggedRows = function () {
-            taggedRows().forEach(row => {
-                row.style.display = toggleValue(row.style.display, "none", "table-row");
-            });
-            title.textContent = title.textContent.replace(/\[(.)\]/, function (match, inner) {
-                let expanded = $(title).data("expanded");
-                let result = "[" + (expanded ? MAXIMIZE_SYMBOL : MINIMIZE_SYMBOL) + "]";
-                $(title).data("expanded", !expanded);
-                return result;
-            });
-        };
-        // hide by default, start the rows toggled off
-        toggleTaggedRows();
-        title.addEventListener("click", toggleTaggedRows);
-        
-        // TODO: move all tagged decks below?
-        // add tagTab before first tagged row
-        tbody.insertBefore(tagTab, taggedRows()[0]);
-        
-        taggedRows().forEach(row => {
-            let textCell = row.children[0];
-            textCell.style.textIndent = "2em";
-        });
-    };
-    
-    // remove specifiers from accessible list
-    const SPECIFIER_REGEX = /^!! /;
-    const SPECIFIER_ITEM_REGEX = /\s*([\S:]+?):(.+)/;
-    const specifiers = {};
-    const specifierRows = [];
-    // console.log(decksByTag);
-    while(decksByTag.unsorted.length && SPECIFIER_REGEX.test(decksByTag.unsorted[0].row.textContent)) {
-        let specifierRow = decksByTag.unsorted.shift().row;
-        specifierRows.push(specifierRow);
-        let specifierText = specifierRow.children[0].textContent;
-        let items = specifierText.split(/;|\s+/);
-        items.forEach(item => {
-            if(/^(!!\s*)?$/.test(item)) {
-                return;
-            }
-            let match = item.match(SPECIFIER_ITEM_REGEX);
-            if(!match) {
-                console.error("Invalid item specifier: " + JSON.stringify(item), item);
-                return;
-            }
-            let [, key, value] = match;
-            specifiers[key] = value;
-        });
-        // specifierRow.remove();
-        specifierRow.style.display = "none";
-    };
-    
-    uniqueTags.forEach(tag => {
-        createNewTab(tag, specifiers[tag]);
-    });
-    
-    const attachListeners = function () {
-        let rows = [
-            ...document.querySelectorAll("#decks-container tr:not(.tr-folder)")
-        ];
-        
-        for(let row of rows) {
-            let [ deckName, renameButton, copyButton, deleteButton ] = row.children;
-            let oldTag = isolateTag(deckName);
-            deckName.textContent = removeTag(deckName.textContent);
-            copyButton.addEventListener("click", function () {
-                refreshDecklists();
-            });
-            deleteButton.addEventListener("click", function () {
-                refreshDecklists();
-            });
-            renameButton.addEventListener("click", function () {
-                refreshDecklists();
-            });
+            table.append(colorTr, renameTr);
+            
+            NexusGUI.popup("Options [" + this.name + "]", table);
         }
         
-    }
+        attachTo(parent) {
+            $(parent).append(this.container);
+            return this;
+        }
+        
+        append(child) {
+            this.children.push(child);
+            if(this.listElement) {
+                this.listElement.append($("<li>").append(child.element));
+            }
+        }
+        
+        resetChildren() {
+            this.children = this.children.filter(e => e.element);
+            this.children.sort((c1, c2) =>
+                (c1.displayName() > c2.displayName()) - (c1.displayName() < c2.displayName())
+            );
+            if(this.listElement) {
+                for(let child of this.children) {
+                    child.element.detach();
+                    this.listElement.append($("<li>").append(child.element));
+                }
+            }
+        }
+        
+        static makeFolderIfNone(name) {
+            return Folder.roster[name] || new Folder(name);
+        }
+        
+        static *allFolders() {
+            yield* Folder.orderedListing;
+        }
+        
+        infoString() {
+            return `${this.name}:${this.color},${this.order}`;
+        }
+        
+        static fromInfoString(name, string) {
+            let [ color, order ] = string.split(/,/);
+            return new Folder(name, color, order);
+        }
+    };
+    Folder.roster = {};
+    Folder.orderedListing = [];
     
-    attachListeners();
+    // initial pass: remove meta-info from deck list
+    const META_INFO_REGEX = /^!! /;
+    const META_INFO_ITEM_REGEX = /\s*([\S:]+?):(.+)/;
+    const META_INFO_DELINEATOR = /;\s*/;
+    let metaInfoCapacity = 0;
+    
+    const fetchDecks = async function (filterMeta = true) {
+        let deckInfo = await requestJSON("https://duelingnexus.com/api/list-decks.php");
+        if(!deckInfo.success) {
+            NexusGUI.popup("Error retrieving decks", "Your decks are not able to be accessed at this time.");
+            return null;
+        }
+        let decks = deckInfo.decks;
+        if(filterMeta) {
+            metaInfoCapacity = 0;
+            while(decks[0] && META_INFO_REGEX.test(decks[0].name)) {
+                let info = decks.shift().name;
+                for(let item of info.split(META_INFO_DELINEATOR)) {
+                    let match = item.match(META_INFO_ITEM_REGEX);
+                    if(!match) {
+                        console.error("Invalid item meta info: " + JSON.stringify(item), item);
+                        return;
+                    }
+                    let [, name, value] = match;
+                    Folder.fromInfoString(name, value);
+                }
+                metaInfoCapacity++;
+            }
+        }
+        return decks;
+    };
+    
+    let decks = await fetchDecks();
+    
+    const decksContainer = $("#decks-container");
+    
+    const BASE_EDITOR_URL = "https://duelingnexus.com/editor/";
+    class Deck {
+        constructor(info) {
+            this.id = info.id;
+            this.name = info.name;
+            this.folder = isolateTag(this.name) || "unsorted";
+            this.element = null;
+            
+            this.createElement();
+            
+            Folder.makeFolderIfNone(this.folder);
+            this.move(this.folder);
+        }
+        
+        createElement() {
+            let ele = $("<div class=deck-entry><span class=arrow-handle>&#x2B24;</span><span class=deck-name></span></div>");
+            
+            ele.click((event) => {
+                console.log(window.target = event.target);
+                if(["deck-entry", "deck-name"].indexOf(target.className) !== -1) {
+                    window.open(BASE_EDITOR_URL + this.id);
+                }
+            });
+            
+            let renameButton = $("<button class=engine-button>Rename</button>");
+            renameButton.click(() => {
+                NexusGUI.prompt("Enter a new name", this.displayName()).then((value) => {
+                    if(value) {
+                        this.changeName(value);
+                    }
+                });
+            });
+            let deleteButton = $("<button class=engine-button>Delete</button>");
+            deleteButton.click(() => {
+                NexusGUI.confirm("Are you sure you want to delete \"" + this.name + "\"?").then((confirmed) => {
+                    if(confirmed) {
+                        deleteDeck(this.id);
+                        this.element.detach();
+                        this.element = null;
+                        Folder.roster[this.folder].resetChildren();
+                    }
+                });
+            });
+            
+            ele.prepend(renameButton, deleteButton);
+            
+            this.element = ele;
+            
+            ele.data("deck", this);
+            
+            this.updateElement();
+        }
+        
+        displayName() {
+            return this.name.replace(/^\[.+?\] /, "");
+        }
+        
+        updateElement() {
+            this.element.find(".deck-name").text(this.displayName());
+        }
+        
+        // raw rename; changes the base
+        rename(newName) {
+            this.name = newName;
+            renameDeck(this.id, newName);
+            this.updateElement();
+            Folder.roster[this.folder].resetChildren();
+        }
+        
+        // rename respecting folder
+        changeName(newName) {
+            this.name = newName;
+            this.updateFolder();
+        }
+        
+        updateFolder() {
+            this.rename(`[${this.folder}] ${this.displayName()}`);
+        }
+        
+        move(folderName) {
+            if(this.folder !== folderName) {
+                this.folder = folderName;
+                this.updateFolder();
+            }
+            this.element.detach();
+            Folder.roster[folderName].append(this);
+        }
+        
+        static async createNew(name) {
+            // TODO: hope nexus implements a better API for this.
+            await createDeck(name);
+            let info = fetchDecks().filter(e => e.name === name);
+            if(info.length !== 1) {
+                throw new Error("No such deck found: " + name);
+            }
+            return new Deck(info);
+        }
+    };
+    
+    // import/export 
     
     const MAX_DECK_NAME_SIZE = 64;
-    const exportSpecifiers = async function () {
-        // console.log("SPEC", specifiers);
-        // let content = specifierRows
-            // .map(tr => tr.children[0].textContent.slice(3))
-            // .join(";")
-            // .split(";");
-        let content = Object.entries(specifiers).filter(([key, value]) =>
-            value !== DEFAULT_TEXT_COLOR
-        ).map(
-            keyValuePair => keyValuePair.join(":")
-        );
+    const exportMetaInfo = async function () {
+        let content = Folder.orderedListing.map(folder => folder.infoString());
         let lines = [];
         let build = "!! ";
         while(content.length) {
@@ -378,7 +364,6 @@ let onStartDeckSorter = function () {
                     console.error("Entry exceeded max length: " + entry);
                     continue;
                 }
-                // console.log(JSON.stringify(build));
                 lines.push(build);
                 build = "!! ";
             }
@@ -388,74 +373,71 @@ let onStartDeckSorter = function () {
             lines.push(build);
         }
         
-        let capacity = specifierRows.length;
-        let deficit = lines.length - capacity;
-        if(deficit > 0) {
-            // console.warn("Creating new decks to make up for deficit of " + deficit);
-            // console.log({ capacity : capacity, deficit: deficit });
-        }
+        let deficit = lines.length - metaInfoCapacity;
+        
         while(deficit > 0) {
             await createDeck("!! ");
             deficit--;
         }
-        let decks = await loadAllDecks();
+        let decks = await fetchDecks(false);
         
         let specifierData = decks.filter(deck => deck.name.startsWith("!! "));
         
         lines.forEach(async (line, index) => {
             line = line.slice(0, -1); // remove trailing ";"
             let spec = specifierData[index];
-            // console.log("renaming!", {
-                // from: spec.id,
-                // to: line,
-            // });
             await renameDeck(spec.id, line);
         });
-        // console.log(content);
     }
     
-    // add new button to top
-    let options = $("<button data-v-6f705b54=''>Options</button>");
-    let createNewDeck = $("#decks-buttons button")[0];
-    createNewDeck.addEventListener("click", function () {
-        refreshDecklists();
-    });
-    options.insertAfter(createNewDeck);
-    $("#decks-buttons").css("justify-content", "start")
-                       .css("-webkit-box-pack", "start")
-                       .css("display", "flex");
-    let optionsCog = $("<img data-v-6f705b54=''>").attr("src", OPTIONS_COG_BASE64);
-    options.prepend(optionsCog);
-    options.click(function () {
-        let content = "";//specifierRows
-        // TODO: flex stuff
-        // console.log(specifierRows);
-        let sorted = [...uniqueTags].sort();
-        let table = $("<table>");
-        for(let tag of sorted) {
-            specifiers[tag] = specifiers[tag] || DEFAULT_TEXT_COLOR;
-            let color = toHexString(specifiers[tag]);
-            let tr = $("<tr><td>" + tag + "</td><td><input type=color value=" + color + "></td></tr>");
-            table.append(tr);
-            let input = tr.find("input");
-            input.on("change", async function (val) {
-                specifiers[tag] = input.val();
-                await exportSpecifiers();
-                setTimeout(refreshDecklists, 200);
+    for(let deck of decks) {
+        let instance = new Deck(deck);
+    }
+    
+    decksContainer.sortable({
+        handle: ".folder-header",
+        update: function () {
+            let ordering = [...$(".folder-header")].map(header => isolateTag(header.textContent));
+            ordering.forEach((name, i) => {
+                let folder = Folder.roster[name];
+                folder.order = i;
+                Folder.orderedListing[i] = folder;
             });
-        }
-        NexusGUI.popup("Modify Colors", table);
+            
+            exportMetaInfo();
+        },
     });
+    
+    for(let folder of Folder.orderedListing) {
+        folder.attachTo(decksContainer);
+    }
+    
+    window.Folder = Folder;
 };
 
-let startUpDeckSorter = async function () {
+let deckSorterStartLoop = async function () {
     // wait until we have something to manipulate
-    waitForElement("#decks-container td").then((container) => {
-        // console.log("Received: ", container.parentNode.parentNode.children);
+    waitForElement("#decks-container p, #decks-container td").then((container) => {
         onStartDeckSorter();
         // now that we're here, we'll wait until we aren't
         waitForNoElement("#decks-area").then(() => {
-            startUpDeckSorter();
+            deckSorterStartLoop();
+        });
+    });
+};
+
+let startUpDeckSorter = function () {
+    waitForElement("#decks-container table").then(() => {
+        let sourceTable = document.querySelector("#decks-container table");
+        while(sourceTable.firstChild) {
+            sourceTable.removeChild(sourceTable.firstChild);
+        }
+        let p = document.createElement("p");
+        p.appendChild(document.createTextNode("Loading UI script..."));
+        sourceTable.appendChild(p);
+        NexusGUI.loadScriptAsync("https://code.jquery.com/ui/1.12.1/jquery-ui.min.js").then((ev) => {
+            console.info("DeckSorter.js started");
+            deckSorterStartLoop();
         });
     });
 };
