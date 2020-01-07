@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CustomNexusGUI API
 // @namespace    https://duelingnexus.com/
-// @version      0.5
+// @version      0.6
 // @description  To enable custom GUI elements, such as popups.
 // @author       Sock#3222
 // @grant        none
@@ -10,7 +10,42 @@
 // @downloadURL https://raw.githubusercontent.com/LimitlessSocks/DuelingNexusUserScripts/master/beta/CustomNexusGUI/CustomNexusGUI.user.js
 // ==/UserScript==
 
+const MY_VERSION = GM_info.script.version;
+
+// modified from https://stackoverflow.com/a/16187766/4119004
+const simplifyVersion = (ver) => ver.replace(/(\.0)+$/, "");
+const versionSplit = (ver) => simplifyVersion(ver).split(".");
+const versionCompare = (ver1, ver2) => {
+    let segment1 = versionSplit(ver1);
+    let segment2 = versionSplit(ver2);
+    let size = Math.min(segment1.length, segment2.length);
+    
+    let diff;
+    for(let i = 0; i < size; i++) {
+        diff = parseInt(segment1[i]) - parseInt(segment2[i]);
+        if(diff) {
+            return diff;
+        }
+    }
+    return segment1.length - segment2.length;
+};
+
+let versionDifference = null;
+if(window.NexusGUI) {
+    versionDifference = versionCompare(MY_VERSION, window.NexusGUI.version);
+    if(versionDifference < 0) {
+        // do not update myself if I'm older
+        console.warn("This script version (" + MY_VERSION + ") is outdated, and was not loaded because a newer version was loaded already.");
+        return;
+    }
+    else if(versionDifference === 0) {
+        console.info("Script version " + MY_VERSION + " has already been loaded.");
+        return;
+    }
+}
+
 const NexusGUI = {
+    version: MY_VERSION,
     commonCSS: null,
     addCSS: function (css, makeNew = false) {
         if(makeNew) {
@@ -307,14 +342,17 @@ let onLoad = function () {
             border-bottom: 1px #7A7A7A;
         }
     `);
-    console.info("CustomNexusGUI API loaded!");
+    if(versionDifference !== null && versionDifference > 0) {
+        window.NexusGUI = NexusGUI;
+        console.info("CustomNexusGUI API loaded!");
+    }
 }
-if(!window.jQuery) {
+if(!window.$) {
     // the same used by nexus
+    console.info("Hard loading jQuery");
     const jQueryInstallationURL = "https://code.jquery.com/jquery-3.1.1.min.js";
-    NexusGUI.loadScript(jQueryInstallationURL, onLoad);
+    NexusGUI.loadScriptAsync(jQueryInstallationURL).then(onLoad);
 }
 else {
     onLoad();
 }
-window.NexusGUI = NexusGUI;
