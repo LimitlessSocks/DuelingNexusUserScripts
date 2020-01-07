@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Dueling Nexus DeckSort Plugin
 // @namespace    https://duelingnexus.com/
-// @version      0.3
+// @version      0.4
 // @description  Adds various support for categorizing decks.
 // @author       Sock#3222
 // @grant        none
