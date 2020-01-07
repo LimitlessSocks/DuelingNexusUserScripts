@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CustomNexusGUI API
 // @namespace    https://duelingnexus.com/
-// @version      0.4
+// @version      0.4.1
 // @description  To enable custom GUI elements, such as popups.
 // @author       Sock#3222
 // @grant        none
