@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Chat Improvements Plugin
 // @namespace    https://duelingnexus.com/
-// @version      0.6.4
+// @version      0.6.5
 // @description  Revamps the chat and visual features of dueling.
 // @author       Sock#3222
 // @grant        none
@@ -1135,7 +1135,7 @@ let onload = function () {
             let msg = "[" + overlays.length.toString() + " material" + plural + "]\n";
             $(overlayExtension).append($("<p>" + msg + "</p>"));
             for(let overlay of overlays) {
-                let imgSrc = ra(overlay.code);
+                let imgSrc = window.ra(overlay.code);
                 let img = $("<img class=material-preview src='" + imgSrc + "' width=" + width + " height=" + height + ">");
                 // img.width = width;
                 // img.height = height;
@@ -1149,6 +1149,40 @@ let onload = function () {
     });
     $(".game-field-zone").on("mouseout", function (ev) {
         $(overlayExtension).hide();
+    });
+    
+    // hide sleeves/profile picture
+    
+    const BLACK_SQUARE_IMAGE = "https://images.squarespace-cdn.com/content/v1/55fc0004e4b069a519961e2d/1442590746571-RPGKIXWGOO671REUNMCB/ke17ZwdGBToddI8pDm48kKVo6eXXpUnmuNsFtLxYNDVZw-zPPgdn4jUwVcJE1ZvWhcwhEtWJXoshNdA9f1qD7abfyk2s94xLLkDA7TSo2rckMlGDU48FfF-V7lLcSuGNU_Uf7d6wOiJwP-LWX64gbQ/image-asset.gif?format=300w";
+    for(let avatar of $(".game-avatar")) {
+        avatar = $(avatar);
+        avatar.data("visible", true);
+        avatar.data("original-source", avatar.attr("src"));
+        avatar.css("cursor", "pointer");
+        avatar.click(() => {
+            if(avatar.data("visible")) {
+                avatar.attr("src", BLACK_SQUARE_IMAGE);
+            }
+            else {
+                avatar.attr("src", avatar.data("original-source"));
+            }
+            avatar.data("visible", !avatar.data("visible"))
+        });
+    }
+    
+    $("#game-field-opponent-deck").click(() => {
+        let opponentName = $("#game-opponent-name").text();
+        let opponent = B.find(player => player.name === opponentName);
+        
+        if(opponent.oa) {
+            opponent.old_oa = opponent.oa;
+            opponent.oa = null;
+            for(let card of $(".game-field-card")) {
+                if($(card).data("controller") !== 0 && card.src.indexOf(opponent.old_oa) !== -1) {
+                    card.src = "assets/images/cover.png";
+                }
+            }
+        }
     });
 };
 

@@ -58,6 +58,7 @@ function h(a) {
 
 function qa(a) {
     return a.toUpperCase().replace(/[\n\- :\.]/g, "")
+    return a.toUpperCase().replace(/[\n\- :\.]/g, "")
 }
 
 function pa(a) {
@@ -78,6 +79,7 @@ function l(a, b) {
     a.off("error");
     a.attr("src", ra(b));
     if (0 < b) a.one("error", function() {
+        
         $(this).attr("src", ra(-1))
     })
 }
@@ -3541,14 +3543,23 @@ function ig(a, b) {
         var c;
         a: {
             b = a.ca;
-            if (!Eb && (z ? c = b : c = 0 == b ? A : 1 - A, B[c].oa)) {
-                c = "uploads/sleeves/" + B[c].oa;
-                break a
+            if (!Eb) {
+                if(z) { 
+                    c = b
+                } else {
+                    c = (b == 0) ? A : 1 - A
+                }
+                if (B[c].oa) {
+                    c = "uploads/sleeves/" + B[c].oa;
+                    break a;
+                }
             }
-            c = ra(0)
+            c = ra(0);
         }
-        sa(a.a, c)
-    } else l(a.a, b)
+        sa(a.a, c);
+    } else {
+        l(a.a, b);
+    }
 };
 
 function Vb(a) {

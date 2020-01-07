@@ -327,6 +327,9 @@ let onLoad = function () {
             margin-bottom: 0.2em;
             border-bottom: 1px #7A7A7A;
         }
+        .nexus-gui-danger-button {
+            background: rgba(255, 107, 107, 0.8);
+        }
     `);
 }
 let versionDifference = null;
