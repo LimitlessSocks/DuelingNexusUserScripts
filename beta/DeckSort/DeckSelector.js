@@ -13,7 +13,7 @@ let onStartDeckSelector = function () {
             button.parentNode.remove();
         }
         else {
-            let tag = isolateTag(button.textContent);
+            let tag = isolateTag(button.textContent) || "unsorted";
             otherButtons[tag] = otherButtons[tag] || [];
             otherButtons[tag].push(button.parentNode);
             button.parentNode.remove();
