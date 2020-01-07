@@ -5,20 +5,36 @@ let onStartDeckSelector = function () {
     gameDeckSelection.css("max-height", "20em")
                      .css("overflow-y", "auto");
     
-    let specifiers = [];
+    let metaInfos = [];
+    let otherButtons = {};
     for(let button of buttons) {
         if(button.textContent.startsWith("!! ")) {
-            specifiers.push(button.textContent.slice(3));
+            metaInfos.push(button.textContent.slice(3));
+            button.parentNode.remove();
+        }
+        else {
+            let tag = isolateTag(button.textContent);
+            otherButtons[tag] = otherButtons[tag] || [];
+            otherButtons[tag].push(button.parentNode);
             button.parentNode.remove();
         }
     }
     
     let tagColors = {};
+    let orderInfo = [];
     
-    specifiers.join(";").split(";").forEach(spec => {
-        let [ tag, color ] = spec.split(":");
+    metaInfos.join(";").split(";").forEach(spec => {
+        let [ tag, info ] = spec.split(":");
+        let [ color, order ] = info.split(",");
         tagColors[tag] = color;
+        orderInfo[order] = tag;
     });
+    
+    for(let tag of orderInfo) {
+        for(let button of otherButtons[tag]) {
+            gameDeckSelection.append(button);
+        }
+    }
     
     let selectedDeckName = $("#game-selected-deck-name");
     let currentTag = isolateTag(selectedDeckName.text().replace(/^Deck: /, ""));
