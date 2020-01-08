@@ -72,6 +72,25 @@ const toHexString = function (color) {
     }
 };
 
+// based on https://stackoverflow.com/a/30832210/4119004
+const download = function promptSaveFile (data, filename, type) {
+    var file = new Blob([data], {type: type});
+    if (window.navigator.msSaveOrOpenBlob) // IE10+
+        window.navigator.msSaveOrOpenBlob(file, filename);
+    else { // Others
+        var a = document.createElement("a"),
+                url = URL.createObjectURL(file);
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(function() {
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);  
+        }, 0);
+    }
+}
+
 const waitForElementJQuery = async function (selector, source = $("body")) {
     let query;
     while (source.find(selector).length === 0) {
