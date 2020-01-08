@@ -89,7 +89,7 @@ let onStartDeckSorter = async function () {
     
     // name is the newName
     const copyDeck = postData(
-        "https://duelingnexus.com/api/create-deck.php",
+        "https://duelingnexus.com/api/copy-deck.php",
         "id", "name"
     );
     
@@ -437,7 +437,6 @@ let onStartDeckSorter = async function () {
             this.name = info.name;
             Deck.usedNames.add(this.name);
             this.folder = isolateTag(this.name) || "unsorted";
-            console.log("DECK FOLDER!", this.folder);
             this.element = null;
             
             this.createElement();
@@ -558,6 +557,7 @@ let onStartDeckSorter = async function () {
             newName = "[" + this.folder + "] " + newName;
             await copyDeck(this.id, newName);
             let info = await Deck.reloadInfoByName(newName);
+            console.log(info);
             return new Deck(info);
         }
     };
