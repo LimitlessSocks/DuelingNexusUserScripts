@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Chat Improvements Plugin
 // @namespace    https://duelingnexus.com/
-// @version      0.6.5
+// @version      0.6.6
 // @description  Revamps the chat and visual features of dueling.
 // @author       Sock#3222
 // @grant        none
@@ -1157,19 +1157,20 @@ let onload = function () {
     for(let avatar of $(".game-avatar")) {
         avatar = $(avatar);
         avatar.data("visible", true);
-        avatar.data("original-source", avatar.attr("src"));
         avatar.css("cursor", "pointer");
         avatar.click(() => {
             if(avatar.data("visible")) {
+                avatar.data("original-source", avatar.attr("src"));
                 avatar.attr("src", BLACK_SQUARE_IMAGE);
             }
             else {
                 avatar.attr("src", avatar.data("original-source"));
             }
-            avatar.data("visible", !avatar.data("visible"))
+            avatar.data("visible", !avatar.data("visible"));
         });
     }
     
+    // TODO: revert
     $("#game-field-opponent-deck").click(() => {
         let opponentName = $("#game-opponent-name").text();
         let opponent = B.find(player => player.name === opponentName);
