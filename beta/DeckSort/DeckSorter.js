@@ -414,7 +414,7 @@ let onStartDeckSorter = async function () {
                     let match = item.match(META_INFO_ITEM_REGEX);
                     if(!match) {
                         console.error("Invalid item meta info: " + JSON.stringify(item), item);
-                        return;
+                        continue;
                     }
                     let [, name, value] = match;
                     Folder.fromInfoString(name, value);
