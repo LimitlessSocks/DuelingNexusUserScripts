@@ -24,6 +24,7 @@ let onStartDeckSelector = function () {
     let orderInfo = [];
     
     metaInfos.join(";").split(";").forEach(spec => {
+        if(!spec) return;
         let [ tag, info ] = spec.split(":");
         let [ color, order ] = info.split(",");
         tagColors[tag] = color;

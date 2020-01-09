@@ -567,7 +567,12 @@ let onStartDeckSorter = async function () {
     // import/export 
     
     const MAX_DECK_NAME_SIZE = 64;
+    let isExporting = false;
     const exportMetaInfo = async function () {
+        if(isExporting) {
+            return false;
+        }
+        isExporting = true;
         let content = Folder.orderedListing.map(folder => folder.infoString());
         let lines = [];
         let build = "!! ";
@@ -595,13 +600,18 @@ let onStartDeckSorter = async function () {
         }
         let decks = await fetchDecks(false);
         
-        let specifierData = decks.filter(deck => deck.name.startsWith("!! "));
+        let specifierData = decks.filter(deck => deck.name.startsWith("!! ") && deck.name !== "!! ");
         
-        lines.forEach(async (line, index) => {
+        let index = 0;
+        for(let line of lines) {
             line = line.slice(0, -1); // remove trailing ";"
             let spec = specifierData[index];
             await renameDeck(spec.id, line);
-        });
+            index++;
+        }
+        
+        isExporting = false;
+        return true;
     }
     DeckSort.exportMetaInfo = exportMetaInfo;
     
