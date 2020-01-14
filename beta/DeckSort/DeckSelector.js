@@ -31,6 +31,10 @@ let onStartDeckSelector = function () {
         orderInfo[order] = tag;
     });
     
+    if(orderInfo.indexOf("unsorted") === -1) {
+        orderInfo.push("unsorted");
+    }
+    
     for(let tag of orderInfo) {
         for(let button of otherButtons[tag]) {
             gameDeckSelection.append(button);
