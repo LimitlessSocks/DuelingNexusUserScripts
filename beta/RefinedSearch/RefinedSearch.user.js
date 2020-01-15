@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.12.1
+// @version      0.12.2
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -165,7 +165,7 @@ class SearchInputParser {
         return SearchInputParser.parse(text).filter(token => !token.isWhiteSpace());
     }
 }
-SearchInputParser.RULE_EXPRESSION = /^((?:[&=]|[!><]=?)\s*)?("(?:[^"]|"")*"|\S+?\b)/;
+SearchInputParser.RULE_EXPRESSION = /^((?:[&=]|[!><]=?)\s*)?("(?:[^"]|"")*"|\S+?(?:\s|$))/;
 SearchInputParser.RULES = [
     [/^\s+/, TokenTypes.WHITESPACE],
     [/^\(/, TokenTypes.OPEN_PAREN],
@@ -1909,12 +1909,13 @@ let onStart = function () {
         return UNICODE_TO_LINK_NUMBER[chr] || 0;
     }
     
-    const tagStringOf = function (tag, value = null, comp = "") {
+    const tagStringOf = function (tag, value = null, comp = "", inversion = false) {
+        let invert = inversion ? "!" : "";
         if(value !== null) {
-            return "{" + tag + " " + comp + value + "}";
+            return "{" + invert + tag + " " + comp + value + "}";
         }
         else {
-            return "{" + tag + "}";
+            return "{" + invert + tag + "}";
         }
     }
     
@@ -1993,15 +1994,20 @@ let onStart = function () {
             let inputElement = MONSTER_INPUTS[inputName];
             let value = inputElement.value;
             if(!value) continue;
+            let inversion = false;
+            if(value[0] === "!" && value[1] !== "=") {
+                inversion = true;
+                value = value.slice(1);
+            }
             if(INPUTS_USE_QUOTES[inputName]) {
                 value = '"' + value + '"';
             }
             switch(inputElement.tagName) {
                 case "INPUT":
-                    tagString += tagStringOf(tagName, value);
+                    tagString += tagStringOf(tagName, value, "", inversion);
                     break;
                 case "SELECT":
-                    tagString += tagStringOf(tagName, value);
+                    tagString += tagStringOf(tagName, value, "", inversion);
                     break;
                 default:
                     console.error("Fatal error: unknown");
@@ -2164,7 +2170,13 @@ let onStart = function () {
      */
     const createValidator = function (tag) {
         if(VALIDATOR_ONTO_MAP[tag.param]) {
-            let value = parseInt(tag.value, 10);
+            let value;
+            if(tag.value === "?") {
+                value = -2;
+            }
+            else {
+                value = parseInt(tag.value, 10);
+            }
             let prop = VALIDATOR_ONTO_MAP[tag.param];
             return function (cardObject) {
                 let objectValue = cardObject[prop];
