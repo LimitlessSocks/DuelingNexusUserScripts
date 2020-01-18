@@ -100,6 +100,16 @@ let onStartDeckSorter = async function () {
     
     $("#decks-container table").empty();
     
+    const sortBy = function (list, fn) {
+        list.sort((a, b) => {
+            let amap, bmap;
+            amap = fn(a);
+            bmap = fn(b);
+            return (amap > bmap) - (amap < bmap);
+        });
+        return list;
+    };
+    
     const generateDifferentName = (base, set) => {
         let count = 1;
         let builtName;
@@ -347,9 +357,7 @@ let onStartDeckSorter = async function () {
         
         resetChildren() {
             this.children = this.children.filter(e => e.element);
-            this.children.sort((c1, c2) =>
-                (c1.displayName() > c2.displayName()) - (c1.displayName() < c2.displayName())
-            );
+            sortBy(this.children, (obj) => obj.displayName().toLowerCase());
             if(this.listElement) {
                 for(let child of this.children) {
                     child.element.detach();
@@ -657,7 +665,10 @@ let onStartDeckSorter = async function () {
                 name = generateDifferentName(name, Deck.usedNames);
             }
             
-            Deck.createNew(name);
+            let deck = Deck.createNew(name);
+            
+            // ensure sorted
+            Folder.roster[deck.folder].resetChildren();
         });
     });
     
