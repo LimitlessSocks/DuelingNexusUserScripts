@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Chat Improvements Plugin
 // @namespace    https://duelingnexus.com/
-// @version      0.6.7
+// @version      0.7
 // @description  Revamps the chat and visual features of dueling.
 // @author       Sock#3222
 // @grant        none
@@ -184,6 +184,10 @@ let onload = function () {
         flex-grow: 1;
         flex-basis: 0;
     }
+    
+    /*#ci-ext-misc-sections > div {
+        transition: height 0.1s;
+    }*/
     </style>`));
     
     // TODO: move chaining options on bottom right
@@ -218,7 +222,6 @@ let onload = function () {
     const isNormalMonster       = (card) => card.type & monsterTypeMap["Normal"];
 
     gameChatContent.css("overflow-y", "auto")
-                   // .css("height", "230px")
                    // .css("background-color", "transparent");
     // gameChatArea.css("background-color", "rgba(0, 0, 0)")
                 // .css("background-color", "rgba(0, 0, 0, 0.7)");
@@ -393,6 +396,7 @@ let onload = function () {
         // scroll to message
         scrollToBottom(chatLog);
         scrollToBottom(gameChatContent);
+        // updateColumnHeight();
         // handle UI
         if(ChatImprovements.temporaryChat) {
             if(gameChatContent.children().length > 10) {
@@ -453,6 +457,9 @@ let onload = function () {
         }
     });
     
+    const roundTo = (n, places = 7) => 
+        Math.round(n * 10 ** places) / (10 ** places);
+    
     // create sections
     let miscContainer = $("<div id=ci-ext-misc>");
     let miscSections = $("<div id=ci-ext-misc-sections>");
@@ -461,6 +468,17 @@ let onload = function () {
     let gameContainer = $("#game-container");
     gameContainer.prepend(miscContainer);
     
+    // restructure chat area to be in card info
+    // gameChatArea.detach();
+    // gameChatArea.css("position", "absolute")
+                // .css("left", "")
+                // .css("width", "100%");
+    
+    // let cardColumnInfo = cardColumn.children().detach();
+    // cardColumn.append($("<table>").append(
+        // $("<tr>").append($("<td valign=top>").append(cardColumnInfo)),
+        // $("<tr>").append($("<td valign=bottom>").append(gameChatArea)),
+    // ));
     class GameOption {
         constructor(tag, id, option, type, info = {}) {
             this.tag = tag;
@@ -728,7 +746,7 @@ let onload = function () {
     let miscSectionButtons = $("<div id=ci-ext-misc-buttons>");
     
     // moved earlier for hideMiscBut
-    let minimizeToggle = $("<button class=engine-button title=minimize>&minus;</button>")
+    let minimizeToggle = $("<button class=engine-button title=minimize>➖</button>")
         .data("toggled", false)
         .click(function () {
             let toggled = $(this).data("toggled");
@@ -737,6 +755,11 @@ let onload = function () {
             toggled = !toggled;
             $(this).data("toggled", toggled);
             scrollToBottom(gameChatContent);
+        });
+    
+    let clearChatButton = $("<button class=engine-button title='clear chat'>🗑️</button>")
+        .click(function() {
+            gameChatContent.empty();
         });
     
     const hideMiscBut = function (but) {
@@ -776,41 +799,22 @@ let onload = function () {
     
     miscContainer.append(miscSections);
     
-    
     // update ui
-    // TODO: toggle even newly inserted messages
+    let chatButtons = $("<div id=ci-ext-chat-buttons>");
     
-    // let updateMuteToggleText;
-    // let muteToggle = $("<button class=engine-button></button>")
-        // .click(function () {
-            // ChatImprovements.playSounds = !ChatImprovements.playSounds;
-            // updateMuteToggleText();
-        // })
-        // .css("float", "right");
-        
-    // updateMuteToggleText = function () {
-        // muteToggle.text(ChatImprovements.playSounds ? "Mute" : "Unmute");
-    // };
-    // updateMuteToggleText();
-    
-    // let updateNotificationToggleText;
-    // let notificationToggle = $("<button class=engine-button></button>")
-        // .click(function () {
-            // ChatImprovements.showEvents = !ChatImprovements.showEvents;
-            // updateNotificationToggleText();
-            // $("#game-chat-area .notified-event").toggle(ChatImprovements.showEvents);
-        // })
-        // .css("float", "right");
-    
-    // updateNotificationToggleText = function () {
-        // notificationToggle.text(ChatImprovements.showEvents ? "Hide events" : "Show events");
-    // };
-    // updateNotificationToggleText();
-    
-    // let 
-    gameChatArea.prepend(
-        minimizeToggle, /*muteToggle,*/ /*notificationToggle*/
-    );
+    waitForElementJQuery("#ci-ext-misc-sections:visible").then(function () {
+        console.info("moving chat!");
+        gameChatArea.css("position", "static")
+                    .css("max-height", "11.4em")
+                    .css("left", "")
+                    .css("bottom", "")
+                    .css("min-width", "")
+                    .css("width", "100%");
+        gameChatArea.detach();
+        miscContainer.append(gameChatArea);
+        chatButtons.append(minimizeToggle, clearChatButton);
+        miscContainer.append(chatButtons);
+    });
     
     // listeners[type] = [...];
     let listeners = {};
@@ -971,31 +975,64 @@ let onload = function () {
         }
     });
     
+    // still a mystery to me
+    // originally: - 24
+    const RESIZE_OFFSET = 24;
+    let updateColumnHeight = function () {
+        // $("#card-upper").css("height", ($("#card-column").height() - $("#game-chat-area").height()) + "px");
+        // setTimeout(function () {
+            let upperMargin = $("#ci-ext-misc-sections").position().top;
+            let baseHeight = $(window).height() - upperMargin - RESIZE_OFFSET;
+            // console.log(upperMargin, baseHeight);
+            
+            let diffHeight = baseHeight - gameChatArea.height() - chatButtons.height();
+            console.log("INF", roundTo(upperMargin), roundTo(baseHeight));
+            
+            $("#ci-ext-misc-sections > div").css("height",
+                roundTo(diffHeight)
+            );
+            $("#game-siding-column").css("max-height", 
+                roundTo(baseHeight)
+            );
+        // }, 20);
+    };
+    
+    let UCH_INT = setInterval(updateColumnHeight, 50);
+    console.log("UCH_INT!!!!", UCH_INT);
     
     // redefine window resizing
-    window.Wb = function Wb() {
-        var a = $("#ci-ext-misc-sections").position().top;
+    let resize = function resize() {
+        if(!m[0]) {
+            return;
+        }
+        // updateColumnHeight();
         
-        // originally: - 24
-        const offset = 24;
-        $("#ci-ext-misc-sections div")
-            .css("max-height", $(window).height() - a - offset);
-        $("#game-siding-column")
-            .css("max-height", $(window).height() - a - offset);
-        
-        a = 4 <= Ab ? 7 : 6;
-        var b = $(window).width() - $("#ci-ext-misc").width() - 50,
+        let a = 4 <= Ab ? 7 : 6;
+        let b = $(window).width() - $("#ci-ext-misc").width() - 50;
+        let c = $(window).height() - 8 - 48 - RESIZE_OFFSET;
             // c = $(window).height();// - $("#game-chat-area").height() - 8 - 48;
-            c = $(window).height() - $("#game-chat-textbox").outerHeight() - 8 - 48;
-        9 * c / a < b ? ($("#game-field").css("height", c + "px"), b = c / a, $("#game-field").css("width", 9 * b + "px")) : ($("#game-field").css("width", b + "px"), b /= 9, $("#game-field").css("height", b * a + "px"));
-        $(".game-field-zone").css("width",
-            b + "px").css("height", b + "px");
+            // c = $(window).height() - $("#game-chat-textbox").outerHeight() - 8 - 48;
+        if(9 * c / a < b) {
+            $("#game-field").css("height", c + "px");
+            b = c / a;
+            $("#game-field").css("width", 9 * b + "px");
+        }
+        else {
+            $("#game-field").css("width", b + "px");
+            b /= 9;
+            $("#game-field").css("height", b * a + "px");
+        }
+        
+        $(".game-field-zone").css("width", b + "px").css("height", b + "px");
         $(".game-field-hand").css("width", 5 * b + "px").css("height", b + "px");
+        
         Cb = b;
         Db = Math.floor(.95 * b);
         E = 177 * Db / 254;
+        
         Zc(m[0]);
         Zc(m[1]);
+        
         $("#game-position-atk-up").css("width", E);
         $("#game-position-atk-up").css("height", Db);
         $("#game-position-atk-up").css("margin-right", Db - E + 3);
@@ -1003,14 +1040,26 @@ let onload = function () {
         $("#game-position-atk-down").css("height", Db);
         $("#game-position-atk-down").css("margin-right", Db - E + 3);
         $("#game-position-def-up").css("width", E);
-        $("#game-position-def-up").css("height",
-            Db);
+        $("#game-position-def-up").css("height", Db);
         $("#game-position-def-up").css("margin-right", Db - E + 3);
         $("#game-position-def-down").css("width", E);
         $("#game-position-def-down").css("height", Db);
         $(".game-selection-card-image").css("width", E);
-        zb && $c();
+        if(zb) {
+            $c();
+        }
     }
+    window.Wb = function Wb() {
+        try {
+            resize();
+        }
+        catch (e) {
+            console.warn("Error while window resizing (probably safe to ignore if everything is working)");
+            console.warn(e);
+        }
+    }
+    $(window).off("resize");
+    $(window).resize(Wb);
     
     window.qf = function qf(a, b) {
         if(listeners["targetCardAnimation"]) {
@@ -1106,8 +1155,6 @@ let onload = function () {
     
     // re-add listener
     // remove current resize listener
-    // $(window).off("resize", Vb);
-    // $(window).resize(Vb);
     Fb.ChatMessageReceived = window.qd = displayOpponentsMessage;
     console.info("ChatImprovements plugin loaded!");
     
