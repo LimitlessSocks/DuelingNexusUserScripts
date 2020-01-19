@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Chat Improvements Plugin
 // @namespace    https://duelingnexus.com/
-// @version      0.7
+// @version      0.7.1
 // @description  Revamps the chat and visual features of dueling.
 // @author       Sock#3222
 // @grant        none
@@ -468,17 +468,6 @@ let onload = function () {
     let gameContainer = $("#game-container");
     gameContainer.prepend(miscContainer);
     
-    // restructure chat area to be in card info
-    // gameChatArea.detach();
-    // gameChatArea.css("position", "absolute")
-                // .css("left", "")
-                // .css("width", "100%");
-    
-    // let cardColumnInfo = cardColumn.children().detach();
-    // cardColumn.append($("<table>").append(
-        // $("<tr>").append($("<td valign=top>").append(cardColumnInfo)),
-        // $("<tr>").append($("<td valign=bottom>").append(gameChatArea)),
-    // ));
     class GameOption {
         constructor(tag, id, option, type, info = {}) {
             this.tag = tag;
@@ -806,14 +795,18 @@ let onload = function () {
         console.info("moving chat!");
         gameChatArea.css("position", "static")
                     .css("max-height", "11.4em")
+                    .css("min-width", "0")
                     .css("left", "")
                     .css("bottom", "")
+                    .css("top", "")
+                    .css("right", "")
                     .css("min-width", "")
                     .css("width", "100%");
         gameChatArea.detach();
         miscContainer.append(gameChatArea);
         chatButtons.append(minimizeToggle, clearChatButton);
         miscContainer.append(chatButtons);
+        console.info("done moving chat!");
     });
     
     // listeners[type] = [...];
@@ -986,7 +979,7 @@ let onload = function () {
             // console.log(upperMargin, baseHeight);
             
             let diffHeight = baseHeight - gameChatArea.height() - chatButtons.height();
-            console.log("INF", roundTo(upperMargin), roundTo(baseHeight));
+            // console.log("INF", roundTo(upperMargin), roundTo(baseHeight));
             
             $("#ci-ext-misc-sections > div").css("height",
                 roundTo(diffHeight)
