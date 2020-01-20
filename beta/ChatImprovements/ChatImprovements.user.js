@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Chat Improvements Plugin
 // @namespace    https://duelingnexus.com/
-// @version      0.7.1
+// @version      0.7.2
 // @description  Revamps the chat and visual features of dueling.
 // @author       Sock#3222
 // @grant        none
@@ -222,6 +222,7 @@ let onload = function () {
     const isNormalMonster       = (card) => card.type & monsterTypeMap["Normal"];
 
     gameChatContent.css("overflow-y", "auto")
+                   .css("max-height", "11.4em");
                    // .css("background-color", "transparent");
     // gameChatArea.css("background-color", "rgba(0, 0, 0)")
                 // .css("background-color", "rgba(0, 0, 0, 0.7)");
@@ -794,14 +795,14 @@ let onload = function () {
     waitForElementJQuery("#ci-ext-misc-sections:visible").then(function () {
         console.info("moving chat!");
         gameChatArea.css("position", "static")
-                    .css("max-height", "11.4em")
                     .css("min-width", "0")
                     .css("left", "")
                     .css("bottom", "")
                     .css("top", "")
                     .css("right", "")
                     .css("min-width", "")
-                    .css("width", "100%");
+                    .css("width", "100%")
+                    .css("overflow", "hidden");
         gameChatArea.detach();
         miscContainer.append(gameChatArea);
         chatButtons.append(minimizeToggle, clearChatButton);
