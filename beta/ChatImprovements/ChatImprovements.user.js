@@ -140,6 +140,12 @@ let onload = function () {
         float: none;
         width: auto;
     }
+    /* temporary fix */
+    #card-column, #ci-ext-event-log, #ci-ext-log, #ci-ext-options {
+        height: auto;
+        max-height: 100% !important;
+        min-height: auto !important;
+    }
     
     #ci-ext-misc-sections > div {
         overflow-x: hidden;
@@ -188,6 +194,10 @@ let onload = function () {
     /*#ci-ext-misc-sections > div {
         transition: height 0.1s;
     }*/
+    
+    #game-container {
+        margin: 16px 16px 0px 16px;
+    }
     </style>`));
     
     // TODO: move chaining options on bottom right
@@ -971,24 +981,17 @@ let onload = function () {
     
     // still a mystery to me
     // originally: - 24
-    const RESIZE_OFFSET = 24;
+    const RESIZE_OFFSET = 10;
+    const getBaseHeight = () => {
+        let upperMargin = $("#ci-ext-misc-sections").position().top;
+        let baseHeight = $(window).height() - upperMargin - RESIZE_OFFSET;
+        return baseHeight;
+    };
     let updateColumnHeight = function () {
-        // $("#card-upper").css("height", ($("#card-column").height() - $("#game-chat-area").height()) + "px");
-        // setTimeout(function () {
-            let upperMargin = $("#ci-ext-misc-sections").position().top;
-            let baseHeight = $(window).height() - upperMargin - RESIZE_OFFSET;
-            // console.log(upperMargin, baseHeight);
-            
-            let diffHeight = baseHeight - gameChatArea.height() - chatButtons.height();
-            // console.log("INF", roundTo(upperMargin), roundTo(baseHeight));
-            
-            $("#ci-ext-misc-sections > div").css("height",
-                roundTo(diffHeight)
-            );
-            $("#game-siding-column").css("max-height", 
-                roundTo(baseHeight)
-            );
-        // }, 20);
+        let diffHeight = getBaseHeight() - gameChatArea.height() - chatButtons.height();
+        $("#ci-ext-misc-sections > div").css("height",
+            roundTo(diffHeight)
+        );
     };
     
     let UCH_INT = setInterval(updateColumnHeight, 50);
@@ -999,8 +1002,9 @@ let onload = function () {
         if(!m[0]) {
             return;
         }
-        // updateColumnHeight();
-        
+        $("#game-siding-column").css("max-height", 
+            roundTo(getBaseHeight())
+        );
         let a = 4 <= Ab ? 7 : 6;
         let b = $(window).width() - $("#ci-ext-misc").width() - 50;
         let c = $(window).height() - 8 - 48 - RESIZE_OFFSET;
