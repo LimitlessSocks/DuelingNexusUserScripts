@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.13.1
+// @version      0.13.2
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -664,10 +664,10 @@ let onStart = function () {
     
     // extend jQuery
     jQuery.fn.tagName = function () {
-        return this.prop("tagName").toLowerCase();
+        return this.prop("tagName").toUpperCase();
     };
     jQuery.fn.tagEquals = function (name) {
-        return this.tagName() === name.toLowerCase();
+        return this.tagName() === name.toUpperCase();
     }
     
     // disable default listener (Z.Rb)
@@ -956,7 +956,6 @@ let onStart = function () {
         
         cardTd.append(...template);
         
-        console.log(mainTd);
         mainTd.click(() => addThisCard(template));
         
         sideTd.click(() => addThisCard(template, "side"));
@@ -1981,7 +1980,7 @@ let onStart = function () {
             if(INPUTS_USE_QUOTES[inputName]) {
                 value = '"' + value + '"';
             }
-            switch(inputElement.tagName) {
+            switch(inputElement.tagName()) {
                 case "INPUT":
                     tagString += tagStringOf(tagName, value, "", inversion);
                     break;
