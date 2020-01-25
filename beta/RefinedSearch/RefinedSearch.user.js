@@ -1,19 +1,17 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.12.3
+// @version      0.13
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
 // @include      https://duelingnexus.com/editor/*
 // @updateURL   https://raw.githubusercontent.com/LimitlessSocks/DuelingNexusUserScripts/master/beta/RefinedSearch/RefinedSearch.user.js
 // @downloadURL https://raw.githubusercontent.com/LimitlessSocks/DuelingNexusUserScripts/master/beta/RefinedSearch/RefinedSearch.user.js
-// @require https://raw.githubusercontent.com/LimitlessSocks/DuelingNexusUserScripts/master/beta/CustomNexusGUI/CustomNexusGUI.user.js
 // ==/UserScript==
 
-// TODO: separate search by name/eff
 // TODO: rehash sort function
-
+try{
 const EXT = {
     RESULTS_PER_PAGE: 30,
     MIN_INPUT_LENGTH: 1,
@@ -475,7 +473,7 @@ let onStart = function () {
     const ADVANCED_SETTINGS_HTML_ELS = jQuery.parseHTML(ADVANCED_SETTINGS_HTML_STRING);
     ADVANCED_SETTINGS_HTML_ELS.reverse();
     
-    // minified with cssminifier.com
+    // local CSS styles
     const ADVANCED_SETTINGS_CSS_STRING = `
         #rs-ext-advanced-search-bar {
             width: 100%
@@ -653,6 +651,15 @@ let onStart = function () {
         #rs-ext-advanced-search-bar > button {
             margin: 2px;
         }
+        
+        #rs-ext-navigation {
+            
+        }
+        
+        #rs-ext-navigate-left,
+        #rs-ext-navigate-right {
+            margin: 5px;
+        }
     `;
     
     // extend jQuery
@@ -663,12 +670,21 @@ let onStart = function () {
         return this.tagName() === name.toLowerCase();
     }
     
-    // disable default listener (Z.Pb)
+    // disable default listener (Z.Rb)
     $("#editor-search-text").off("input");
     
     // VOLATILE FUNCTIONS, MAY CHANGE AFTER A MAIN UPDATE
+    const computePadding = Z.Ca;
+    const updateBanlistIcons = Z.N;
+    const countInDecks = Z.Gb;
+    const removeCardSilent = Z.P;
+    const defaultShuffleList = Z.Pb;
+    const previewCardSelection = Z.Aa;
+    const getCardTemplate = () => $(Z.Nb);
+    const searchResults = $(Z.za);
     
     /* reload cards until pendulum hotfix */
+    // TODO: pendulum scales seem to have been fixed, reinvestigate
     // const CARD_LIST = X;
     const CARD_LIST = {};
     const CardObject = function (a) {
@@ -714,22 +730,30 @@ let onStart = function () {
             })
         })
     };
-    
+
     readCards();
     
+    // expected result: { zb: "Warrior", qb: "Spellcaster", ... }
     const TYPE_HASH = bg;
     const TYPE_LIST = Object.values(TYPE_HASH);
     
+    // expected result: { Ta: 1, Ab: 2, Za: 4, Bb: 8, cb: 16, Na: 32, Pa: 64 }
     const ATTRIBUTE_MASK_HASH = Yf;
+    // expected result: { Ta: "EARTH", Ab: "WATER", ... }
+    const ATTRIBUTE_WORD_VALUE_HASH = ag;
     
     const ATTRIBUTE_HASH = {};
     for(obfs in ATTRIBUTE_MASK_HASH) {
-        let attr = ag[obfs].toUpperCase();
+        let attr = ATTRIBUTE_WORD_VALUE_HASH[obfs].toUpperCase();
         ATTRIBUTE_HASH[attr] = ATTRIBUTE_MASK_HASH[obfs];
-    }
+    };
     
     const attributeOf = function (cardObject) {
         return cardObject.H;
+    };
+    
+    const scalesOf = function (cardObject) {
+        return [cardObject.xa, cardObject.ya];
     }
     
     const makeSearchable = function (name) {
@@ -753,18 +777,22 @@ let onStart = function () {
         return searchable;
     }
     
+    // expected result for Ef: { 0: "?", 1: "Warrior", 2: "Spellcaster", ... }
     const monsterType = function (card) {
         return Ef[card.race];
     }
     const monsterTypeMap = {};
+    // expected result for Wf: { 0: "?", 1: "Monster", 2: "Spell", ... }
     for(let key in Wf) {
         let value = Wf[key];
         monsterTypeMap[value] = parseInt(key, 10);
     }
     window.monsterTypeMap = monsterTypeMap;
     
+    // expected result for ha.b: { {...}, ...}
     const banlists = ha.b;
     const banlistNames = banlists.map(list => list.name);
+    EXT.BANLIST_NAME = banlistNames[0];
     const allowedCount = function (card, index = EXT.BANLIST_NAME) {
         // card.A = the source id (e.g. for alt arts)
         // card.id = the actual id
@@ -780,7 +808,7 @@ let onStart = function () {
         let banlist = banlists[index];
         
         if(!banlist) {
-            console.warn("Banlist unable to be loaded");
+            console.warn("Banlist unable to be loaded (" + index + ")");
             return 3;
         }
         
@@ -799,7 +827,7 @@ let onStart = function () {
         return 3;
     }
     const clearVisualSearchOptions = function () {
-        return Z.Db();
+        return Z.Fb();
     }
     const isPlayableCard = function (card) {
         // internally checks U.U - having that bit means its not a playable card
@@ -834,48 +862,13 @@ let onStart = function () {
     }
     const previewCard = Cc;
     
-    // corresponds to EDIT_LOCATION where save was clicked
-    // EXT.EDIT_API.SAVED_INDEX = 0;
-    // const saveDeck = function () {
-        // Z.Ob();
-        // $("#editor-save-button").addClass("engine-button-disabled");
-        // $.post("api/update-deck.php", {
-            // id: window.Deck.id,
-            // deck: JSON.stringify({
-                // main: window.Deck.main,
-                // extra: window.Deck.extra,
-                // side: window.Deck.side
-            // })
-        // }, function(a) {
-            // a.success || "no_changes" === a.error ? $("#editor-save-button").text("Saved!").delay(2E3).queue(function() {
-                    // $(this).removeClass("engine-button-disabled").text("Save").dequeue()
-                // }) :
-                // $("#editor-save-button").text("Error while saving: " + a.error).delay(5E3).queue(function() {
-                    // $(this).removeClass("engine-button-disabled").text("Save").dequeue()
-                // })
-        // }, "json");
-    // }
-    // EXT.EDIT_API.save = saveDeck;
-    // re-attach listener
-    // let saveButton = document.getElementById("editor-save-button");
-    // $(saveButton).unbind();
-    // saveButton.addEventListener("click", saveDeck);
-    // capture page beforeunload
-    // window.addEventListener("beforeunload", function (ev) {
-        // if(EXT.EDIT_API.SAVED_INDEX !== EXT.EDIT_API.EDIT_LOCATION) {
-            // ev.preventDefault(); // PREFERED METHOD (not supported universally)
-            // return event.returnValue = ""; // deprecated
-        // }
-        // return null;
-    // });
-    
     const engineButton = function (content, id = null) {
         let button = makeElement("button", id, content);
-        button.classList.add("engine-button", "engine-button-default");
+        button.prop("classList").add("engine-button", "engine-button-default");
         return button;
     }
     
-    // Z.Ba = function() {
+    // Z.Da = function() {
         // if(Z.selection) {
             // console.log("tick");
             // Z.selection.css("left", Z.Ib + 3).css("top", Z.Jb + 3);
@@ -890,7 +883,7 @@ let onStart = function () {
     };
     const addCardToSearchWithButtons = function (cardId) {
         let card = CARD_LIST[cardId];
-        let template = $(Z.Lb);
+        let template = getCardTemplate();
         template.find(".template-name").text(card.name);
         l(template.find(".template-picture"), card.id);
         if (card.type & U.L) {
@@ -923,7 +916,7 @@ let onStart = function () {
             // left mouse - move card to tooltip
             if (1 == a.which) {
                 let id = $(this).data("id");
-                Z.ya(id);
+                previewCardSelection(id);
                 return false;
             }
             // right mouse - do nothing (allow contextmenu to trigger)
@@ -961,19 +954,11 @@ let onStart = function () {
         
         cardTd.append(...template);
         
-        // let mainDeckAdd = engineButton("Add to Main");
-        mainTd.addEventListener("click", function () {
-            addThisCard(template);
-        });
-        // mainTd.append(mainDeckAdd);
+        mainTd.click(() => addThisCard(template));
         
-        // let sideDeckAdd = engineButton("Add to Side");
-        sideTd.addEventListener("click", function () {
-            addThisCard(template, "side");
-        });
-        // sideTd.append(sideDeckAdd);
+        sideTd.click(() => addThisCard(template, "side"));
         
-        Z.xa.append(container);
+        searchResults.append(container);
     }
     
     const addCardToSearch = function (card) {
@@ -1089,7 +1074,7 @@ let onStart = function () {
                 addCardToSearch(EXT.Search.cache[i].id);
             }
         }
-        clearChildren(infoBox);
+        infoBox.empty();
         for(let container of EXT.Search.messages) {
             let [kind, message] = container;
             let color, symbol;
@@ -1110,23 +1095,24 @@ let onStart = function () {
                     symbol = SYMBOLS.INFO;
                     break;
             }
-            let symbolElement = document.createElement("span");
-            let messageElement = document.createElement("span");
+            let symbolElement = makeElement("span");
+            let messageElement = makeElement("span");
             
             appendTextNode(symbolElement, symbol);
-            symbolElement.style.padding = "3px";
+            symbolElement.css("padding", "3px");
             appendTextNode(messageElement, message);
             
-            let alignTable = document.createElement("table");
-            alignTable.style.backgroundColor = color;
-            alignTable.style.padding = "2px";
-            alignTable.appendChild(makeElement("tr"));
-            alignTable.children[0].appendChild(makeElement("td"));
-            alignTable.children[0].children[0].appendChild(symbolElement);
-            alignTable.children[0].appendChild(makeElement("td"));
-            alignTable.children[0].children[1].appendChild(messageElement);
+            let alignTable = makeElement("table");
+            alignTable.css("backgroundColor", color);
+            alignTable.css("padding", "2px");
+            let tr = makeElement("tr");
+            tr.append(
+                makeElement("td").append(symbolElement),
+                makeElement("td").append(messageElement)
+            );
+            alignTable.append(tr);
             
-            infoBox.appendChild(alignTable);
+            infoBox.append(alignTable);
         }
     }
     
@@ -1139,43 +1125,36 @@ let onStart = function () {
         EXT.Search.messages = [];
     }
     // gui/dom manipulation stuff
-    const clearChildren = function (el) {
-        while(el.firstChild) {
-            el.removeChild(el.firstChild);
-        }
-        return true;
-    }
     const appendTextNode = function (el, text) {
-        let textNode = document.createTextNode(text);
-        el.appendChild(textNode);
+        el.append(text);
         return true;
     }
     const makeElement = function (name, id = null, content = null, opts = {}) {
-        let el = document.createElement(name);
+        let el = $(document.createElement(name));
         if(id !== null) {
             el.id = id;
         }
         if(content !== null) {
-            appendTextNode(el, content);
+            el.append(content);
         }
         for(let [key, val] of Object.entries(opts)) {
             el[key] = val;
         }
-        return el;
+        return $(el);
     }
     const HTMLTag = function (tag, id, classes, ...children) {
         let el = makeElement(tag, id);
         if(classes) {
-            el.classList.add(...classes);
+            el.prop("classList").add(...classes);
         }
         for(let child of children) {
-            el.appendChild(child);
+            el.append(child);
         }
         return el;
     }
     const replaceTextNode = function (el, newText) {
-        clearChildren(el);
-        appendTextNode(el, newText);
+        el.empty();
+        el.append(newText);
     }
     const NO_SELECT_PROPERTIES = [
         "-webkit-touch-callout",
@@ -1188,7 +1167,7 @@ let onStart = function () {
     // TODO: select based on browser?
     const noSelect = function (el) {
         NO_SELECT_PROPERTIES.forEach(property => {
-            el.style[property] = "none";
+            el.css(property, "none");
         });
     }
     
@@ -1206,10 +1185,10 @@ let onStart = function () {
     };
     
     let styleHeaderNeutral = function (el) {
-        el.style.background = GUI_COLORS.HEADER.NEUTRAL;
-        el.style.fontSize = "16px";
-        el.style.padding = "3px";
-        el.style.marginBottom = "10px";
+        el.css("background", GUI_COLORS.HEADER.NEUTRAL)
+          .css("font-size", "16px")
+          .css("padding", "3px")
+          .css("margin-bottom", "10px");
     }
     
     // https://stackoverflow.com/a/30832210/4119004
@@ -1245,7 +1224,7 @@ let onStart = function () {
         "extra": [ -3.6, -4.05, -6.00],
         "side":  [ -3.6, -4.05, -6.00],
     };
-    Z.Aa = function (a) {
+    Z.Ca = function (a) {
         var padding = "0";
         // let 
         if(Z[a].length > ("main" == a ? 80 : 25)) {
@@ -1266,7 +1245,6 @@ let onStart = function () {
     */
     
     /* UNDO / REDO */
-    // const addCardSilent = Z.O;
     const addCardSilent = function(a, destination, c, d) {
         let card = X[a];
         if (card && !isToken(card)) {
@@ -1279,7 +1257,7 @@ let onStart = function () {
                 || !isExtra && toExtraDeck
                 || Z[destination].length >= sizeLimit
                 // cannot have more than 3 copies!
-                || Z.Eb(card.A ? card.A : card.id) >= 3
+                || countInDecks(card.A ? card.A : card.id) >= 3
             );
             
             if (!isInvalidLocation) {
@@ -1296,7 +1274,7 @@ let onStart = function () {
                         var b = $(this).data("location"),
                             c = $(this).parent().children().index($(this));
                         Z.P(b, c);
-                        Z.ya(a);
+                        previewCardSelection(a);
                         return false
                     }
                     if (3 == a.which) return false
@@ -1341,12 +1319,11 @@ let onStart = function () {
                 } else {
                     d.data("banlist", null);
                 }
-                Z.Aa(destination);
-                Z.N(destination)
+                computePadding(destination);
+                updateBanlistIcons(destination);
             }
         }
     };
-    const removeCardSilent = Z.P;
     const addCard = function (...args) {
         addCardSilent(...args);
         addEditPoint();
@@ -1459,8 +1436,8 @@ let onStart = function () {
         EXT.EDIT_API.EDIT_LOCATION = EXT.EDIT_API.EDIT_HISTORY.length - 1;
         
         // we can no longer redo, but now we can undo
-        undoButton.disabled = false;
-        redoButton.disabled = true;
+        undoButton.attr("disabled", false);
+        redoButton.attr("disabled", true);
         
         return true;
     };
@@ -1481,11 +1458,11 @@ let onStart = function () {
         updateDeckState(EXT.EDIT_API.EDIT_HISTORY[EXT.EDIT_API.EDIT_LOCATION]);
         
         // we can now redo
-        redoButton.disabled = false;
+        redoButton.attr("disabled", false);
         
         // disable the undo button if there is nothing left to undo
         if(EXT.EDIT_API.EDIT_LOCATION === 0) {
-            undoButton.disabled = true;
+            undoButton.attr("disabled", true);
         }
         
         return true;
@@ -1506,11 +1483,11 @@ let onStart = function () {
         updateDeckState(EXT.EDIT_API.EDIT_HISTORY[EXT.EDIT_API.EDIT_LOCATION]);
         
         // we can now undo
-        undoButton.disabled = false;
+        undoButton.attr("disabled", false);
         
         // disable the redo button if there is nothing left to redo
         if(EXT.EDIT_API.EDIT_LOCATION === EXT.EDIT_API.EDIT_HISTORY.length - 1) {
-            redoButton.disabled = true;
+            redoButton.attr("disabled", true);
         }
         
         return true;
@@ -1536,9 +1513,9 @@ let onStart = function () {
     EXT.EDIT_API.clear = clear;
     
     // reset listener for editor's clear button
-    let clearButton = document.getElementById("editor-clear-button");
-    $(clearButton).unbind();
-    clearButton.addEventListener("click", clear);
+    let clearButton = $("#editor-clear-button");
+    clearButton.unbind();
+    clearButton.click(clear);
     
     const overMainExtraSide = function (it) {
         for(let name of ["main", "extra", "side"]) {
@@ -1554,44 +1531,46 @@ let onStart = function () {
             // Z[c].sort(function(a, b) {
                 // return Z.fa(X[a.data("id")], X[b.data("id")])
             // });
-            // Z.N(c);
+            // updateBanlistIcons(c);
         // }
         overMainExtraSide((contents, location) => {
             contents.sort((c1, c2) => 
                 Z.fa(X[c1.data("id")], X[c2.data("id")])
             );
-            Z.N(location);
+            updateBanlistIcons(location);
         });
         restoreVisualState();
         addEditPoint();
     };
     
     // reset listener for editor's sort button
-    let sortButton = document.getElementById("editor-sort-button");
-    $(sortButton).unbind();
-    sortButton.addEventListener("click", sort);
+    let sortButton = $("editor-sort-button");
+    sortButton.unbind();
+    sortButton.click(sort);
     
     const shuffleAll = function () {
         clearVisualState();
         overMainExtraSide((contents, location) => {
-            Z.Nb(contents);
-            Z.N(location);
+            defaultShuffleList(contents);
+            updateBanlistIcons(location);
         });
         restoreVisualState();
         addEditPoint();
     }
     
-    let shuffleButton = document.getElementById("editor-shuffle-button");
-    $(shuffleButton).unbind();
-    shuffleButton.addEventListener("click", shuffleAll);
+    let shuffleButton = $("#editor-shuffle-button");
+    shuffleButton.unbind();
+    shuffleButton.click(shuffleAll);
     
     // code for Export readable
     const countIn = function (arr, el) {
         return arr.filter(e => e === el).length;
     }
 
-    const namesOf = function (el) {
-        let names = [...el.children].map(e => CARD_LIST[$(e).data("id")].name);
+    const cardNamesInDeck = function (el) {
+        let names = [...el.children()].map(e =>
+            CARD_LIST[$(e).data("id")].name
+        );
         let uniq = [...new Set(names)];
         return uniq.map(name =>
             `${countIn(names, name)}x ${name}`
@@ -1600,20 +1579,20 @@ let onStart = function () {
 
     const outputDeck = function () {
         let decks = {
-            Main: "editor-main-deck",
-            Extra: "editor-extra-deck",
-            Side: "editor-side-deck",
+            Main: "#editor-main-deck",
+            Extra: "#editor-extra-deck",
+            Side: "#editor-side-deck",
         };
         
         return Object.entries(decks).map(([key, value]) =>
-            [key + " Deck:", ...namesOf(document.getElementById(value))]
+            [key + " Deck:", ...cardNamesInDeck($(value))]
             .join("\n")
         ).join("\n--------------\n");
     }
     
     /* UPDATE PAGE STRUCTURE */
-    let editorMenuContent = document.getElementById("editor-menu-content");
-    let saveButton = document.getElementById("editor-save-button");
+    let editorMenuContent = $("#editor-menu-content");
+    let saveButton = $("#editor-save-button");
     
     // remove annoying spacer
     
@@ -1622,13 +1601,13 @@ let onStart = function () {
     // add banlist selection
     let selector = makeElement("select", "rs-ext-banlist");
     for(let name of banlistNames) {
-        selector.appendChild(makeElement("option", null, name));
+        selector.append(makeElement("option", null, name));
     }
     
     // TODO: "DRY" this.
     let updateBanlist = function () {
-        console.info("Banlist changed to " + selector.value);
-        EXT.BANLIST_NAME = selector.value;
+        console.info("Banlist changed to " + selector.val());
+        EXT.BANLIST_NAME = selector.val();
         
         for(let pic of document.querySelectorAll(".editor-card-small")) {
             let el = $(pic);
@@ -1651,44 +1630,44 @@ let onStart = function () {
             }
         }
         // update everything manually
-        Z.N("main");
-        Z.N("extra");
-        Z.N("side");
-        Z.Aa("main");
-        Z.Aa("extra");
-        Z.Aa("side");
+        updateBanlistIcons("main");
+        updateBanlistIcons("extra");
+        updateBanlistIcons("side");
+        computePadding("main");
+        computePadding("extra");
+        computePadding("side");
         updateSearchContents();
     };
     
-    selector.addEventListener("change", updateBanlist);
+    selector.change(updateBanlist);
     
-    editorMenuContent.insertBefore(selector, saveButton);
+    selector.insertBefore(saveButton);
     
     // add new buttons
     
     let undoButton = makeElement("button", "rs-ext-editor-export-button", "Undo");
-    undoButton.classList.add("engine-button", "engine-button", "engine-button-default");
-    appendTextNode(editorMenuContent, " ");
-    editorMenuContent.appendChild(undoButton);
-    undoButton.disabled = true;
+    undoButton.prop("classList").add("engine-button", "engine-button", "engine-button-default");
+    editorMenuContent.append(" ");
+    editorMenuContent.append(undoButton);
+    undoButton.attr("disabled", true);
     
-    undoButton.addEventListener("click", undo);
+    undoButton.click(undo);
     
     let redoButton = makeElement("button", "rs-ext-editor-export-button", "Redo");
-    redoButton.classList.add("engine-button", "engine-button", "engine-button-default");
-    appendTextNode(editorMenuContent, " ");
-    editorMenuContent.appendChild(redoButton);
-    redoButton.disabled = true;
+    redoButton.prop("classList").add("engine-button", "engine-button", "engine-button-default");
+    editorMenuContent.append(" ");
+    editorMenuContent.append(redoButton);
+    redoButton.attr("disabled", true);
     
-    redoButton.addEventListener("click", redo);
+    redoButton.click(redo);
     
     let exportButton = makeElement("button", "rs-ext-editor-export-button", "Export .ydk");
-    exportButton.classList.add("engine-button", "engine-button", "engine-button-default");
+    exportButton.prop("classList").add("engine-button", "engine-button", "engine-button-default");
     exportButton.title = "Export Saved Version of Deck";
-    appendTextNode(editorMenuContent, " ");
-    editorMenuContent.appendChild(exportButton);
+    editorMenuContent.append(" ");
+    editorMenuContent.append(exportButton);
     
-    exportButton.addEventListener("click", function () {
+    exportButton.click(function () {
         let lines = [
             "#created by RefinedSearch plugin"
         ];
@@ -1703,22 +1682,22 @@ let onStart = function () {
     });
     
     let exportRawButton = makeElement("button", "rs-ext-editor-export-button", "Export Readable");
-    exportRawButton.classList.add("engine-button", "engine-button", "engine-button-default");
+    exportRawButton.prop("classList").add("engine-button", "engine-button", "engine-button-default");
     exportRawButton.title = "Export Human Readable Version of Deck";
-    appendTextNode(editorMenuContent, " ");
-    editorMenuContent.appendChild(exportRawButton);
+    editorMenuContent.append(" ");
+    editorMenuContent.append(exportRawButton);
     
-    exportRawButton.addEventListener("click", function () {
+    exportRawButton.click(function () {
         let message = outputDeck();
         download(message, Deck.name + ".txt", "text");
     });
     
     let helpButton = makeElement("button", "rs-ext-show-help", "Help");
-    helpButton.classList.add("engine-button", "engine-button", "engine-button-default");
-    appendTextNode(editorMenuContent, " ");
-    editorMenuContent.appendChild(helpButton);
+    helpButton.prop("classList").add("engine-button", "engine-button", "engine-button-default");
+    editorMenuContent.append(" ");
+    editorMenuContent.append(helpButton);
     
-    helpButton.addEventListener("click", function () {
+    helpButton.click(function () {
         let pages = [
             `By clicking any one of the "monster", "spell", and "trap" tabs, you can open a section which contains various search filters. There are two kinds of inputs: Drop-downs and text inputs. Drop-down lists give you a predefined set of options from which to choose. For example, a Trap may be either "Normal", "Continuous", or "Counter", so a drop-down menu is used. For features such as ATK and Level, you type a specific number, such as "2300" or "8".`,
             `For text inputs, you can put a comparison sign before the number to modify the expression. For example, typing ">=1500" in the "ATK" section will only show you monsters whose ATK value is at least 1500. The available operators are "=" (equality), "!=" (inequality), ">" (greater than), "<" (less than), ">=" (greater than or equal to), and "<=" (less than or equal to).`,
@@ -1732,15 +1711,15 @@ let onStart = function () {
     // add options tile
     let optionsArea = makeElement("div", "options-area"); /* USES NEXUS DEFAULT CSS/ID */
     let options = makeElement("button", "rs-ext-options");
-    options.classList.add("engine-button", "engine-button", "engine-button-default");
+    options.prop("classList").add("engine-button", "engine-button", "engine-button-default");
     let cog = makeElement("i");
-    cog.classList.add("fa", "fa-cog");
-    options.appendChild(cog);
+    cog.prop("classList").add("fa", "fa-cog");
+    options.append(cog);
     appendTextNode(options, " Options");
-    optionsArea.appendChild(options);
+    optionsArea.append(options);
     
     // TODO: implement option toggle area
-    // document.body.appendChild(optionsArea);
+    // document.body.append(optionsArea);
     
     let optionsWindow; /* USES NEXUS DEFAULT CSS/ID */
     let overflowDeckSizeElement;
@@ -1755,87 +1734,81 @@ let onStart = function () {
     // TODO: add this
     
     // add css
-    let rsExtCustomCss = makeElement("style", null, ADVANCED_SETTINGS_CSS_STRING);
-    document.head.appendChild(rsExtCustomCss);
+    NexusGUI.addCSS(ADVANCED_SETTINGS_CSS_STRING);
     
-    let searchText = document.getElementById("editor-search-text");
+    let searchText = $("#editor-search-text");
     
     // info box
     let infoBox = makeElement("div");
-    // let infoMessage = makeElement("span", "rs-ext-info-message");
-    // infoBox.appendChild(document.createTextNode("🛈 "));
-    // infoBox.appendChild(infoMessage);
     
     styleHeaderNeutral(infoBox);
-    searchText.parentNode.insertBefore(infoBox, searchText);
+    infoBox.insertBefore(searchText);
     
     // advanced search settings
     for(let el of ADVANCED_SETTINGS_HTML_ELS) {
-        searchText.parentNode.insertBefore(el, searchText);
+        $(el).insertBefore(searchText);
     }
     
     // page navigation bar
-    let navigationHolder = makeElement("div", "rs-ext-navigation");
+    let navigationHolder = makeElement("table", "rs-ext-navigation");
     let leftButton = makeElement("button", "rs-ext-navigate-left", "<");
     let rightButton = makeElement("button", "rs-ext-navigate-right", ">");
     for(let button of [leftButton, rightButton]) {
-        button.classList.add("engine-button");
-        button.classList.add("engine-button-default");
+        button.addClass("engine-button");
+        button.addClass("engine-button-default");
     }
-    leftButton.style.margin = rightButton.style.margin = "5px";
     let pageInfo = makeElement("span", null, "Page ");
     let currentPageIndicator = makeElement("span","rs-ext-current-page", "X");
     let maxPageIndicator = makeElement("span", "rs-ext-max-page", "X");
-    pageInfo.appendChild(currentPageIndicator);
-    appendTextNode(pageInfo, " of ");
-    pageInfo.appendChild(maxPageIndicator);
+    pageInfo.append(currentPageIndicator, " of ", maxPageIndicator);
     
-    navigationHolder.appendChild(leftButton);
-    navigationHolder.appendChild(pageInfo);
-    navigationHolder.appendChild(rightButton);
+    let buttonHolder = $("<td id=rs-ext-button-holder>");
+    buttonHolder.append(leftButton, pageInfo, rightButton);
+    
+    navigationHolder.append(buttonHolder);
     
     styleHeaderNeutral(navigationHolder);
-    navigationHolder.style.textAlign = "center";
     noSelect(navigationHolder);
     
-    searchText.parentNode.insertBefore(navigationHolder, searchText);
+    navigationHolder.insertBefore(searchText);
     
     // wire event listeners for advanced search settings
     let toggleButtonState = function () {
-        let isSelected = this.classList.contains("rs-ext-selected");
+        let classList = this.prop("classList");
+        let isSelected = classList.contains("rs-ext-selected");
         if(isSelected) {
-            this.classList.remove("rs-ext-selected");
+            classList.remove("rs-ext-selected");
         }
         else {
-            this.classList.add("rs-ext-selected");
+            classList.add("rs-ext-selected");
         }
         updateSearchContents();
     };
-    [...document.querySelectorAll(".rs-ext-toggle-button")].forEach(el => {
-        el.addEventListener("click", toggleButtonState.bind(el));
+    [...$(".rs-ext-toggle-button")].forEach(el => {
+        el.click(toggleButtonState.bind(el));
     });
     
-    let monsterTab = document.getElementById("rs-ext-monster");
-    let spellTab = document.getElementById("rs-ext-spell");
-    let trapTab = document.getElementById("rs-ext-trap");
-    let sortTab = document.getElementById("rs-ext-sort");
+    let monsterTab = $("#rs-ext-monster");
+    let spellTab = $("#rs-ext-spell");
+    let trapTab = $("#rs-ext-trap");
+    let sortTab = $("#rs-ext-sort");
     
-    let spacer = document.getElementById("rs-ext-spacer");
+    let spacer = $("#rs-ext-spacer");
     
     // returns `true` if the object is visible, `false` otherwise
     let toggleShrinkable = function (target, state = null) {
         let isShrunk = state;
         if(isShrunk === null) {
-            isShrunk = target.classList.contains("rs-ext-shrunk");
+            isShrunk = target.hasClass("rs-ext-shrunk");
         }
         if(isShrunk) {
-            spacer.classList.add("rs-ext-activated");
-            target.classList.remove("rs-ext-shrunk");
+            target.addClass("rs-ext-activated");
+            target.removeClass("rs-ext-shrunk");
             return true;
         }
         else {
-            spacer.classList.remove("rs-ext-activated");
-            target.classList.add("rs-ext-shrunk");
+            target.addClass("rs-ext-shrunk");
+            target.removeClass("rs-ext-activated");
             return false;
         }
         // equiv. `return isShrunk;`, changed for clarity
@@ -1845,35 +1818,37 @@ let onStart = function () {
         return function () {
             let wasShrunk = toggleShrinkable(target);
             if(wasShrunk) {
-                others.forEach(other => other.classList.add("rs-ext-shrunk"));
+                others.forEach(other => other.addClass("rs-ext-shrunk"));
             }
             updateSearchContents();
         }
     };
     
-    document.getElementById("rs-ext-monster-toggle")
-            .addEventListener("click", createToggleOtherListener(monsterTab,  spellTab,   trapTab));
-    document.getElementById("rs-ext-spell-toggle")
-            .addEventListener("click", createToggleOtherListener(spellTab,    monsterTab, trapTab));
-    document.getElementById("rs-ext-trap-toggle")
-            .addEventListener("click", createToggleOtherListener(trapTab,     monsterTab, spellTab));
+    $("#rs-ext-monster-toggle")
+        .click(createToggleOtherListener(monsterTab, spellTab,   trapTab));
+    $("#rs-ext-spell-toggle")
+        .click(createToggleOtherListener(spellTab,   monsterTab, trapTab));
+    $("#rs-ext-trap-toggle")
+        .click(createToggleOtherListener(trapTab,    monsterTab, spellTab));
     
     
-    document.getElementById("rs-ext-sort-toggle").addEventListener("click", function () {
+    $("#rs-ext-sort-toggle").click(() => {
         toggleShrinkable(sortTab);
     });
     
     const currentSections = function () {
-        return [monsterTab, spellTab, trapTab, sortTab].filter(el => !el.classList.contains("rs-ext-shrunk")) || null;
+        return [monsterTab, spellTab, trapTab, sortTab].filter(el => !el.hasClass("rs-ext-shrunk")) || null;
     }
+    window.currentSections = currentSections;
     
+    // TODO: clientHeight might be 
     const updatePaddingHeight = function () {
         let sections = currentSections();
         let height = FN.sum(sections.map(section => section.clientHeight));
-        spacer.style.height = height + "px";
+        spacer.css("height", height + "px");
         // update top position of sort, if necessary
-        if(!sortTab.classList.contains("rs-ext-shrunk")) {
-            sortTab.style.top = (height - sortTab.clientHeight) + "px";
+        if(!sortTab.hasClass("rs-ext-shrunk")) {
+            sortTab.css("top", (height - sortTab.clientHeight) + "px");
         }
     }
     let interval = setInterval(updatePaddingHeight, 1);
@@ -1924,16 +1899,16 @@ let onStart = function () {
         "TYPE": true,
     };
     const MONSTER_INPUTS = {
-        ARROWS:     [...document.querySelectorAll(".rs-ext-toggle-button")],
-        TYPE:       document.getElementById("rs-ext-monster-type"),
-        ATTRIBUTE:  document.getElementById("rs-ext-monster-attribute"),
-        LEVEL:      document.getElementById("rs-ext-level"),
-        SCALE:      document.getElementById("rs-ext-scale"),
-        LIMIT:      document.getElementById("rs-ext-monster-limit"),
-        ATK:        document.getElementById("rs-ext-atk"),
-        DEF:        document.getElementById("rs-ext-def"),
-        CATEGORY:   document.getElementById("rs-ext-monster-category"),
-        ABILITY:    document.getElementById("rs-ext-monster-ability"),
+        ARROWS:     [...$(".rs-ext-toggle-button")],
+        TYPE:       $("#rs-ext-monster-type"),
+        ATTRIBUTE:  $("#rs-ext-monster-attribute"),
+        LEVEL:      $("#rs-ext-level"),
+        SCALE:      $("#rs-ext-scale"),
+        LIMIT:      $("#rs-ext-monster-limit"),
+        ATK:        $("#rs-ext-atk"),
+        DEF:        $("#rs-ext-def"),
+        CATEGORY:   $("#rs-ext-monster-category"),
+        ABILITY:    $("#rs-ext-monster-ability"),
     };
     const INPUT_TO_KEYWORD = {
         // ARROWS: "ARROWS",
@@ -1972,7 +1947,7 @@ let onStart = function () {
         
         // links
         let selectedArrows = MONSTER_INPUTS.ARROWS.filter(arrow => arrow.classList.contains("rs-ext-selected"));
-        let selectedSymbols = selectedArrows.map(arrow => arrow.textContent);
+        let selectedSymbols = selectedArrows.map(arrow => arrow.text());
         let bitmaps = selectedSymbols.map(convertUnicodeToNumber);
         let mask = bitmaps.reduce((a, c) => a | c, 0b0);
         
@@ -1983,7 +1958,7 @@ let onStart = function () {
         
         // category
         for(let category of CATEGORY_SOURCES) {
-            let value = MONSTER_INPUTS[category].value;
+            let value = MONSTER_INPUTS[category].val();
             if(value) {
                 let keyword = CATEGORY_TO_KEYWORD[value];
                 tagString += tagStringOf(keyword);
@@ -1992,7 +1967,7 @@ let onStart = function () {
         
         for(let [inputName, tagName] of Object.entries(INPUT_TO_KEYWORD)) {
             let inputElement = MONSTER_INPUTS[inputName];
-            let value = inputElement.value;
+            let value = inputElement.val();
             if(!value) continue;
             let inversion = false;
             if(value[0] === "!" && value[1] !== "=") {
@@ -2019,10 +1994,10 @@ let onStart = function () {
     }
     
     const SPELL_TRAP_INPUTS = {
-        SPELL:       document.getElementById("rs-ext-spell-type"),
-        SPELL_LIMIT: document.getElementById("rs-ext-spell-limit"),
-        TRAP:        document.getElementById("rs-ext-trap-type"),
-        TRAP_LIMIT:  document.getElementById("rs-ext-trap-limit"),
+        SPELL:       $("#rs-ext-spell-type"),
+        SPELL_LIMIT: $("#rs-ext-spell-limit"),
+        TRAP:        $("#rs-ext-trap-type"),
+        TRAP_LIMIT:  $("#rs-ext-trap-limit"),
     };
     const SPELL_TO_KEYWORD = {
         "Normal": "NORMALST",
@@ -2035,13 +2010,13 @@ let onStart = function () {
     const spellSectionTags = function () {
         let tagString = "{SPELL}";
         
-        let value = SPELL_TRAP_INPUTS.SPELL.value;
+        let value = SPELL_TRAP_INPUTS.SPELL.val();
         if(value) {
             let keyword = SPELL_TO_KEYWORD[value];
             tagString += tagStringOf(keyword);
         }
         
-        let limit = SPELL_TRAP_INPUTS.SPELL_LIMIT.value;
+        let limit = SPELL_TRAP_INPUTS.SPELL_LIMIT.val();
         if(limit) {
             tagString += tagStringOf("LIM", limit);
         }
@@ -2057,13 +2032,13 @@ let onStart = function () {
     const trapSectionTags = function () {
         let tagString = "{TRAP}";
         
-        let value = SPELL_TRAP_INPUTS.TRAP.value;
+        let value = SPELL_TRAP_INPUTS.TRAP.val();
         if(value) {
             let keyword = TRAP_TO_KEYWORD[value];
             tagString += tagStringOf(keyword);
         }
         
-        let limit = SPELL_TRAP_INPUTS.TRAP_LIMIT.value;
+        let limit = SPELL_TRAP_INPUTS.TRAP_LIMIT.val();
         if(limit) {
             tagString += tagStringOf("LIM", limit);
         }
@@ -2324,6 +2299,8 @@ let onStart = function () {
         "Level": compareBy(x => x.level),
         "ATK": compareBy(x => x.attack),
         "DEF": compareBy(x => x.i),
+        // "SCALE": compareBy(x => x.lscale),
+        
         // TODO: sort each sub-strata? e.g. all level 1s by name
         // "Level": compareByAlterantives("level", "name"),
         // "ATK": compareByAlterantives("attack", "name"),
@@ -2544,7 +2521,7 @@ let onStart = function () {
             // sort the results
             let method = $("#rs-ext-sort-by").val();
             let reverseResults = $("#rs-ext-sort-order").val() === "Descending";
-            let stratify = document.getElementById("rs-ext-sort-stratify").checked;
+            let stratify = $("#rs-ext-sort-stratify").prop("checked");
             let strataKind;
             if(method === "Level") {
                 strataKind = "LEVELED";
@@ -2680,7 +2657,7 @@ let onStart = function () {
 };
 
 let checkStartUp = function () {
-    if(Z.xa) {
+    if(Z.za) {
         onStart();
         // destroy reference; pseudo-closure
         onStart = null;
@@ -2691,3 +2668,6 @@ let checkStartUp = function () {
 }
 
 checkStartUp();
+} catch(e) {
+    console.error("Error while running!", e);
+}
