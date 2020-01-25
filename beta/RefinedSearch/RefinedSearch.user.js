@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.13
+// @version      0.13.1
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -681,7 +681,7 @@ let onStart = function () {
     const defaultShuffleList = Z.Pb;
     const previewCardSelection = Z.Aa;
     const getCardTemplate = () => $(Z.Nb);
-    const searchResults = $(Z.za);
+    const searchResults = () => $(Z.za);
     
     /* reload cards until pendulum hotfix */
     // TODO: pendulum scales seem to have been fixed, reinvestigate
@@ -949,16 +949,20 @@ let onStart = function () {
         else {
             banlistIcon.remove();
         }
-        let container = $("<table width=100% class=rs-ext-card-entry-table><tr><td width=74%></td><td width=13% class=rs-ext-table-button>Add to Main</td><td width=13% class=rs-ext-table-button>Add to Side</td></tr></table>");
-        let [ cardTd, mainTd, sideTd ] = container.find("td");
+        let container = $("<table width=100% class=rs-ext-card-entry-table>");
+        let cardTd = $("<td width=74% class=card-preview></td>");
+        let mainTd = $("<td width=13% class=rs-ext-table-button class>Add to Main</td>");
+        let sideTd = $("<td width=13% class=rs-ext-table-button>Add to Side</td>");
         
         cardTd.append(...template);
         
+        console.log(mainTd);
         mainTd.click(() => addThisCard(template));
         
         sideTd.click(() => addThisCard(template, "side"));
         
-        searchResults.append(container);
+        container.append($("<tr>").append(cardTd, mainTd, sideTd));
+        searchResults().append(container);
     }
     
     const addCardToSearch = function (card) {
@@ -1841,10 +1845,10 @@ let onStart = function () {
     }
     window.currentSections = currentSections;
     
-    // TODO: clientHeight might be 
+    // TODO: clientHeight might be deprecated
     const updatePaddingHeight = function () {
         let sections = currentSections();
-        let height = FN.sum(sections.map(section => section.clientHeight));
+        let height = FN.sum(sections.map(section => section[0].clientHeight));
         spacer.css("height", height + "px");
         // update top position of sort, if necessary
         if(!sortTab.hasClass("rs-ext-shrunk")) {
