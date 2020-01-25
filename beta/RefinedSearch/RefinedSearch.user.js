@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.13.2
+// @version      0.13.3
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -1851,7 +1851,7 @@ let onStart = function () {
         spacer.css("height", height + "px");
         // update top position of sort, if necessary
         if(!sortTab.hasClass("rs-ext-shrunk")) {
-            sortTab.css("top", (height - sortTab.clientHeight) + "px");
+            sortTab.css("top", (height - sortTab[0].clientHeight) + "px");
         }
     }
     let interval = setInterval(updatePaddingHeight, 1);
