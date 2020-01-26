@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.13.5
+// @version      0.13.6
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -1796,12 +1796,24 @@ let onStart = function () {
         else {
             pool = pool.map(card => card.id);
         }
-        pool = pool.filter(id => countInDecks(id) < allowedCount(id));
-        if(!pool.length) {
-            return;
+        if(pool.length < 100) {
+            pool = pool.filter(id => countInDecks(id) < allowedCount(id));
+            if(!pool.length) {
+                return;
+            }
         }
-        let id = pool[Math.random() * pool.length | 0];
-        let card = CARD_LIST[id];
+        let id, card, rind;
+        do {
+            if(id) {
+                pool = pool.splice(rind, 1);
+            }
+            if(!pool.length) {
+                return;
+            }
+            rind = Math.random() * pool.length | 0;
+            id = pool[rind];
+            card = CARD_LIST[id];
+        } while(countInDecks(id) >= allowedCount(id));
         let destination = isExtraDeckMonster(card) ? "extra" : "main";
         
         // console.log(card, isExtraDeckMonster(card));
