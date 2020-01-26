@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.13.7
+// @version      0.13.8
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -1803,6 +1803,11 @@ let onStart = function () {
             }
         }
         let id, card, rind, destination;
+        
+        if(Z["main"].length === 60 && Z["extra"].length === 15) {
+            return;
+        }
+        
         do {
             if(id) {
                 pool.splice(rind, 1);
@@ -1815,7 +1820,6 @@ let onStart = function () {
             id = pool[rind];
             card = CARD_LIST[id];
             destination = isExtraDeckMonster(card) ? "extra" : "main";
-            console.log("card: ", card);
         } while(countInDecks(id) >= allowedCount(id) || Z[destination].length === (destination === "extra" ? 15 : 60));
         
         // console.log(card, isExtraDeckMonster(card));
