@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.13.3
+// @version      0.13.4
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -660,6 +660,21 @@ let onStart = function () {
         #rs-ext-navigate-right {
             margin: 5px;
         }
+        
+        #rs-ext-spacer-left,
+        #rs-ext-spacer-right {
+            width: 25%;
+        }
+        #rs-ext-button-holder {
+            width: 50%;
+            text-align: center;
+        }
+        #rs-ext-spacer-right {
+            text-align: right;
+        }
+        #rs-ext-navigation {
+            width: 100%;
+        }
     `;
     
     // extend jQuery
@@ -1133,12 +1148,12 @@ let onStart = function () {
         return true;
     }
     const makeElement = function (name, id = null, content = null, opts = {}) {
-        let el = $(document.createElement(name));
+        let el = document.createElement(name);
         if(id !== null) {
             el.id = id;
         }
         if(content !== null) {
-            el.append(content);
+            $(el).append(content);
         }
         for(let [key, val] of Object.entries(opts)) {
             el[key] = val;
@@ -1765,10 +1780,36 @@ let onStart = function () {
     let maxPageIndicator = makeElement("span", "rs-ext-max-page", "X");
     pageInfo.append(currentPageIndicator, " of ", maxPageIndicator);
     
+    let spacerLeft = $("<td id=rs-ext-spacer-left>");
+    let spacerRight = $("<td id=rs-ext-spacer-right>");
+    
+    // todo: finish
+    let addRandomCardButton = $("<button id=rs-ext-add-random-card class='engine-button engine-button-default'>")
+        .text("Random card")
+        .attr("title", "Ech Button");
+    
+    addRandomCardButton.click(() => {
+        let pool = EXT.Search.cache;
+        if(!pool || pool.length === 0) {
+            pool = Object.keys(CARD_LIST);
+        }
+        else {
+            pool = pool.map(card => card.id);
+        }
+        let id = pool[Math.random() * pool.length | 0];
+        let card = CARD_LIST[id];
+        let destination = isExtraDeckMonster(card) ? "extra" : "main";
+        
+        // console.log(card, isExtraDeckMonster(card));
+        addCard(id, destination, -1);
+    });
+    
+    spacerRight.append(addRandomCardButton);
+    
     let buttonHolder = $("<td id=rs-ext-button-holder>");
     buttonHolder.append(leftButton, pageInfo, rightButton);
     
-    navigationHolder.append(buttonHolder);
+    navigationHolder.append(spacerLeft, buttonHolder, spacerRight);
     
     styleHeaderNeutral(navigationHolder);
     noSelect(navigationHolder);
@@ -1788,6 +1829,7 @@ let onStart = function () {
         updateSearchContents();
     };
     [...$(".rs-ext-toggle-button")].forEach(el => {
+        el = $(el);
         el.click(toggleButtonState.bind(el));
     });
     
@@ -1950,7 +1992,7 @@ let onStart = function () {
         
         // links
         let selectedArrows = MONSTER_INPUTS.ARROWS.filter(arrow => arrow.classList.contains("rs-ext-selected"));
-        let selectedSymbols = selectedArrows.map(arrow => arrow.text());
+        let selectedSymbols = selectedArrows.map(arrow => arrow.textContent);
         let bitmaps = selectedSymbols.map(convertUnicodeToNumber);
         let mask = bitmaps.reduce((a, c) => a | c, 0b0);
         
