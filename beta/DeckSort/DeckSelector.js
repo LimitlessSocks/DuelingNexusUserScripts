@@ -1,4 +1,6 @@
 let onStartDeckSelector = function () {
+    const DEFAULT_TEXT_COLOR = "#F0F0F0";
+
     let gameDeckSelection = $("#game-deck-selection");
     let buttons = gameDeckSelection.find("button");
     
@@ -46,7 +48,7 @@ let onStartDeckSelector = function () {
     
     for(let button of buttons) {
         let tag = isolateTag(button);
-        let color = tagColors[tag] || "auto";
+        let color = tagColors[tag] || DEFAULT_TEXT_COLOR;
         $(button).css("color", color);
         $(button).click(() => {
             selectedDeckName.css("color", color);
