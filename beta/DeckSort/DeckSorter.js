@@ -419,6 +419,9 @@ let onStartDeckSorter = async function () {
             while(decks[0] && META_INFO_REGEX.test(decks[0].name)) {
                 let info = decks.shift().name;
                 for(let item of info.split(META_INFO_DELINEATOR)) {
+                    if(item.replace(/^!!\s*/, "").length === 0) {
+                        continue;
+                    }
                     let match = item.match(META_INFO_ITEM_REGEX);
                     if(!match) {
                         console.error("Invalid item meta info: " + JSON.stringify(item), item);
@@ -608,11 +611,13 @@ let onStartDeckSorter = async function () {
         }
         let decks = await fetchDecks(false);
         
-        let specifierData = decks.filter(deck => deck.name.startsWith("!! ") && deck.name !== "!! ");
+        let specifierData = decks.filter(deck => deck.name.startsWith("!! "));
+        // console.log("DECKS!!!!", decks);
         
         let index = 0;
         for(let line of lines) {
             line = line.slice(0, -1); // remove trailing ";"
+            // console.log("LINE!!!", JSON.stringify(line), specifierData);
             let spec = specifierData[index];
             await renameDeck(spec.id, line);
             index++;
