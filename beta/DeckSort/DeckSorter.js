@@ -501,8 +501,28 @@ let onStartDeckSorter = async function () {
                     }
                 });
             });
+            let quickMoveButton = $("<button class=engine-button>Move</button>");
+            quickMoveButton.click(() => {
+                let options = [...Folder.allFolders()].map(folder =>
+                    ({
+                        text: folder.name,
+                        css: {
+                            color: folder.color
+                        }
+                    })
+                );
+                NexusGUI.dropdown(
+                    "Choose folder destination",
+                    ["", ...options]
+                ).then((value) => {
+                    if(value === null || value === "") {
+                        return;
+                    }
+                    alert(value);
+                });
+            });
             
-            ele.prepend(renameButton, copyButton, deleteButton);
+            ele.prepend(renameButton, copyButton, deleteButton, quickMoveButton);
             
             this.element = ele;
             
