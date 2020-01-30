@@ -97,6 +97,12 @@ let onStartDeckSorter = async function () {
         "https://duelingnexus.com/api/delete-deck.php",
         "id"
     );
+    DeckSort.RAW_API = {
+        renameDeck: renameDeck,
+        createDeck: createDeck,
+        copyDeck: copyDeck,
+        deleteDeck: deleteDeck,
+    };
     
     $("#decks-container table").empty();
     
@@ -161,10 +167,16 @@ let onStartDeckSorter = async function () {
     };
     
     class Folder {
-        constructor(name, color = DEFAULT_TEXT_COLOR, order = Folder.orderedListing.length) {
+        constructor(name, color = DEFAULT_TEXT_COLOR, order = null) {
             this.name = name;
             this.children = [];
-            this.order = parseInt(order);
+            if(order === null) {
+                let last = Folder.orderedListing[Folder.orderedListing.length - 1];
+                this.order = last ? last.order + 1 : 0;
+            }
+            else {
+                this.order = parseInt(order);
+            }
             this.color = color;
             this.container = $("<div>");
             this.listElement = $("<ul class=folder-contents>");
@@ -241,8 +253,9 @@ let onStartDeckSorter = async function () {
                 },
             });
             
-            Folder.roster[this.name] = this;
-            Folder.orderedListing[order] = this;
+            Folder.insert(this);
+            // Folder.roster[this.name] = this;
+            // Folder.orderedListing[order] = this;
         }
         
         updateVisuals() {
@@ -392,8 +405,21 @@ let onStartDeckSorter = async function () {
         }
         
         static fromInfoString(name, string) {
+            if(Folder.roster[name]) {
+                return false;
+            }
             let [ color, order ] = string.split(/,/);
             return new Folder(name, color, order);
+        }
+        
+        // NOTE: previously was implemented as a sparse array, treated as contiguous
+        static insert(folder) {
+            Folder.roster[folder.name] = folder;
+            let i = 0;
+            while(Folder.orderedListing[i] && folder.order > Folder.orderedListing[i].order) {
+                i++;
+            }
+            Folder.orderedListing.splice(i, 0, folder);
         }
     };
     Folder.roster = {};
@@ -405,7 +431,8 @@ let onStartDeckSorter = async function () {
     const META_INFO_REGEX = /^!! /;
     const META_INFO_ITEM_REGEX = /\s*(\w[^:]*?):(.+)/;
     const META_INFO_DELINEATOR = /;\s*/;
-    let metaInfoCapacity = 0;
+    let metaInfoDecks = [];
+    DeckSort.metaInfoDecks = metaInfoDecks;
     
     const fetchDecks = async function (filterMeta = true) {
         let deckInfo = await requestJSON("https://duelingnexus.com/api/list-decks.php");
@@ -415,9 +442,11 @@ let onStartDeckSorter = async function () {
         }
         let decks = deckInfo.decks;
         if(filterMeta) {
-            metaInfoCapacity = 0;
+            // clear deck
+            metaInfoDecks.splice(Infinity);
             while(decks[0] && META_INFO_REGEX.test(decks[0].name)) {
-                let info = decks.shift().name;
+                let metaInfoDeck = decks.shift();
+                let info = metaInfoDeck.name;
                 for(let item of info.split(META_INFO_DELINEATOR)) {
                     if(item.replace(/^!!\s*/, "").length === 0) {
                         continue;
@@ -430,7 +459,7 @@ let onStartDeckSorter = async function () {
                     let [, name, value] = match;
                     Folder.fromInfoString(name, value);
                 }
-                metaInfoCapacity++;
+                metaInfoDecks.push(metaInfoDeck);
             }
         }
         return decks;
@@ -518,7 +547,8 @@ let onStartDeckSorter = async function () {
                     if(value === null || value === "") {
                         return;
                     }
-                    alert(value);
+                    this.move(value);
+                    Folder.roster[deck.folder].resetChildren();
                 });
             });
             
@@ -541,10 +571,12 @@ let onStartDeckSorter = async function () {
         
         // raw rename; changes the base
         rename(newName) {
-            this.name = newName;
-            renameDeck(this.id, newName);
-            this.updateElement();
-            Folder.roster[this.folder].resetChildren();
+            if(newName !== this.name) {
+                this.name = newName;
+                renameDeck(this.id, newName);
+                this.updateElement();
+                Folder.roster[this.folder].resetChildren();
+            }
         }
         
         // rename respecting folder
@@ -567,29 +599,39 @@ let onStartDeckSorter = async function () {
             Folder.roster[folderName].append(this);
         }
         
-        static async reloadInfoByName(name) {
-            let decks = await fetchDecks(false);
-            let info = decks.filter(e => e.name === name);
-            if(info.length !== 1) {
-                throw new Error("No such deck found: " + name);
-            }
-            return info[0];
-        }
+        // static async reloadInfoByName(name) {
+            // let decks = await fetchDecks(false);
+            // let info = decks.filter(e => e.name === name);
+            // if(info.length !== 1) {
+                // throw new Error("No such deck found: " + name);
+            // }
+            // return info[0];
+        // }
         
         static async createNew(name) {
-            // TODO: hope nexus implements a better API for this.
-            await createDeck(name);
-            let info = await Deck.reloadInfoByName(name);
-            return new Deck(info);
+            let info = await createDeck(name);
+            if(!info.success) {
+                // TODO: better error
+                alert("Deck could not be made");
+            }
+            let deck = new Deck({ name: name, id: info.id });
+            
+            let folder = Folder.roster[deck.folder];
+            if(!folder.parent) {
+                folder.attachTo(decksContainer);
+            }
+            return deck;
         }
         
         async cloneTo(newName) {
             // add folder
             newName = "[" + this.folder + "] " + newName;
-            await copyDeck(this.id, newName);
-            let info = await Deck.reloadInfoByName(newName);
-            console.log(info);
-            return new Deck(info);
+            let info = await copyDeck(this.id, newName);
+            if(!info.success) {
+                // TODO: better error
+                alert("Deck could not be cloned");
+            }
+            return new Deck({ name: newName, id: info.id });
         }
     };
     Deck.usedNames = new Set([]);
@@ -601,8 +643,10 @@ let onStartDeckSorter = async function () {
     let isExporting = false;
     const exportMetaInfo = async function () {
         if(isExporting) {
+            console.info("Exporting canceled - already exporting in progress");
             return false;
         }
+        console.info("Starting export.");
         isExporting = true;
         let content = Folder.orderedListing
             .filter(folder => folder !== null)
@@ -627,30 +671,54 @@ let onStartDeckSorter = async function () {
         if(build && build !== "!! ") {
             lines.push(build);
         }
-        console.log(lines, metaInfoCapacity);
         
-        let deficit = lines.length - metaInfoCapacity;
+        console.info("Lines to be exported:", lines);
+        
+        let deficit = lines.length - metaInfoDecks.length;
+        
+        console.info("Deficit is:", deficit);
         
         while(deficit > 0) {
-            await createDeck("!! ");
+            let name = "!! ";
+            let info = await createDeck(name);
+            if(!info.success) {
+                alert("Error saving state information");
+                // TODO: better error
+                return false;
+            }
+            metaInfoDecks.push({ name: name, id: info.id });
             deficit--;
-            metaInfoCapacity++;
         }
-        let decks = await fetchDecks(false);
         
-        let specifierData = decks.filter(deck => deck.name.startsWith("!! "));
-        // console.log("DECKS!!!!", decks);
-        
-        let index = 0;
-        console.log("<export>");
-        for(let line of lines) {
-            line = line.slice(0, -1); // remove trailing ";"
-            console.log("LINE!!!", JSON.stringify(line), specifierData);
-            let spec = specifierData[index];
-            await renameDeck(spec.id, line);
-            index++;
+        let tasks = [];
+        let toDelete = [];
+        for(let i = 0; i < metaInfoDecks.length; i++) {
+            let metaInfoDeck = metaInfoDecks[i];
+            let line = lines[i];
+            if(line) {
+                line = line.replace(/;$/, "");
+                if(line !== metaInfoDeck.name) {
+                    let task = renameDeck(metaInfoDeck.id, line);
+                    tasks.push(task);
+                    task.then(data => {
+                        metaInfoDeck.name = line;
+                    });
+                }
+            }
+            else {
+                console.info("Deleting extra deck", metaInfoDeck.name);
+                let task = deleteDeck(metaInfoDeck.id);
+                tasks.push(task);
+                task.then(data => {
+                    toDelete.push(i);
+                });
+            }
         }
-        console.log("</export>");
+        await Promise.all(tasks);
+        for(let index of toDelete) {
+            metaInfoDecks.splice(index, 1);
+        }
+        console.info("Finished all promises");
         
         isExporting = false;
         return true;
@@ -663,11 +731,13 @@ let onStartDeckSorter = async function () {
     
     decksContainer.sortable({
         handle: ".folder-header",
+        // when a folder is dropped
         update: function () {
             let ordering = [...$(".folder-header")].map(header => isolateTag(header.textContent));
+            
+            Folder.orderedListing = [];
             ordering.forEach((name, i) => {
                 let folder = Folder.roster[name];
-                Folder.orderedListing[folder.order] = null;
                 folder.order = i;
                 Folder.orderedListing[i] = folder;
             });
@@ -702,7 +772,7 @@ let onStartDeckSorter = async function () {
                 name = generateDifferentName(name, Deck.usedNames);
             }
             
-            let deck = Deck.createNew(name);
+            let deck = await Deck.createNew(name);
             
             // ensure sorted
             Folder.roster[deck.folder].resetChildren();
