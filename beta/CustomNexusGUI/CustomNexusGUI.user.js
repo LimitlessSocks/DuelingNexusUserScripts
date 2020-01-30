@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CustomNexusGUI API
 // @namespace    https://duelingnexus.com/
-// @version      0.7
+// @version      0.7.1
 // @description  To enable custom GUI elements, such as popups.
 // @author       Sock#3222
 // @grant        none
@@ -151,7 +151,17 @@ const NexusGUI = {
         let okButton = NexusGUI.button("OK");
         let cancelButton = NexusGUI.button("Cancel");
         for(let option of options) {
-            select.append($("<option>").val(option).text(option));
+            let config;
+            if(typeof option === "string") {
+                config = { text: option };
+            }
+            else {
+                config = option;
+            }
+            config.value = typeof config.value === "undefined" ? config.text : config.value;
+            config.css = config.css || {};
+            let optionElement = $("<option>").val(config.value).text(config.text).css(config.css);
+            select.append(optionElement);
         }
         content.append(
             select,
@@ -166,7 +176,7 @@ const NexusGUI = {
                 resolve(null);
                 NexusGUI.closePopup();
             });
-            NexusGUI.popup(message, content, { style: "minimal" }).then(() => {
+            NexusGUI.popup(message, content).then(() => {
                 resolve(null);
             });
             select.focus();
