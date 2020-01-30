@@ -604,11 +604,16 @@ let onStartDeckSorter = async function () {
             return false;
         }
         isExporting = true;
-        let content = Folder.orderedListing.map(folder => folder.infoString());
+        let content = Folder.orderedListing
+            .filter(folder => folder !== null)
+            .map(folder => folder.infoString());
         let lines = [];
         let build = "!! ";
         while(content.length) {
             let entry = content.pop();
+            if(!entry) {
+                continue;
+            }
             if(build.length + entry.length > MAX_DECK_NAME_SIZE) {
                 if(build.length === 3) {
                     console.error("Entry exceeded max length: " + entry);
@@ -622,12 +627,14 @@ let onStartDeckSorter = async function () {
         if(build && build !== "!! ") {
             lines.push(build);
         }
+        console.log(lines, metaInfoCapacity);
         
         let deficit = lines.length - metaInfoCapacity;
         
         while(deficit > 0) {
             await createDeck("!! ");
             deficit--;
+            metaInfoCapacity++;
         }
         let decks = await fetchDecks(false);
         
@@ -635,13 +642,15 @@ let onStartDeckSorter = async function () {
         // console.log("DECKS!!!!", decks);
         
         let index = 0;
+        console.log("<export>");
         for(let line of lines) {
             line = line.slice(0, -1); // remove trailing ";"
-            // console.log("LINE!!!", JSON.stringify(line), specifierData);
+            console.log("LINE!!!", JSON.stringify(line), specifierData);
             let spec = specifierData[index];
             await renameDeck(spec.id, line);
             index++;
         }
+        console.log("</export>");
         
         isExporting = false;
         return true;
@@ -658,6 +667,7 @@ let onStartDeckSorter = async function () {
             let ordering = [...$(".folder-header")].map(header => isolateTag(header.textContent));
             ordering.forEach((name, i) => {
                 let folder = Folder.roster[name];
+                Folder.orderedListing[folder.order] = null;
                 folder.order = i;
                 Folder.orderedListing[i] = folder;
             });
@@ -669,7 +679,9 @@ let onStartDeckSorter = async function () {
     Folder.makeFolderIfNone("unsorted");
     
     for(let folder of Folder.orderedListing) {
-        folder.attachTo(decksContainer);
+        if(folder) {
+            folder.attachTo(decksContainer);
+        }
     }
     
     let oldCreateNewDeck = $($("#decks-buttons button")[0]);
