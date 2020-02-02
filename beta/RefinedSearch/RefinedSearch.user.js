@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.13.9
+// @version      0.13.10
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -698,55 +698,7 @@ let onStart = function () {
     const getCardTemplate = () => $(Z.Nb);
     const searchResults = () => $(Z.za);
     
-    /* reload cards until pendulum hotfix */
-    // TODO: pendulum scales seem to have been fixed, reinvestigate
-    // const CARD_LIST = X;
-    const CARD_LIST = {};
-    const CardObject = function (a) {
-        this.id = a.id;
-        this.A = a.als || 0;
-        this.za = a.sc || [];
-        this.type = a.typ || 0;
-        this.attack = a.atk || 0;
-        this.i = a.def || 0;
-        var b = a.lvl || 0;
-        this.race = a.rac || 0;
-        this.H = a.att || 0;
-        this.level = b & 0xFF;
-        this.lscale = (b >> 24) & 0xFF;
-        this.rscale = (b >> 16) & 0xFF;
-    };
-    
-    const CARD_LIST_VERSION = 88;
-    const readCards = function (a) {
-        jQuery.ajaxSetup({
-            beforeSend: function(a) {
-                a.overrideMimeType && a.overrideMimeType("application/json")
-            }
-        });
-        jQuery.getJSON(h(`data/cards.json?v=${CARD_LIST_VERSION}`), function(b) {
-            for (let card of b.cards) {
-                CARD_LIST[card.id] = new CardObject(card);
-            }
-            // NOTE: different request from the above
-            jQuery.getJSON(h(`data/cards_en.json?v=${CARD_LIST_VERSION}`), function(b) {
-                for (let card of b.texts) {
-                    let other = CARD_LIST[card.id];
-                    if (other) {
-                        other.name = card.n;
-                        other.description = card.d;
-                        other.ra = card.s || [];
-                        other.Z = qa(other.name);
-                    }
-                }
-                if(a) {
-                    a();
-                }
-            })
-        })
-    };
-
-    readCards();
+    const CARD_LIST = X;
     
     // expected result: { zb: "Warrior", qb: "Spellcaster", ... }
     const TYPE_HASH = bg;
@@ -2174,7 +2126,7 @@ let onStart = function () {
         "ATK": "attack",
         "DEF": "i",
         "ARROWS": "i",
-        "SCALE": "lscale",
+        "SCALE": "xa", // left scale
     };
     const VALIDATOR_LEVEL_MAP = {
         "LEVEL": isLevelMonster,
@@ -2366,7 +2318,7 @@ let onStart = function () {
         "Level": compareBy(x => x.level),
         "ATK": compareBy(x => x.attack),
         "DEF": compareBy(x => x.i),
-        // "SCALE": compareBy(x => x.lscale),
+        // "SCALE": compareBy(x => x.xa),
         
         // TODO: sort each sub-strata? e.g. all level 1s by name
         // "Level": compareByAlterantives("level", "name"),
