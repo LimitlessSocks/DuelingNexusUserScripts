@@ -542,13 +542,15 @@ let onStartDeckSorter = async function () {
                 );
                 NexusGUI.dropdown(
                     "Choose folder destination",
-                    ["", ...options]
+                    // ["", ...options],
+                    options,
+                    { size: 10 }
                 ).then((value) => {
                     if(value === null || value === "") {
                         return;
                     }
                     this.move(value);
-                    Folder.roster[deck.folder].resetChildren();
+                    Folder.roster[this.folder].resetChildren();
                 });
             });
             
