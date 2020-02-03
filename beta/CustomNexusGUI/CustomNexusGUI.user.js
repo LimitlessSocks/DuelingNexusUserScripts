@@ -114,6 +114,28 @@ const NexusGUI = {
         elements.background.trigger("click");
     },
     button: (text) => $("<button>").addClass("nexus-gui-button").text(text),
+    Form: class NexusGUIForm {
+        constructor() {
+            this.content = $("<div>");
+        }
+        
+        addInput(type = "text", defaultValue = null) {
+            let input = $("<input>")
+                .attr("type", "text");
+                
+            if(defaultValue !== null) {
+                input.val(defaultValue);
+            }
+            
+            return input;
+        }
+        
+        addDropdown() {
+            
+        }
+        
+        
+    },
     prompt: function (message, defaultValue = null) {
         let content = $("<div>");
         let input = $("<input type=text>");
@@ -145,11 +167,18 @@ const NexusGUI = {
             input.focus();
         });
     },
-    dropdown: function (message, options) {
+    dropdown: function (message, options, overallConfig) {
         let content = $("<div>");
         let select = $("<select>");
         let okButton = NexusGUI.button("OK");
         let cancelButton = NexusGUI.button("Cancel");
+        
+        overallConfig = overallConfig || {};
+        
+        if(typeof overallConfig.size !== "undefined") {
+            select.attr("size", overallConfig.size.toString());
+        }
+        
         for(let option of options) {
             let config;
             if(typeof option === "string") {
@@ -160,13 +189,20 @@ const NexusGUI = {
             }
             config.value = typeof config.value === "undefined" ? config.text : config.value;
             config.css = config.css || {};
-            let optionElement = $("<option>").val(config.value).text(config.text).css(config.css);
+            let optionElement = $("<option>")
+                .val(config.value)
+                .text(config.text)
+                .css(config.css);
             select.append(optionElement);
         }
+        
         content.append(
             select,
             $("<div>").append(okButton, cancelButton)
         );
+        
+        setTimeout(() => select.scrollTop(0), 0);
+        
         return new Promise((resolve, reject) => {
             okButton.click(() => {
                 resolve(select.val());
