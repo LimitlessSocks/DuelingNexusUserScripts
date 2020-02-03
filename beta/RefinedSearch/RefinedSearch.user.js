@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.13.10
+// @version      0.13.11
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -257,7 +257,14 @@ class SearchInputShunter {
 }
 
 let onStart = function () {
-    // minified with https://kangax.github.io/html-minifier/
+    // check if NexusGUI extension is installed
+    const NEXUS_GUI_EXTENSION_INSTALLATION = "https://github.com/LimitlessSocks/DuelingNexusUserScripts/raw/master/beta/CustomNexusGUI/CustomNexusGUI.user.js";
+    
+    if(typeof NexusGUI === "undefined") {
+        alert("Error - You need to install the Custom GUI Extension, found here: " + NEXUS_GUI_EXTENSION_INSTALLATION);
+        return;
+    }
+    
     const ADVANCED_SETTINGS_HTML_STRING = `
         <div id=rs-ext-advanced-search-bar>
           <button id=rs-ext-monster-toggle class="engine-button engine-button-default">monster</button><button id=rs-ext-spell-toggle class="engine-button engine-button-default">spell</button><button id=rs-ext-trap-toggle class="engine-button engine-button-default">trap</button>
