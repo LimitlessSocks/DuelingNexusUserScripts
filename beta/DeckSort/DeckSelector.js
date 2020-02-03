@@ -38,6 +38,10 @@ let onStartDeckSelector = function () {
     }
     
     for(let tag of orderInfo) {
+        // skip if section empty
+        if(!otherButtons[tag]) {
+            continue;
+        }
         for(let button of otherButtons[tag]) {
             gameDeckSelection.append(button);
         }
