@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Chat Improvements Plugin
 // @namespace    https://duelingnexus.com/
-// @version      0.7.4
+// @version      0.7.5
 // @description  Revamps the chat and visual features of dueling.
 // @author       Sock#3222
 // @grant        none
@@ -70,10 +70,44 @@ ChatImprovements.storage.set = function (item, value) {
     return value;
 };
 
+const onObjectUpdate = (initial, fn, parents = []) => {
+    let copy = new Proxy(initial, {
+        get: function (obj, prop) {
+            let val = obj[prop];
+            if(typeof val === "object") {
+                return onObjectUpdate(val, fn, [...parents, prop]);
+            }
+            return val;
+        },
+        set: function (obj, prop, val) {
+            obj[prop] = val;
+            fn(obj, parents, val);
+            return copy[val];
+        }
+    });
+    return copy;
+};
+
 ChatImprovements.storage.get = function (item) {
     checkCache();
     
-    return ChatImprovements.storage._cache[item];
+    let entry = ChatImprovements.storage._cache[item];
+    
+    if(typeof entry === "object") {
+        return onObjectUpdate(entry, function () {
+            console.log("UPDATE!", item, entry);
+            ChatImprovements.storage.set(item, entry);
+        });
+    }
+    return entry;
+};
+
+ChatImprovements.storage.removeKey = function (key) {
+    checkCache();
+    
+    delete ChatImprovements.storage._cache[key];
+    
+    updateLocalStorage();
 };
 
 ChatImprovements.storage.clear = function (item) {
@@ -114,12 +148,15 @@ let defaultProperties = {
         showOpponentExtra: {
             key: "6",
         },
+        showBackrow: {
+            key: "7",
+        },
         invokeSequence: {
             key: "j",
         },
         closeCardWindow: {
             key: "Escape",
-        }
+        },
     }
 };
 
@@ -380,10 +417,15 @@ let onload = function () {
         let container = m[player].f[location];
         let content = $("<div>");
         for(let card of container) {
+            if(!card) {
+                continue;
+            }
+            let code = card.A || card.code;
             let img = $("<img>")
-                .attr("src", ra(card.A || card.code))
+                .attr("src", ra(code))
                 .attr("width", E + "px")
-                .attr("class", "popup-card-preview");
+                .attr("class", "popup-card-preview")
+                .hover(() => showCardInColumn(code));
             content.append(img);
         }
         if(container.length === 0) {
@@ -447,6 +489,9 @@ let onload = function () {
                 break;
             case ChatImprovements.keybinds.showYourExtra.key:
                 popupLocation(PLAYERS.YOU, LOCATIONS.EXTRA);
+                break;
+            case ChatImprovements.keybinds.showBackrow.key:
+                popupLocation(PLAYERS.YOU, LOCATIONS.SPELL_TRAPS);
                 break;
             case ChatImprovements.keybinds.showOpponentGY.key:
                 popupLocation(PLAYERS.OPPONENT, LOCATIONS.GY);
@@ -834,6 +879,23 @@ let onload = function () {
             
             return tr;
         }
+    };
+    
+    const displayKey = (data) => {
+        let message = [];
+        if(data.ctrl) {
+            message.push("Ctrl");
+        }
+        if(data.shift) {
+            message.push("Shift");
+        }
+        if(data.alt) {
+            message.push("Alt");
+        }
+        if(data.key) {
+            message.push(data.key);
+        }
+        return message.join(" + ");
     }
     // initialize options column
     let optionsColumnInfo = [
@@ -950,7 +1012,90 @@ let onload = function () {
             new GameButton(
                 "Edit Bindings",
                 function () {
-                    NexusGUI.popup("Edit Bindings", "todo: implement");
+                    let content = $("<div>");
+                    content.css("text-align", "center");
+                    let binds = Object.keys(ChatImprovements.keybinds);
+                    let table = $("<table>");
+                    for(let bind of binds) {
+                        let tr = $("<tr>");
+                        let keyCell = $("<td>")
+                            .text(displayKey(ChatImprovements.keybinds[bind]));
+                        let edit = NexusGUI.button("Edit bind");
+                        let recordEnd = () => {
+                            edit.off("click", recordEnd);
+                            edit.text("Edit bind");
+                            edit.click(recordStart);
+                        }
+                        let recordStart = () => {
+                            edit.off("click", recordStart);
+                            edit.text("Record");
+                            edit.click(recordEnd);
+                            let tempInput = $("<input>")
+                                .css("height", "0px")
+                                .css("width", "0px")
+                                .css("overflow", "hidden");
+                            let clean = () => {
+                                tempInput.detach();
+                                recordEnd();
+                                keyCell.text(displayKey(ChatImprovements.keybinds[bind]));
+                            }
+                            $("body").append(tempInput);
+                            tempInput.focus();
+                            let data = {
+                                shift: false,
+                                control: false,
+                                alt: false,
+                                key: null,
+                            };
+                            tempInput.keydown((ev) => {
+                                let key = ev.originalEvent.key;
+                                // console.log(key);
+                                if(key === "Shift") {
+                                    data.shift = true;
+                                }
+                                else if(key === "Control") {
+                                    data.control = true;
+                                }
+                                else if(key === "Alt") {
+                                    data.alt = true;
+                                }
+                                else {
+                                    data.key = key;
+                                    ChatImprovements.keybinds[bind] = data;
+                                    clean();
+                                }
+                                keyCell.text(displayKey(data));
+                            });
+                            tempInput.keyup((ev) => {
+                                let key = ev.originalEvent.key;
+                                // console.log(key);
+                                if(key === "Shift") {
+                                    data.shift = false;
+                                }
+                                else if(key === "Control") {
+                                    data.control = false;
+                                }
+                                else if(key === "Alt") {
+                                    data.alt = false;
+                                }
+                                keyCell.text(displayKey(data));
+                            });
+                            tempInput.focusout(() => {
+                                clean();
+                            });
+                        };
+                        edit.click(recordStart);
+                        tr.append(
+                            $("<td>").text(bind),
+                            keyCell,
+                            $("<td>").append(edit),
+                        );
+                        table.append(tr);
+                    }
+                    content.append(table);
+                    NexusGUI.popup("Edit Bindings", content).then(() => {
+                        
+                    });
                 },
             )
         ]
