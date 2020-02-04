@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Chat Improvements Plugin
 // @namespace    https://duelingnexus.com/
-// @version      0.7.5
+// @version      0.7.6
 // @description  Revamps the chat and visual features of dueling.
 // @author       Sock#3222
 // @grant        none
@@ -129,6 +129,8 @@ let defaultProperties = {
     showNormalEvents: true,
     showChainEvents: true,
     
+    showOnHover: true,
+    
     keybinds: {
         showYourGY: {
             key: "1",
@@ -151,6 +153,9 @@ let defaultProperties = {
         showBackrow: {
             key: "7",
         },
+        showHand: {
+            key: "8",
+        },
         invokeSequence: {
             key: "j",
         },
@@ -160,10 +165,36 @@ let defaultProperties = {
     }
 };
 
+// maintains the key order of copyFrom
+const deepMergeObjects = (source, copyFrom) => {
+    let result = {};
+    for(let [key, value] of Object.entries(copyFrom)) {
+        let copyVal = copyFrom[key];
+        if(key in source) {
+            let sourceVal = source[key];
+            if(typeof sourceVal === "object" && typeof copyVal === "object") {
+                result[key] = deepMergeObjects(sourceVal, copyVal);
+            }
+            else {
+                result[key] = sourceVal;
+            }
+        }
+        else {
+            result[key] = copyVal;
+        }
+    }
+    
+    return result;
+};
+
 for(let [prop, defaultValue] of Object.entries(defaultProperties)) {
     // define if unset (inital run)
     if(typeof ChatImprovements.storage.get(prop) === "undefined") {
         ChatImprovements.storage.set(prop, defaultValue);
+    }
+    else if(typeof defaultValue === "object") {
+        let cur = ChatImprovements.storage.get(prop);
+        ChatImprovements.storage.set(prop, deepMergeObjects(cur, defaultValue));
     }
     
     // getter & setter
@@ -428,7 +459,7 @@ let onload = function () {
                 .hover(() => showCardInColumn(code));
             content.append(img);
         }
-        if(container.length === 0) {
+        if(content.children().length === 0) {
             content.append("(empty)");
         }
         let name = "";
@@ -493,6 +524,9 @@ let onload = function () {
             case ChatImprovements.keybinds.showBackrow.key:
                 popupLocation(PLAYERS.YOU, LOCATIONS.SPELL_TRAPS);
                 break;
+            case ChatImprovements.keybinds.showHand.key:
+                popupLocation(PLAYERS.YOU, LOCATIONS.HAND);
+                break;
             case ChatImprovements.keybinds.showOpponentGY.key:
                 popupLocation(PLAYERS.OPPONENT, LOCATIONS.GY);
                 break;
@@ -506,6 +540,9 @@ let onload = function () {
     });
     
     const showOnHover = function (ev, delay = 1200) {
+        if(!ChatImprovements.showOnHover) {
+            return;
+        }
         let el = $(this);
         if(el.data("hoverInterval")) {
             return;
@@ -733,8 +770,9 @@ let onload = function () {
     
     // pseudo interface
     class OptionRenderable {
-        constructor() {
-            
+        constructor(name, id) {
+            this.name = name;
+            this.id = id;
         }
         
         get isRange() {
@@ -746,27 +784,28 @@ let onload = function () {
         }
         
         toElement() {
-            return null;
+            return $("<div>")
+                .text(this.name)
+                .attr("id", this.id);
         }
     }
     
     class GameButton extends OptionRenderable {
-        constructor(name, event) {
-            super();
-            this.name = name;
+        constructor(name, id, event) {
+            super(name, id);
             this.event = event;
         }
         
         toElement() {
             return NexusGUI.button(this.name)
+                .attr("id", this.id)
                 .click(this.event);
         }
     }
     
     class GameOption extends OptionRenderable {
-        constructor(tag, id, option, type, info = {}) {
-            super();
-            this.tag = tag;
+        constructor(name, id, option, type, info = {}) {
+            super(name, id);
             this.id = id;
             this.option = option;
             this.type = type;
@@ -870,7 +909,7 @@ let onload = function () {
             
             let tr = $("<tr>");
             
-            tr.append($("<td>").text(this.tag));
+            tr.append($("<td>").text(this.name));
             tr.append($("<td>").append(base));
             
             if(this.showValue) {
@@ -991,6 +1030,12 @@ let onload = function () {
                     resolveOnLoad: true,
                 }
             ),
+            new GameOption(
+                "Show container on hover",
+                "ci-ext-option-show-hover",
+                "showOnHover",
+                "checkbox",
+            )
         ],
         [
             "Event Filters",
@@ -1011,6 +1056,7 @@ let onload = function () {
             "Keybindings",
             new GameButton(
                 "Edit Bindings",
+                "ci-ext-open-bindings",
                 function () {
                     let content = $("<div>");
                     content.css("text-align", "center");
