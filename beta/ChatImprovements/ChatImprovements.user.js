@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Chat Improvements Plugin
 // @namespace    https://duelingnexus.com/
-// @version      0.7.3
+// @version      0.7.4
 // @description  Revamps the chat and visual features of dueling.
 // @author       Sock#3222
 // @grant        none
@@ -9,6 +9,9 @@
 // @updateURL    https://raw.githubusercontent.com/LimitlessSocks/DuelingNexusUserScripts/master/beta/ChatImprovements/ChatImprovements.user.js
 // @downloadURL  https://raw.githubusercontent.com/LimitlessSocks/DuelingNexusUserScripts/master/beta/ChatImprovements/ChatImprovements.user.js
 // ==/UserScript==
+
+// TODO: show chat during ranked
+// TODO: show options during pre-round
 
 let makeReadOnly = function (obj, prop) {
     let val = obj[prop];
@@ -87,9 +90,37 @@ let defaultProperties = {
     playSounds: true,
     temporaryChat: true,
     showOptions: false,
+    cardMargin: 0.3,
     
     showNormalEvents: true,
     showChainEvents: true,
+    
+    keybinds: {
+        showYourGY: {
+            key: "1",
+        },
+        showYourBanished: {
+            key: "2",
+        },
+        showYourExtra: {
+            key: "3",
+        },
+        showOpponentGY: {
+            key: "4",
+        },
+        showOpponentBanished: {
+            key: "5",
+        },
+        showOpponentExtra: {
+            key: "6",
+        },
+        invokeSequence: {
+            key: "j",
+        },
+        closeCardWindow: {
+            key: "Escape",
+        }
+    }
 };
 
 for(let [prop, defaultValue] of Object.entries(defaultProperties)) {
@@ -139,6 +170,7 @@ let onload = function () {
     #card-column {
         float: none;
         width: auto;
+        border-bottom-width: 0px !important;
     }
     /* temporary fix */
     #card-column, #ci-ext-event-log, #ci-ext-log, #ci-ext-options {
@@ -198,10 +230,32 @@ let onload = function () {
     #game-container {
         margin: 16px 16px 0px 16px;
     }
+    
+    .popup-card-preview:hover {
+        transform: scale(1.4);
+    }
+    
+    input[type=text] {
+        height: 32px;
+        background-color: rgba(0,0,0,.9);
+        border: 1px solid #7a7a7a;
+        color: #F0F0F0;
+        padding-left: 8px;
+    }
     </style>`));
     
     // TODO: move chaining options on bottom right
     // TODO: add hide options for sleeves/avatars
+    
+    // window.mg = function mg(a, offset = ChatImprovements.cardMargin) {
+        // a.a.data("sequence", a.D);
+        // if (a.location & O.c || a.location & O.v || a.location & O.u || a.location & O.h) {
+            // var b = 0 == a.controller ? 1 : -1;
+            // b *= a.location & O.h ? -1 : 1;
+            // a.a.css("left", b * a.D * offset + "%");
+            // a.a.css("top", offset * -a.D + "%");
+        // } else a.a.css("left", ""), a.a.css("top", "");
+    // }
     
     // boilerplate
     const globalOptions = f;
@@ -211,7 +265,28 @@ let onload = function () {
     const gameChatTextbox = $("#game-chat-textbox");
     const gameChatArea = $("#game-chat-area");
     const showCardInColumn = Cc;
+    const closeCardWindow = Xb;
+    const getCardImage = ra;
     const SECONDS = 1000;
+    const LOCATIONS = {
+        DECK: 1,
+        HAND: 2,
+        MONSTERS: 4,
+        SPELL_TRAPS: 8,
+        GY: 16,
+        BANISHED: 32,
+        EXTRA: 64,
+    };
+    const PLAYERS = {
+        YOU: 0,
+        OPPONENT: 1,
+    }
+    const revealLocation = function(player, location) {
+        closeCardWindow();
+        ac();
+        // fc(m[player].f[location], true);
+        vb = true;
+    };
     
     const monsterTypeMap = {};
     for(let key in Wf) {
@@ -266,7 +341,6 @@ let onload = function () {
     Gb.GameFlipSummoning = window.Wd = function Wd(a) {
         xc(a.cardCode, function() {
             Q("summon-flip");
-            // console.log("Wd", a);
             kf(a.cardCode);
         });
         return true;
@@ -277,8 +351,6 @@ let onload = function () {
         xc(a.cardCode, function() {
             Q("activate");
             let cardName = a.cardCode ? "#@" + a.cardCode : "A card";
-            // console.log("!!!!", cardName);
-            // notifyEvent(" of " + cardName + " was activated (from " + GameLocations[a.location]);
             let message = `Chain Link ${a.chainCount}: ${cardName}`
             if(a.chainCount > 1) {
                 message = CHAIN_SYMBOL + " " + message;
@@ -287,6 +359,141 @@ let onload = function () {
             kf(a.cardCode);
         });
         return true;
+    }
+    
+    const serializePlayerLocation = (player, location) =>
+        `${player};${location}`;
+    const popupLocation = (player, location) => {
+        let serialized = serializePlayerLocation(player, location);
+        // toggle off if already present
+        if(popupLocation.currentLocation === serialized) {
+            NexusGUI.closePopup();
+            return;
+        }
+        // do not interrupt other popups
+        if(!popupLocation.currentLocation && NexusGUI.isPopupOpen) {
+            return;
+        }
+        // update serialized
+        popupLocation.currentLocation = serialized;
+        
+        let container = m[player].f[location];
+        let content = $("<div>");
+        for(let card of container) {
+            let img = $("<img>")
+                .attr("src", ra(card.A || card.code))
+                .attr("width", E + "px")
+                .attr("class", "popup-card-preview");
+            content.append(img);
+        }
+        if(container.length === 0) {
+            content.append("(empty)");
+        }
+        let name = "";
+        name += ["Your", "Opponent's"][player];
+        name += " ";
+        name += Bf[location] || "Unspecified Location";
+        NexusGUI.popup(name, content, {
+            style: "minimal-padded",
+            ignoreForceClose: true
+        }).then(() => {
+            // console.log("NULLING!");
+            popupLocation.currentLocation = null;
+        });
+    };
+    popupLocation.currentLocation = null;
+    ChatImprovements.popupLocation = popupLocation;
+    
+    ChatImprovements.KeyModifiers = {};
+    $(window).keydown((ev) => {
+        switch(ev.originalEvent.key) {
+            case "Control":
+                ChatImprovements.KeyModifiers.control = true;
+                break;
+            case "Shift":
+                ChatImprovements.KeyModifiers.shift = true;
+                break;
+            case "Alt":
+                ChatImprovements.KeyModifiers.alt = true;
+                break;
+        }
+    });
+    /* keybinds */
+    $(window).keyup((ev) => {
+        let target = $(ev.target);
+        if(target.is("input, textarea")) {
+            return;
+        }
+        switch(ev.originalEvent.key) {
+            // key modifiers
+            case "Control":
+                ChatImprovements.KeyModifiers.control = false;
+                break;
+            case "Shift":
+                ChatImprovements.KeyModifiers.shift = false;
+                break;
+            case "Alt":
+                ChatImprovements.KeyModifiers.alt = false;
+                break;
+            // binds
+            case ChatImprovements.keybinds.closeCardWindow.key:
+                closeCardWindow();
+                break;
+            case ChatImprovements.keybinds.showYourGY.key:
+                popupLocation(PLAYERS.YOU, LOCATIONS.GY);
+                break;
+            case ChatImprovements.keybinds.showYourBanished.key:
+                popupLocation(PLAYERS.YOU, LOCATIONS.BANISHED);
+                break;
+            case ChatImprovements.keybinds.showYourExtra.key:
+                popupLocation(PLAYERS.YOU, LOCATIONS.EXTRA);
+                break;
+            case ChatImprovements.keybinds.showOpponentGY.key:
+                popupLocation(PLAYERS.OPPONENT, LOCATIONS.GY);
+                break;
+            case ChatImprovements.keybinds.showOpponentBanished.key:
+                popupLocation(PLAYERS.OPPONENT, LOCATIONS.BANISHED);
+                break;
+            case ChatImprovements.keybinds.showOpponentExtra.key:
+                popupLocation(PLAYERS.OPPONENT, LOCATIONS.EXTRA);
+                break;
+        }
+    });
+    
+    const showOnHover = function (ev, delay = 1200) {
+        let el = $(this);
+        if(el.data("hoverInterval")) {
+            return;
+        }
+        
+        let interval = setTimeout(() => {
+            popupLocation(el.data("player"), el.data("location"));
+        }, delay);
+        el.data("hoverInterval", interval);
+    };
+    const cancelOnHover = function (ev) {
+        let el = $(this);
+        clearTimeout(el.data("hoverInterval"));
+        el.data("hoverInterval", null);
+    };
+    const addHoverReveal = function (el) {
+        el.mouseover(showOnHover);
+        el.mouseout(cancelOnHover);
+    };
+    
+    // let candidates = $("*[id^='game-field-player-'], *[id^='game-field-opponent-']"$("*[id^='game-field-player-'], *[id^='game-field-opponent-']");
+    let candidates = [
+        "#game-field-player-extra",
+        "#game-field-player-deck",
+        "#game-field-player-graveyard",
+        "#game-field-player-banished",
+        "#game-field-opponent-extra",
+        "#game-field-opponent-deck",
+        "#game-field-opponent-graveyard",
+        "#game-field-opponent-banished",
+    ];
+    for(let candidate of candidates) {
+        addHoverReveal($(candidate));
     }
     
     /*
@@ -479,8 +686,41 @@ let onload = function () {
     let gameContainer = $("#game-container");
     gameContainer.prepend(miscContainer);
     
-    class GameOption {
+    // pseudo interface
+    class OptionRenderable {
+        constructor() {
+            
+        }
+        
+        get isRange() {
+            return false;
+        }
+        
+        get isCheckbox() {
+            return false;
+        }
+        
+        toElement() {
+            return null;
+        }
+    }
+    
+    class GameButton extends OptionRenderable {
+        constructor(name, event) {
+            super();
+            this.name = name;
+            this.event = event;
+        }
+        
+        toElement() {
+            return NexusGUI.button(this.name)
+                .click(this.event);
+        }
+    }
+    
+    class GameOption extends OptionRenderable {
         constructor(tag, id, option, type, info = {}) {
+            super();
             this.tag = tag;
             this.id = id;
             this.option = option;
@@ -595,14 +835,6 @@ let onload = function () {
             return tr;
         }
     }
-    /*
-        var a = $(this).data("option"),
-        b = $(this).val();
-        $("#options-" + a + "-value").text(b + "%");
-        f.options[a] = b;
-        f.save();
-        jd && jd(a, b)
-    */
     // initialize options column
     let optionsColumnInfo = [
         [
@@ -712,6 +944,15 @@ let onload = function () {
                 "showChainEvents",
                 "checkbox",
             ),
+        ],
+        [
+            "Keybindings",
+            new GameButton(
+                "Edit Bindings",
+                function () {
+                    NexusGUI.popup("Edit Bindings", "todo: implement");
+                },
+            )
         ]
     ];
     
