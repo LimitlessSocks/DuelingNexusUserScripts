@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CustomNexusGUI API
 // @namespace    https://duelingnexus.com/
-// @version      0.7.1
+// @version      0.7.2
 // @description  To enable custom GUI elements, such as popups.
 // @author       Sock#3222
 // @grant        none
@@ -71,17 +71,25 @@ const NexusGUI = {
         elements.title = elements.popupWrapper.find("#nexus-gui-popup-title");
         elements.content = elements.popupWrapper.find("#nexus-gui-popup-content");
         
-        elements.background.click(function () {
-            elements.popupWrapper.toggle(false);
-        });
+        // elements.background.click(function () {
+            // elements.popupWrapper.toggle(false);
+        // });
         elements.popupWrapper.toggle(false);
         
         $("body").append(elements.popupWrapper);
         
         NexusGUI._popupElementsLoaded = true;
     },
-    _popupStyles: ["wide", "minimal"],
+    _popupStyles: ["wide", "minimal", "minimal-padded"],
+    _cleanUpPopup: null,
+    get isPopupOpen() {
+        let background = NexusGUI._popupElements.background;
+        return background && background.is(":visible");
+    },
     popup: function (title, content, options = {}) {
+        if(NexusGUI.isPopupOpen) {
+            NexusGUI.closePopup(true);
+        }
         // reference variable
         const elements = NexusGUI._popupElements;
         
@@ -101,17 +109,23 @@ const NexusGUI = {
         }
         
         return new Promise((resolve, reject) => {
-            let cleanUp = () => {
-                resolve();
+            let cleanUp = (forceClosed = false) => {
+                if(!options.ignoreForceClose || !forceClosed) {
+                    resolve();
+                }
                 elements.background.unbind("click", cleanUp);
+                NexusGUI._cleanUpPopup = null;
+                elements.popupWrapper.toggle(false);
             };
+            NexusGUI._cleanUpPopup = cleanUp;
             
-            elements.background.bind("click", cleanUp);
+            elements.background.bind("click", () => cleanUp(false));
         });
     },
-    closePopup: function () {
-        const elements = NexusGUI._popupElements;
-        elements.background.trigger("click");
+    closePopup: function (forceClose = false) {
+        if(NexusGUI._cleanUpPopup) {
+            NexusGUI._cleanUpPopup(forceClose);
+        }
     },
     button: (text) => $("<button>").addClass("nexus-gui-button").text(text),
     Form: class NexusGUIForm {
@@ -391,10 +405,14 @@ let onLoad = function () {
         #nexus-gui-popup.wide {
             width: 800px;
         }
-        #nexus-gui-popup.minimal {
+        #nexus-gui-popup.minimal,
+        #nexus-gui-popup.minimal-padded {
             width: auto;
             min-height: 0px;
             height: auto;
+        }
+        #nexus-gui-popup.minimal-padded {
+            padding: 2em;
         }
         #nexus-gui-popup-title {
             margin: 0;
