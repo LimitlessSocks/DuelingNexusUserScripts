@@ -22,6 +22,7 @@ const EXT = {
     DECK_SIZE_LIMIT: null,
     BANLIST_NAME: null,
     BYPASS_LIMIT: true,
+    RECALCULATE_BANLIST: false,
     Search: {
         cache: [],
         current_page: 1,
@@ -781,26 +782,33 @@ let onStart = function () {
     const banlists = ha.b;
     const banlistNames = banlists.map(list => list.name);
     EXT.BANLIST_NAME = banlistNames[0];
-    const allowedCount = function (card, index = EXT.BANLIST_NAME) {
+    EXT.banlists = banlists;
+    EXT.banlistNames = banlistNames;
+    
+    const allowedCount = function (card, banlistIndicator = EXT.BANLIST_NAME, index = null) {
         // card.A = the source id (e.g. for alt arts)
         // card.id = the actual id
         let ident = card.A || card.id || card;
         
-        if(typeof index === "string") {
-            index = banlistNames.indexOf(index);
-            if(index < 0) {
-                index = 0;
+        let banlist;
+        if(typeof banlistIndicator === "string") {
+            let banlistIndex = banlistNames.indexOf(index);
+            if(banlistIndex < 0) {
+                banlistIndex = 0;
             }
+            banlist = banlists[banlistIndex];
         }
-        
-        let banlist = banlists[index];
+        else {
+            banlist = banlistIndicator;
+        }
+        let banlistName = banlist.name;
         
         if(banlist.allowedCount) {
-            return banlist.allowedCount(ident);
+            return banlist.allowedCount(ident, index);
         }
         
         if(!banlist) {
-            console.warn("Banlist unable to be loaded (" + index + ")");
+            console.warn("Banlist unable to be loaded (" + banlistName + ")");
             return 3;
         }
         
@@ -833,10 +841,7 @@ let onStart = function () {
     }
     const cardCompare = function (cardA, cardB) {
         return Z.fa(cardA, cardB);
-    }
-    const shuffle = function (list) {
-        return Z.Nb(list);
-    }
+    };
     // clears the visual state, allowing editing to take place
     const clearVisualState = function () {
         Z.pa();
@@ -1533,21 +1538,14 @@ let onStart = function () {
     // sorts everything
     const sort = function () {
         clearVisualState();
-        // for (var a = ["main", "extra", "side"], b = 0; b < a.length; ++b) {
-            // var c = a[b];
-            // Z[c].sort(function(a, b) {
-                // return Z.fa(X[a.data("id")], X[b.data("id")])
-            // });
-            // updateBanlistIcons(c);
-        // }
         overMainExtraSide((contents, location) => {
             contents.sort((c1, c2) => 
                 Z.fa(X[c1.data("id")], X[c2.data("id")])
             );
-            updateBanlistIcons(location);
         });
         restoreVisualState();
         addEditPoint();
+        refreshBanlistIcons();
     };
     
     // reset listener for editor's sort button
@@ -1559,10 +1557,10 @@ let onStart = function () {
         clearVisualState();
         overMainExtraSide((contents, location) => {
             defaultShuffleList(contents);
-            updateBanlistIcons(location);
         });
         restoreVisualState();
         addEditPoint();
+        refreshBanlistIcons();
     }
     
     let shuffleButton = $("#editor-shuffle-button");
@@ -1626,16 +1624,16 @@ let onStart = function () {
     
     const enabledBanlist = function () {
         return banlistByName(EXT.BANLIST_NAME);
-    }
+    };
+    EXT.EDIT_API.enabledBanlist = enabledBanlist;
     
     const isRestricted = function (id, limitStatus, banlist) {
         return banlist.isRestricted ? banlist.isRestricted(limitStatus) : limitStatus !== 3;
     };
+    EXT.EDIT_API.isRestricted = isRestricted;
     
-    const getBanlistIconImage = function (id) {
-        let banlist = enabledBanlist();
-        
-        let limitStatus = allowedCount(id);
+    const restrictedStatus = function (id, banlist = enabledBanlist(), index = null) {
+        let limitStatus = allowedCount(id, banlist, index);
         let restricted = isRestricted(id, limitStatus, banlist);
         
         let result = {
@@ -1643,27 +1641,44 @@ let onStart = function () {
             limitStatus: limitStatus,
         };
         
-        if(restricted) {
+        return result;
+    };
+    EXT.EDIT_API.restrictedStatus = restrictedStatus;
+    
+    const getBanlistIconImage = function (id, index = null) {
+        let banlist = enabledBanlist();
+        
+        let result = restrictedStatus(id, banlist, index);
+        
+        if(result.restricted) {
             let iconSource = banlist.icons || banlistIcons;
-            result.src = iconSource[limitStatus];
+            result.src = iconSource[result.limitStatus];
         }
         
         return result;
     };
+    EXT.EDIT_API.getBanlistIconImage = getBanlistIconImage;
     
     const refreshBanlistIcons = function (destinations) {
         destinations = destinations || ["main", "extra", "side"];
         if(!Array.isArray(destinations)) {
             destinations = [destinations];
         }
+        let counts = {};
+        
+        if(EXT.RECALCULATE_BANLIST) {
+            destinations = ["main", "extra", "side"];
+        }
         for(let destination of destinations) {
-            for(let pic of document.querySelectorAll(".editor-card-small")) {
+            let collection = document.querySelectorAll("#editor-" + destination + "-deck .editor-card-small");
+            for(let pic of collection) {
                 let el = $(pic);
                 let id = el.data("alias") || el.data("id");
-            
-                let banlistIcon = el.find(".editor-search-banlist-icon");
+                counts[id] = counts[id] || 0;
+                let iconStatus = getBanlistIconImage(id, counts[id]);
+                counts[id]++;
                 
-                let iconStatus = getBanlistIconImage(id);
+                let banlistIcon = el.find(".editor-search-banlist-icon");
                 
                 if(iconStatus.restricted) {
                     // make icon if it doesn't exist
@@ -1685,10 +1700,9 @@ let onStart = function () {
         }
         updateSearchContents();
     };
+    EXT.EDIT_API.refreshBanlistIcons = refreshBanlistIcons;
     // TODO: "DRY" this.
     const updateBanlist = function () {
-        // console.info("Banlist changed to " + banlistSelector.val());
-        
         // unload previous settings, if any
         if(enabledBanlist().unload) {
             enabledBanlist().unload();
