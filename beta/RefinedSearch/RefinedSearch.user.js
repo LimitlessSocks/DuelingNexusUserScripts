@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.13.11
+// @version      0.13.12
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -1623,7 +1623,7 @@ let onStart = function () {
     // add new buttons
     
     let undoButton = makeElement("button", "rs-ext-editor-export-button", "Undo");
-    undoButton.prop("classList").add("engine-button", "engine-button", "engine-button-default");
+    undoButton.prop("classList").add("engine-button", "engine-button", "engine-button-default", "engine-button-navbar");
     editorMenuContent.append(" ");
     editorMenuContent.append(undoButton);
     undoButton.attr("disabled", true);
@@ -1631,7 +1631,7 @@ let onStart = function () {
     undoButton.click(undo);
     
     let redoButton = makeElement("button", "rs-ext-editor-export-button", "Redo");
-    redoButton.prop("classList").add("engine-button", "engine-button", "engine-button-default");
+    redoButton.prop("classList").add("engine-button", "engine-button", "engine-button-default", "engine-button-navbar");
     editorMenuContent.append(" ");
     editorMenuContent.append(redoButton);
     redoButton.attr("disabled", true);
@@ -1639,7 +1639,7 @@ let onStart = function () {
     redoButton.click(redo);
     
     let exportButton = makeElement("button", "rs-ext-editor-export-button", "Export .ydk");
-    exportButton.prop("classList").add("engine-button", "engine-button", "engine-button-default");
+    exportButton.prop("classList").add("engine-button", "engine-button", "engine-button-default", "engine-button-navbar");
     exportButton.title = "Export Saved Version of Deck";
     editorMenuContent.append(" ");
     editorMenuContent.append(exportButton);
@@ -1659,7 +1659,7 @@ let onStart = function () {
     });
     
     let exportRawButton = makeElement("button", "rs-ext-editor-export-button", "Export Readable");
-    exportRawButton.prop("classList").add("engine-button", "engine-button", "engine-button-default");
+    exportRawButton.prop("classList").add("engine-button", "engine-button", "engine-button-default", "engine-button-navbar");
     exportRawButton.title = "Export Human Readable Version of Deck";
     editorMenuContent.append(" ");
     editorMenuContent.append(exportRawButton);
@@ -1670,7 +1670,7 @@ let onStart = function () {
     });
     
     let helpButton = makeElement("button", "rs-ext-show-help", "Help");
-    helpButton.prop("classList").add("engine-button", "engine-button", "engine-button-default");
+    helpButton.prop("classList").add("engine-button", "engine-button", "engine-button-default", "engine-button-navbar");
     editorMenuContent.append(" ");
     editorMenuContent.append(helpButton);
     
