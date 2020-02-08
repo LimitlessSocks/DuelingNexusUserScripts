@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.13.12
+// @version      0.14.0
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -12,6 +12,8 @@
 
 // TODO: rehash sort function
 try{
+let EDIT_API_READY = false;
+let EDIT_API_CALLBACKS = [];
 const EXT = {
     RESULTS_PER_PAGE: 30,
     MIN_INPUT_LENGTH: 1,
@@ -19,6 +21,7 @@ const EXT = {
     MAX_UNDO_RECORD: 30,
     DECK_SIZE_LIMIT: null,
     BANLIST_NAME: null,
+    BYPASS_LIMIT: true,
     Search: {
         cache: [],
         current_page: 1,
@@ -27,7 +30,18 @@ const EXT = {
         messages: [],
     },
     // contents defined later
-    EDIT_API: {}
+    EDIT_API: {
+        waitForReady: function () {
+            return new Promise((resolve, reject) => {
+                if(EDIT_API_READY) {
+                    resolve();
+                }
+                else {
+                    EDIT_API_CALLBACKS.push(resolve);
+                }
+            });
+        }
+    }
 };
 window.EXT = EXT;
 const FN = {
@@ -781,6 +795,10 @@ let onStart = function () {
         
         let banlist = banlists[index];
         
+        if(banlist.allowedCount) {
+            return banlist.allowedCount(ident);
+        }
+        
         if(!banlist) {
             console.warn("Banlist unable to be loaded (" + index + ")");
             return 3;
@@ -799,7 +817,7 @@ let onStart = function () {
         }
         
         return 3;
-    }
+    };
     const clearVisualSearchOptions = function () {
         return Z.Fb();
     }
@@ -851,9 +869,9 @@ let onStart = function () {
     // reimplements Z.la
     const banlistIcons = {
         3: null,
-        2: "banlist-semilimited.png",
-        1: "banlist-limited.png",
-        0: "banlist-banned.png",
+        2: "assets/images/banlist-semilimited.png",
+        1: "assets/images/banlist-limited.png",
+        0: "assets/images/banlist-banned.png",
     };
     const addCardToSearchWithButtons = function (cardId) {
         let card = CARD_LIST[cardId];
@@ -916,9 +934,10 @@ let onStart = function () {
         });
         /* BANLIST TOKEN GENERATION */
         var banlistIcon = template.find(".editor-search-banlist-icon");
-        let limitStatus = allowedCount(card);
-        if(limitStatus !== 3) {
-            banlistIcon.attr("src", "assets/images/" + banlistIcons[limitStatus]);
+        let sourceId = card.A || card.id;
+        let iconStatus = getBanlistIconImage(sourceId);
+        if(iconStatus.restricted) {
+            banlistIcon.attr("src", iconStatus.src);
         }
         else {
             banlistIcon.remove();
@@ -1105,7 +1124,7 @@ let onStart = function () {
     const appendTextNode = function (el, text) {
         el.append(text);
         return true;
-    }
+    };
     const makeElement = function (name, id = null, content = null, opts = {}) {
         let el = document.createElement(name);
         if(id !== null) {
@@ -1118,7 +1137,7 @@ let onStart = function () {
             el[key] = val;
         }
         return $(el);
-    }
+    };
     const HTMLTag = function (tag, id, classes, ...children) {
         let el = makeElement(tag, id);
         if(classes) {
@@ -1229,12 +1248,13 @@ let onStart = function () {
             let toExtraDeck = destination === "extra";
             let isExtra = isExtraDeckMonster(card);
             let sizeLimit = EXT.DECK_SIZE_LIMIT || toMainDeck ? 60 : 15;
+            let ident = card.A ? card.A : card.id;
             let isInvalidLocation = (
                    isExtra && toMainDeck
                 || !isExtra && toExtraDeck
                 || Z[destination].length >= sizeLimit
                 // cannot have more than 3 copies!
-                || countInDecks(card.A ? card.A : card.id) >= 3
+                || countInDecks(ident) >= (EXT.BYPASS_LIMIT ? 3 : allowedCount(ident))
             );
             
             if (!isInvalidLocation) {
@@ -1296,8 +1316,7 @@ let onStart = function () {
                 } else {
                     d.data("banlist", null);
                 }
-                computePadding(destination);
-                updateBanlistIcons(destination);
+                refreshBanlistIcons(destination);
             }
         }
     };
@@ -1575,50 +1594,109 @@ let onStart = function () {
     
     $("#editor-menu-spacer").toggle(false);
     
+    const banlistSelector = makeElement("select", "rs-ext-banlist"); // used later
+    
+    const registerBanlist = function (json) {
+        banlists.unshift(json);
+        banlistNames.unshift(json.name);
+        banlistSelector.prepend(makeElement("option", null, json.name));
+    };
+    EXT.EDIT_API.registerBanlist = registerBanlist;
+    
     // add banlist selection
-    let selector = makeElement("select", "rs-ext-banlist");
     for(let name of banlistNames) {
-        selector.append(makeElement("option", null, name));
+        banlistSelector.append(makeElement("option", null, name));
     }
     
-    // TODO: "DRY" this.
-    let updateBanlist = function () {
-        console.info("Banlist changed to " + selector.val());
-        EXT.BANLIST_NAME = selector.val();
-        
-        for(let pic of document.querySelectorAll(".editor-card-small")) {
-            let el = $(pic);
-            let id = el.data("alias") || el.data("id");
-        
-            let banlistIcon = el.find(".editor-search-banlist-icon");
-            let limitStatus = allowedCount(id);
-            // console.log(banlistIcon, pic, limitStatus);
-            if(limitStatus !== 3) {
-                if(!el.data("banlist")) {
-                    let img = $("<img>");
-                    el.data("banlist", img);
-                    $("#editor-banlist-icons").append(img);
-                }
-                el.data("banlist").attr("src", "assets/images/" + banlistIcons[limitStatus]);
-            }
-            else if(el.data("banlist")) {
-                el.data("banlist").remove();
-                el.data("banlist", null);
-            }
-        }
-        // update everything manually
-        updateBanlistIcons("main");
-        updateBanlistIcons("extra");
-        updateBanlistIcons("side");
-        computePadding("main");
-        computePadding("extra");
-        computePadding("side");
-        updateSearchContents();
+    const banlistByName = function (name) {
+        let index = banlistNames.indexOf(name);
+        return banlists[index];
     };
     
-    selector.change(updateBanlist);
+    const enabledBanlist = function () {
+        return banlistByName(EXT.BANLIST_NAME);
+    }
     
-    selector.insertBefore(saveButton);
+    const isRestricted = function (id, limitStatus, banlist) {
+        return banlist.isRestricted ? banlist.isRestricted(limitStatus) : limitStatus !== 3;
+    };
+    
+    const getBanlistIconImage = function (id) {
+        let banlist = enabledBanlist();
+        
+        let limitStatus = allowedCount(id);
+        let restricted = isRestricted(id, limitStatus, banlist);
+        
+        let result = {
+            restricted: restricted,
+            limitStatus: limitStatus,
+        };
+        
+        if(restricted) {
+            let iconSource = banlist.icons || banlistIcons;
+            result.src = iconSource[limitStatus];
+        }
+        
+        return result;
+    };
+    
+    const refreshBanlistIcons = function (destinations) {
+        destinations = destinations || ["main", "extra", "side"];
+        if(!Array.isArray(destinations)) {
+            destinations = [destinations];
+        }
+        for(let destination of destinations) {
+            for(let pic of document.querySelectorAll(".editor-card-small")) {
+                let el = $(pic);
+                let id = el.data("alias") || el.data("id");
+            
+                let banlistIcon = el.find(".editor-search-banlist-icon");
+                
+                let iconStatus = getBanlistIconImage(id);
+                
+                console.log("id", id, "info", iconStatus);
+                if(iconStatus.restricted) {
+                    // make icon if it doesn't exist
+                    if(!el.data("banlist")) {
+                        let img = $("<img>");
+                        el.data("banlist", img);
+                        $("#editor-banlist-icons").append(img);
+                    }
+                    // update source
+                    el.data("banlist").attr("src", iconStatus.src);
+                }
+                else if(el.data("banlist")) {
+                    el.data("banlist").remove();
+                    el.data("banlist", null);
+                }
+            }
+            updateBanlistIcons(destination);
+            computePadding(destination);
+        }
+        updateSearchContents();
+    };
+    // TODO: "DRY" this.
+    const updateBanlist = function () {
+        // console.info("Banlist changed to " + banlistSelector.val());
+        
+        // unload previous settings, if any
+        if(enabledBanlist().unload) {
+            enabledBanlist().unload();
+        }
+        
+        EXT.BANLIST_NAME = banlistSelector.val();
+        
+        // load new settings, if any
+        if(enabledBanlist().load) {
+            enabledBanlist().load();
+        }
+        
+        refreshBanlistIcons();
+    };
+    
+    banlistSelector.change(updateBanlist);
+    
+    banlistSelector.insertBefore(saveButton);
     
     // add new buttons
     
@@ -1775,7 +1853,7 @@ let onStart = function () {
                 return;
             }
             rind = Math.random() * pool.length | 0;
-            console.log("new rind:", rind, pool.length);
+            // console.log("new rind:", rind, pool.length);
             id = pool[rind];
             card = CARD_LIST[id];
             destination = isExtraDeckMonster(card) ? "extra" : "main";
@@ -2201,7 +2279,7 @@ let onStart = function () {
             }
         }
         else if(tag.param === "LIM" || tag.param === "LIMIT") {
-            if(/^\d+$/.test(tag.value)) {
+            if(/^-?\d+$/.test(tag.value)) {
                 let value = parseInt(tag.value, 10);
                 return function (cardObject) {
                     let count = allowedCount(cardObject);
@@ -2680,6 +2758,12 @@ let onStart = function () {
     $(rightButton).on("click", nextPage);
     
     updateBanlist();
+    
+    // extension ready
+    EDIT_API_READY = true;
+    for(let cb of EDIT_API_CALLBACKS) {
+        cb(true);
+    }
 };
 
 let checkStartUp = function () {
