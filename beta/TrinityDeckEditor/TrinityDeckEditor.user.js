@@ -7,6 +7,8 @@
 // @grant        none
 // @include      https://duelingnexus.com/editor/*
 // @require      Banlist.js
+// @updateURL    https://github.com/LimitlessSocks/DuelingNexusUserScripts/raw/master/beta/TrinityDeckEditor/TrinityDeckEditor.user.js
+// @downloadURL  https://github.com/LimitlessSocks/DuelingNexusUserScripts/raw/master/beta/TrinityDeckEditor/TrinityDeckEditor.user.js
 // ==/UserScript==
 
 const TrinityBanlistJSON = {
