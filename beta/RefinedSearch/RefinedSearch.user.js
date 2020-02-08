@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.14.0
+// @version      0.14.1
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -1406,6 +1406,12 @@ let onStart = function () {
     EXT.EDIT_API.EDIT_HISTORY = [ currentDeckState() ];
     EXT.EDIT_API.EDIT_LOCATION = 0;
     
+    const onDeckEditListeners = [];
+    const onDeckEdit = function (cb) {
+        onDeckEditListeners.push(cb);
+    };
+    EXT.EDIT_API.onDeckEditListeners = onDeckEditListeners;
+    EXT.EDIT_API.onDeckEdit = onDeckEdit;
     const addEditPoint = function () {
         let state = currentDeckState();
         let previousState = lastElement(EXT.EDIT_API.EDIT_HISTORY);
@@ -1434,6 +1440,11 @@ let onStart = function () {
         // we can no longer redo, but now we can undo
         undoButton.attr("disabled", false);
         redoButton.attr("disabled", true);
+        
+        // call stuff
+        for(let cb of onDeckEditListeners) {
+            cb(state);
+        }
         
         return true;
     };
@@ -1654,7 +1665,6 @@ let onStart = function () {
                 
                 let iconStatus = getBanlistIconImage(id);
                 
-                console.log("id", id, "info", iconStatus);
                 if(iconStatus.restricted) {
                     // make icon if it doesn't exist
                     if(!el.data("banlist")) {
@@ -2758,6 +2768,15 @@ let onStart = function () {
     $(rightButton).on("click", nextPage);
     
     updateBanlist();
+    
+    const updateDeckNumbers = (state = currentDeckState()) => {
+        // console.log(state);
+        $("#editor-deck-main-title").text("Main (" + state.main.length + ")");
+        $("#editor-deck-extra-title").text("Extra (" + state.extra.length + ")");
+        $("#editor-deck-side-title").text("Side (" + state.side.length + ")");
+    };
+    onDeckEdit(updateDeckNumbers);
+    updateDeckNumbers();
     
     // extension ready
     EDIT_API_READY = true;
