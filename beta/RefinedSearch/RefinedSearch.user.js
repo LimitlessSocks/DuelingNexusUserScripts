@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.14.1
+// @version      0.14.3
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -786,13 +786,14 @@ let onStart = function () {
     EXT.banlistNames = banlistNames;
     
     const allowedCount = function (card, banlistIndicator = EXT.BANLIST_NAME, index = null) {
+        // console.log(banlistIndicator);
         // card.A = the source id (e.g. for alt arts)
         // card.id = the actual id
         let ident = card.A || card.id || card;
         
         let banlist;
         if(typeof banlistIndicator === "string") {
-            let banlistIndex = banlistNames.indexOf(index);
+            let banlistIndex = banlistNames.indexOf(banlistIndicator);
             if(banlistIndex < 0) {
                 banlistIndex = 0;
             }
@@ -802,6 +803,7 @@ let onStart = function () {
             banlist = banlistIndicator;
         }
         let banlistName = banlist.name;
+        // console.log(banlistName, banlist);
         
         if(banlist.allowedCount) {
             return banlist.allowedCount(ident, index);
