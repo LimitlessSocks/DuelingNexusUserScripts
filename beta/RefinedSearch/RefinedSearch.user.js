@@ -945,7 +945,7 @@ let onStart = function () {
             banlistIcon.attr("src", iconStatus.src);
         }
         else {
-            banlistIcon.remove();
+            banlistIcon.toggle(false);
         }
         let container = $("<table width=100% class=rs-ext-card-entry-table>");
         let cardTd = $("<td width=74% class=card-preview></td>");
@@ -1659,6 +1659,19 @@ let onStart = function () {
     };
     EXT.EDIT_API.getBanlistIconImage = getBanlistIconImage;
     
+    const updateSearchBanlistIcons = function () {
+        for(let entry of $(".editor-search-result")) {
+            let template = $(entry);
+            let id = template.data("id");
+            let banlistIcon = template.find(".editor-search-banlist-icon");
+            let iconStatus = getBanlistIconImage(id);
+            if(iconStatus.restricted) {
+                banlistIcon.attr("src", iconStatus.src);
+            }
+            banlistIcon.toggle(iconStatus.restricted);
+        }
+    };
+    
     const refreshBanlistIcons = function (destinations) {
         destinations = destinations || ["main", "extra", "side"];
         if(!Array.isArray(destinations)) {
@@ -1698,7 +1711,7 @@ let onStart = function () {
             updateBanlistIcons(destination);
             computePadding(destination);
         }
-        updateSearchContents();
+        updateSearchBanlistIcons();
     };
     EXT.EDIT_API.refreshBanlistIcons = refreshBanlistIcons;
     // TODO: "DRY" this.
