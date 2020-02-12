@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.14.3
+// @version      0.15
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -707,29 +707,20 @@ let onStart = function () {
         return this.tagName() === name.toUpperCase();
     }
     
-    // disable default listener (Z.Rb)
+    // disable default listener
     $("#editor-search-text").off("input");
     
-    // VOLATILE FUNCTIONS, MAY CHANGE AFTER A MAIN UPDATE
-    const computePadding = Z.Ca;
-    const updateBanlistIcons = Z.N;
-    const countInDecks = Z.Gb;
-    const removeCardSilent = Z.P;
-    const defaultShuffleList = Z.Pb;
-    const previewCardSelection = Z.Aa;
-    const getCardTemplate = () => $(Z.Nb);
-    const searchResults = () => $(Z.za);
-    
-    const CARD_LIST = X;
-    
-    // expected result: { zb: "Warrior", qb: "Spellcaster", ... }
-    const TYPE_HASH = bg;
+    const getCardTemplate = () => $(Editor.searchResultTemplateHtml);
+    const searchResults = () => $(Editor.searchResultsElement);
+
+    // TODO: be sensitive to different languages when that comes
+    const TYPE_HASH = I18n.en.races;
     const TYPE_LIST = Object.values(TYPE_HASH);
-    
+
     // expected result: { Ta: 1, Ab: 2, Za: 4, Bb: 8, cb: 16, Na: 32, Pa: 64 }
-    const ATTRIBUTE_MASK_HASH = Yf;
+    const ATTRIBUTE_MASK_HASH = CardAttribute;
     // expected result: { Ta: "EARTH", Ab: "WATER", ... }
-    const ATTRIBUTE_WORD_VALUE_HASH = ag;
+    const ATTRIBUTE_WORD_VALUE_HASH = I18n.en.attributes;
     
     const ATTRIBUTE_HASH = {};
     for(obfs in ATTRIBUTE_MASK_HASH) {
@@ -737,23 +728,14 @@ let onStart = function () {
         ATTRIBUTE_HASH[attr] = ATTRIBUTE_MASK_HASH[obfs];
     };
     
-    const attributeOf = function (cardObject) {
-        return cardObject.H;
-    };
-    
-    const scalesOf = function (cardObject) {
-        return [cardObject.xa, cardObject.ya];
-    }
-    
     const makeSearchable = function (name) {
-        return name//.replace(/ /g, "")
-                   .toUpperCase();
-    }
+        return name.toUpperCase();
+    };
     
     const searchableCardName = function (id_or_card) {
         let card;
         if(typeof id_or_card === "number") {
-            card = CARD_LIST[id_or_card];
+            card = Engine.database.cards[id_or_card];
         }
         else {
             card = id_or_card;
@@ -764,22 +746,22 @@ let onStart = function () {
             card.searchName = searchable;
         }
         return searchable;
-    }
+    };
     
     // expected result for Ef: { 0: "?", 1: "Warrior", 2: "Spellcaster", ... }
     const monsterType = function (card) {
-        return Ef[card.race];
+        return I18n.races[card.race];
     }
-    const monsterTypeMap = {};
+    const cardTypeMap = {};
     // expected result for Wf: { 0: "?", 1: "Monster", 2: "Spell", ... }
-    for(let key in Wf) {
-        let value = Wf[key];
-        monsterTypeMap[value] = parseInt(key, 10);
+    for(let key in I18n.types) {
+        let value = I18n.types[key];
+        cardTypeMap[value] = parseInt(key, 10);
     }
-    window.monsterTypeMap = monsterTypeMap;
+    window.cardTypeMap = cardTypeMap;
     
     // expected result for ha.b: { {...}, ...}
-    const banlists = ha.b;
+    const banlists = Engine.banlists.banlists;
     const banlistNames = banlists.map(list => list.name);
     EXT.BANLIST_NAME = banlistNames[0];
     EXT.banlists = banlists;
@@ -787,9 +769,9 @@ let onStart = function () {
     
     const allowedCount = function (card, banlistIndicator = EXT.BANLIST_NAME, index = null) {
         // console.log(banlistIndicator);
-        // card.A = the source id (e.g. for alt arts)
+        // card.alias = the source id (e.g. for alt arts)
         // card.id = the actual id
-        let ident = card.A || card.id || card;
+        let ident = card.alias || card.id || card;
         
         let banlist;
         if(typeof banlistIndicator === "string") {
@@ -828,52 +810,20 @@ let onStart = function () {
         
         return 3;
     };
-    const clearVisualSearchOptions = function () {
-        return Z.Fb();
-    }
-    const isPlayableCard = function (card) {
-        // internally checks U.U - having that bit means its not a playable card
-        // (reserved for tokens, it seems)
-        return Z.ua(card);
-    }
-    const sanitizeText = function (text) {
-        // qa - converts to uppercase and removes:
-        //      newlines, hyphens, spaces, colons, and periods
-        return qa(text);
-    }
-    const cardCompare = function (cardA, cardB) {
-        return Z.fa(cardA, cardB);
-    };
-    // clears the visual state, allowing editing to take place
-    const clearVisualState = function () {
-        Z.pa();
-    }
-    // restores the visual state
-    const restoreVisualState = function () {
-        Z.ma();
-    }
     const lastElement = function (arr) {
         return arr[arr.length - 1];
-    }
+    };
     // modified from https://stackoverflow.com/a/6969486/4119004
     const escapeRegex = function (string) {
         return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    }
-    const previewCard = Cc;
+    };
     
     const engineButton = function (content, id = null) {
         let button = makeElement("button", id, content);
         button.prop("classList").add("engine-button", "engine-button-default");
         return button;
-    }
+    };
     
-    // Z.Da = function() {
-        // if(Z.selection) {
-            // console.log("tick");
-            // Z.selection.css("left", Z.Ib + 3).css("top", Z.Jb + 3);
-        // }
-    // };
-    // reimplements Z.la
     const banlistIcons = {
         3: null,
         2: "assets/images/banlist-semilimited.png",
@@ -881,41 +831,42 @@ let onStart = function () {
         0: "assets/images/banlist-banned.png",
     };
     const addCardToSearchWithButtons = function (cardId) {
-        let card = CARD_LIST[cardId];
+        let card = Engine.database.cards[cardId];
         let template = getCardTemplate();
         template.find(".template-name").text(card.name);
-        l(template.find(".template-picture"), card.id);
-        if (card.type & U.L) {
+        Engine.setCardImageElement(template.find(".template-picture"), card.id);
+        if (card.type & CardType.MONSTER) {
             template.find(".template-if-spell").remove();
             template.find(".template-level").text(card.level);
             template.find(".template-atk").text(card.attack);
-            template.find(".template-def").text(card.i);
+            template.find(".template-def").text(card.defence);
             // Df - object indexed by powers of 2 containg *type* information
             // card.race = type
-            template.find(".template-race").text(Ef[card.race]);
+            template.find(".template-race").text(monsterType(card));
             // Ef - object indexed by powers of 2 containing *attribute* information
             // card.H = attribute
-            template.find(".template-attribute").text(Ff[card.H]);
+            template.find(".template-attribute").text(I18n.attributes[card.attribute]);
         }
         else {
             template.find(".template-if-monster").remove();
             var types = [];
-            for (let n of Object.values(U)) {
+            for (let n of Object.values(CardType)) {
                 if(card.type & n) {
-                    types.push(Wf[n]);
+                    types.push(I18n.types[n]);
                 }
             }
             template.find(".template-types").text(types.join("|"));
         }
         template.data("id", card.id);
+        template.data("alias", card.alias);
         template.mouseover(function () {
-            previewCard($(this).data("id"));
+            Engine.ui.setCardInfo($(this).data("id"));
         });
         template.mousedown(function (a) {
             // left mouse - move card to tooltip
             if (1 == a.which) {
                 let id = $(this).data("id");
-                previewCardSelection(id);
+                Editor.selectCard(id);
                 return false;
             }
             // right mouse - do nothing (allow contextmenu to trigger)
@@ -925,11 +876,11 @@ let onStart = function () {
         });
         let addThisCard = function (el, destination = null) {
             let id = $(el).data("id");
-            let card = CARD_LIST[id];
+            let card = Engine.database.cards[id];
             // deduce destination
             if(!destination) {
                 destination = "main";
-                if (card.type & U.S || card.type & U.T || card.type & U.G || card.type & U.C) {
+                if(isExtraDeckMonster(card)) {
                     destination = "extra";
                 }
             }
@@ -941,7 +892,7 @@ let onStart = function () {
         });
         /* BANLIST TOKEN GENERATION */
         var banlistIcon = template.find(".editor-search-banlist-icon");
-        let sourceId = card.A || card.id;
+        let sourceId = card.alias || card.id;
         let iconStatus = getBanlistIconImage(sourceId);
         if(iconStatus.restricted) {
             banlistIcon.attr("src", iconStatus.src);
@@ -962,29 +913,28 @@ let onStart = function () {
         
         container.append($("<tr>").append(cardTd, mainTd, sideTd));
         searchResults().append(container);
-    }
+    };
     
     const addCardToSearch = function (card) {
-        // return Z.la(card);
         return addCardToSearchWithButtons(card);
-    }
+    };
     
     // interaction stuff
     const pluralize = function (noun, count, suffix = "s", base = "") {
         return noun + (count == 1 ? base : suffix);
-    }
+    };
     
     // card identification stuff
-    const isToken               = (card) => card.type & monsterTypeMap["Token"];
+    const isToken               = (card) => card.type & cardTypeMap["Token"];
     
-    const isTrapCard            = (card) => card.type & monsterTypeMap["Trap"];
-    const isSpellCard           = (card) => card.type & monsterTypeMap["Spell"];
-    const isRitualSpell         = (card) => isSpellCard(card) && (card.type & monsterTypeMap["Ritual"]);
-    const isContinuous          = (card) => card.type & monsterTypeMap["Continuous"];
-    const isCounter             = (card) => card.type & monsterTypeMap["Counter"];
-    const isField               = (card) => card.type & monsterTypeMap["Field"];
-    const isEquip               = (card) => card.type & monsterTypeMap["Equip"];
-    const isQuickPlay           = (card) => card.type & monsterTypeMap["Quick-Play"];
+    const isTrapCard            = (card) => card.type & cardTypeMap["Trap"];
+    const isSpellCard           = (card) => card.type & cardTypeMap["Spell"];
+    const isRitualSpell         = (card) => isSpellCard(card) && (card.type & cardTypeMap["Ritual"]);
+    const isContinuous          = (card) => card.type & cardTypeMap["Continuous"];
+    const isCounter             = (card) => card.type & cardTypeMap["Counter"];
+    const isField               = (card) => card.type & cardTypeMap["Field"];
+    const isEquip               = (card) => card.type & cardTypeMap["Equip"];
+    const isQuickPlay           = (card) => card.type & cardTypeMap["Quick-Play"];
     const isSpellOrTrap         = (card) => isSpellCard(card) || isTrapCard(card);
     
     const nonNormalSpellTraps   = [isContinuous, isQuickPlay, isField, isCounter, isEquip, isRitualSpell];
@@ -992,21 +942,21 @@ let onStart = function () {
         isSpellOrTrap(card)
         && !nonNormalSpellTraps.some(cond => cond(card));
     
-    const isNormalMonster       = (card) => card.type & monsterTypeMap["Normal"];
-    const isEffectMonster       = (card) => card.type & monsterTypeMap["Effect"];
+    const isNormalMonster       = (card) => card.type & cardTypeMap["Normal"];
+    const isEffectMonster       = (card) => card.type & cardTypeMap["Effect"];
     const isMonster             = (card) => !isTrapCard(card) && !isSpellCard(card);
     const isNonEffectMonster    = (card) => !isEffectMonster(card);
-    const isFusionMonster       = (card) => card.type & monsterTypeMap["Fusion"];
-    const isRitualMonster       = (card) => isMonster(card) && (card.type & monsterTypeMap["Ritual"]);
-    const isSynchroMonster      = (card) => card.type & monsterTypeMap["Synchro"];
-    const isTunerMonster        = (card) => card.type & monsterTypeMap["Tuner"];
-    const isLinkMonster         = (card) => card.type & monsterTypeMap["Link"];
-    const isGeminiMonster       = (card) => card.type & monsterTypeMap["Dual"];
-    const isToonMonster         = (card) => card.type & monsterTypeMap["Toon"];
-    const isFlipMonster         = (card) => card.type & monsterTypeMap["Flip"];
-    const isSpiritMonster       = (card) => card.type & monsterTypeMap["Spirit"];
-    const isXyzMonster          = (card) => card.type & monsterTypeMap["Xyz"];
-    const isPendulumMonster     = (card) => card.type & monsterTypeMap["Pendulum"];
+    const isFusionMonster       = (card) => card.type & cardTypeMap["Fusion"];
+    const isRitualMonster       = (card) => isMonster(card) && (card.type & cardTypeMap["Ritual"]);
+    const isSynchroMonster      = (card) => card.type & cardTypeMap["Synchro"];
+    const isTunerMonster        = (card) => card.type & cardTypeMap["Tuner"];
+    const isLinkMonster         = (card) => card.type & cardTypeMap["Link"];
+    const isGeminiMonster       = (card) => card.type & cardTypeMap["Dual"];
+    const isToonMonster         = (card) => card.type & cardTypeMap["Toon"];
+    const isFlipMonster         = (card) => card.type & cardTypeMap["Flip"];
+    const isSpiritMonster       = (card) => card.type & cardTypeMap["Spirit"];
+    const isXyzMonster          = (card) => card.type & cardTypeMap["Xyz"];
+    const isPendulumMonster     = (card) => card.type & cardTypeMap["Pendulum"];
     
     const isExtraDeckMonster = (card) => [
         isFusionMonster,
@@ -1061,7 +1011,7 @@ let onStart = function () {
     }
     
     const defaultSearchOptionState = function () {
-        clearVisualSearchOptions();
+        Editor.clearSearch();
     };
     
     const displayResults = function () {
@@ -1215,91 +1165,59 @@ let onStart = function () {
     
     /* TODO: allow larger deck sizes */
     
-    /*
-    let deckSizes = {
-        "main":  [   40,    60,   100],
-        "extra": [   10,    15,    25],
-        "side":  [   10,    15,    25],
-    };
-    // if length > corresponding cell in deckSizes, pad by this much
-    let cardMargins = {
-        "main":  [ -3.6, -4.05, -6.00],
-        "extra": [ -3.6, -4.05, -6.00],
-        "side":  [ -3.6, -4.05, -6.00],
-    };
-    Z.Ca = function (a) {
-        var padding = "0";
-        // let 
-        if(Z[a].length > ("main" == a ? 80 : 25)) {
-            // padding = "main" == a ? "-4.05%" : "-4.72%";
-            padding = "-6.0%";
-        }
-        else if(Z[a].length > ("main" == a ? 60 : 15)) {
-            padding = "main" == a ? "-4.05%" : "-4.72%";
-        }
-        else if(Z[a].length > ("main" == a ? 40 : 10)) {
-            padding = "-3.6%";
-        }
-        if (Z.ha[a] !== padding) {
-            Z.ha[a] = padding;
-            for (var c = 0; c < Z[a].length; ++c) Z[a][c].css("margin-right", padding);
-        }
-    },
-    */
-    
     /* UNDO / REDO */
     const addCardSilent = function(a, destination, c, d) {
-        let card = X[a];
+        let card = Engine.database.cards[a];
         if (card && !isToken(card)) {
             let toMainDeck = destination === "main";
             let toExtraDeck = destination === "extra";
             let isExtra = isExtraDeckMonster(card);
             let sizeLimit = EXT.DECK_SIZE_LIMIT || toMainDeck ? 60 : 15;
-            let ident = card.A ? card.A : card.id;
+            let ident = card.alias ? card.alias : card.id;
             let isInvalidLocation = (
                    isExtra && toMainDeck
                 || !isExtra && toExtraDeck
-                || Z[destination].length >= sizeLimit
+                || Editor[destination].length >= sizeLimit
                 // cannot have more than 3 copies!
-                || countInDecks(ident) >= (EXT.BYPASS_LIMIT ? 3 : allowedCount(ident))
+                || Editor.getCardCount(ident) >= (EXT.BYPASS_LIMIT ? 3 : allowedCount(ident))
             );
             
             if (!isInvalidLocation) {
-                g = Z[destination];
+                g = Editor[destination];
                 var k = $("#editor-" + destination + "-deck");
-                d = $("<img>").css("margin-right", Z.ha[destination]).addClass("editor-card-small");
-                l(d, a);
+                d = $("<img>").css("margin-right", Editor.margins[destination]).addClass("editor-card-small");
+                Engine.setCardImageElement(d, a);
                 d.mouseover(function() {
-                    previewCard($(this).data("id"));
+                    Engine.ui.setCardInfo($(this).data("id"));
                 });
                 d.mousedown(function(a) {
                     if (1 == a.which) {
                         a = $(this).data("id");
                         var b = $(this).data("location"),
                             c = $(this).parent().children().index($(this));
-                        Z.P(b, c);
-                        previewCardSelection(a);
+                        removeCard(b, c);
+                        Editor.selectCard(a);
                         return false
                     }
                     if (3 == a.which) return false
                 });
                 d.mouseup(function(a) {
-                    if (1 == a.which && Z.selection) {
+                    if (1 == a.which && Editor.selection) {
                         a = $(this).data("location");
                         var b = $(this).parent().children().index($(this));
-                        addCard(Z.selection.data("id"), a, b);
-                        Z.aa();
-                        return false
+                        addCard(Editor.selection.data("id"), a, b);
+                        Editor.clearSelection();
+                        return false;
                     }
                 });
                 d.on("contextmenu", function() {
                     var a = $(this).data("location"),
                         b = $(this).parent().children().index($(this));
-                    Z.P(a, b);
-                    return false
+                    removeCard(a, b);
+                    return false;
                 });
                 d.data("id", a);
-                d.data("alias", card.A);
+                d.data("alias", card.alias);
                 d.data("location", destination); 
                 if(c === -1) {
                     k.append(d);
@@ -1323,6 +1241,21 @@ let onStart = function () {
                 } else {
                     d.data("banlist", null);
                 }
+                
+                if(card.ot === 1) {
+                    let img = $("<img>")
+                        .attr("src", "assets/images/ocg.png");
+                    d.data("region", img);
+                    $("#editor-region-icons").append(img);
+                }
+                else if(card.ot === 2) {
+                    let img = $("<img>")
+                        .attr("src", "assets/images/tcg.png");
+                    d.data("region", img);
+                    $("#editor-region-icons").append(img);
+                } else {
+                    d.data("region", null);
+                }
                 refreshBanlistIcons(destination);
             }
         }
@@ -1331,17 +1264,17 @@ let onStart = function () {
         addCardSilent(...args);
         addEditPoint();
     };
-    Z.O = addCard;
+    Editor.addCard = addCard;
     EXT.EDIT_API.addCard = addCard;
     EXT.EDIT_API.addCardSilent = addCardSilent;
     
+    EXT.EDIT_API.removeCardSilent = Editor.removeCard;
     const removeCard = function (...args) {
-        removeCardSilent(...args);
+        EXT.EDIT_API.removeCardSilent(...args);
         addEditPoint();
     };
-    Z.P = removeCard;
+    Editor.removeCard = removeCard;
     EXT.EDIT_API.removeCard = removeCard;
-    EXT.EDIT_API.removeCardSilent = removeCardSilent;
     
     const deepCloneArray = function (arr) {
         return arr.map ? arr.map(deepCloneArray) : arr;
@@ -1368,14 +1301,14 @@ let onStart = function () {
     };
     const currentDeckState = function () {
         return {
-            main: mapIDs(Z.main),
-            extra: mapIDs(Z.extra),
-            side: mapIDs(Z.side)
+            main: mapIDs(Editor.main),
+            extra: mapIDs(Editor.extra),
+            side: mapIDs(Editor.side)
         };
     }
     const clearLocation = function (location) {
-        while(Z[location].length) {
-            removeCardSilent(location, 0);
+        while(Editor[location].length) {
+            EXT.EDIT_API.removeCardSilent(location, 0);
         }
     };
     const clearDeck = function () {
@@ -1386,18 +1319,20 @@ let onStart = function () {
     
     // for use in undo/redo - replaces the current state with the new state
     /*
-               TypeError: Z[c][e].appendTo is not a function engine.min.js:144:115
+               TypeError: Editor[c][e].appendTo is not a function engine.min.js:144:115
                 ma https://duelingnexus.com/script/engine.min.js?v=187:144
-                restoreVisualState debugger eval code:387
+                Editor.attachCards debugger eval code:387
                 updateDeckState debugger eval code:933
                 undo debugger eval code:987
 
     */
     const updateDeckState = function (newState) {
         let state = currentDeckState();
-        clearVisualState();
+        Editor.detachCards();
         overMainExtraSide((contents, location) => {
-            if(deepEquals(contents, newState[location])) {
+            let contentIds = mapIDs(contents);
+            // console.log(contentIds, newState[location]);
+            if(deepEquals(contentIds, newState[location])) {
                 // console.warn("EXT.EDIT_API.updateDeckState - new and old sections for " + location + " are equal, not updating");
                 return;
             }
@@ -1406,7 +1341,7 @@ let onStart = function () {
                 addCardSilent(id, location, -1);
             }
         });
-        restoreVisualState();
+        Editor.attachCards();
     };
     EXT.EDIT_API.updateDeckState = updateDeckState;
     EXT.EDIT_API.currentDeckState = currentDeckState;
@@ -1510,18 +1445,18 @@ let onStart = function () {
     
     /* reimplementing nexus buttons with edit history enabled */
     const clear = function () {
-        clearVisualState();
+        Editor.detachCards();
         overMainExtraSide((contents, location) => {
-            for(let el of Z[location]) {
+            for(let el of Editor[location]) {
                 let banlist = el.data("banlist");
                 if(banlist) {
                     banlist.remove();
                 }
                 el.remove();
             }
-            Z[location] = [];
+            Editor[location] = [];
         });
-        restoreVisualState();
+        Editor.attachCards();
         addEditPoint();
     }
     EXT.EDIT_API.clear = clear;
@@ -1533,19 +1468,19 @@ let onStart = function () {
     
     const overMainExtraSide = function (it) {
         for(let name of ["main", "extra", "side"]) {
-            it(Z[name], name);
+            it(Editor[name], name);
         }
     };
     
     // sorts everything
     const sort = function () {
-        clearVisualState();
+        Editor.detachCards();
         overMainExtraSide((contents, location) => {
             contents.sort((c1, c2) => 
-                Z.fa(X[c1.data("id")], X[c2.data("id")])
+                Editor.compareCards(Engine.database.cards[c1.data("id")], Engine.database.cards[c2.data("id")])
             );
         });
-        restoreVisualState();
+        Editor.attachCards();
         addEditPoint();
         refreshBanlistIcons();
     };
@@ -1556,11 +1491,11 @@ let onStart = function () {
     sortButton.click(sort);
     
     const shuffleAll = function () {
-        clearVisualState();
+        Editor.detachCards();
         overMainExtraSide((contents, location) => {
-            defaultShuffleList(contents);
+            Editor.shuffleArray(contents);
         });
-        restoreVisualState();
+        Editor.attachCards();
         addEditPoint();
         refreshBanlistIcons();
     }
@@ -1576,7 +1511,7 @@ let onStart = function () {
 
     const cardNamesInDeck = function (el) {
         let names = [...el.children()].map(e =>
-            CARD_LIST[$(e).data("id")].name
+            Engine.database.cards[$(e).data("id")].name
         );
         let uniq = [...new Set(names)];
         return uniq.map(name =>
@@ -1664,7 +1599,7 @@ let onStart = function () {
     const updateSearchBanlistIcons = function () {
         for(let entry of $(".editor-search-result")) {
             let template = $(entry);
-            let id = template.data("id");
+            let id = template.data("alias") || template.data("id");
             let banlistIcon = template.find(".editor-search-banlist-icon");
             let iconStatus = getBanlistIconImage(id);
             if(iconStatus.restricted) {
@@ -1710,8 +1645,8 @@ let onStart = function () {
                     el.data("banlist", null);
                 }
             }
-            updateBanlistIcons(destination);
-            computePadding(destination);
+            Editor.updateBanlist(destination);
+            Editor.updateMargins(destination);
         }
         updateSearchBanlistIcons();
     };
@@ -1768,7 +1703,7 @@ let onStart = function () {
         for(let kind of ["main", "extra", "side"]) {
             let header = (kind === "side" ? "!" : "#") + kind;
             lines.push(header);
-            // TODO: add option to use card.A rather than card.id
+            // TODO: add option to use card.alias rather than card.id
             lines.push(...Deck[kind]);
         }
         let message = lines.join("\n");
@@ -1867,20 +1802,20 @@ let onStart = function () {
     addRandomCardButton.click(() => {
         let pool = EXT.Search.cache;
         if(!pool || pool.length === 0) {
-            pool = Object.keys(CARD_LIST);
+            pool = Object.keys(Engine.database.cards);
         }
         else {
             pool = pool.map(card => card.id);
         }
         if(pool.length < 100) {
-            pool = pool.filter(id => countInDecks(id) < allowedCount(id));
+            pool = pool.filter(id => Editor.getCardCount(id) < allowedCount(id));
             if(!pool.length) {
                 return;
             }
         }
         let id, card, rind, destination;
         
-        if(Z["main"].length === 60 && Z["extra"].length === 15) {
+        if(Editor["main"].length === 60 && Editor["extra"].length === 15) {
             return;
         }
         
@@ -1894,9 +1829,9 @@ let onStart = function () {
             rind = Math.random() * pool.length | 0;
             // console.log("new rind:", rind, pool.length);
             id = pool[rind];
-            card = CARD_LIST[id];
+            card = Engine.database.cards[id];
             destination = isExtraDeckMonster(card) ? "extra" : "main";
-        } while(countInDecks(id) >= allowedCount(id) || Z[destination].length === (destination === "extra" ? 15 : 60));
+        } while(Editor.getCardCount(id) >= allowedCount(id) || Editor[destination].length === (destination === "extra" ? 15 : 60));
         
         // console.log(card, isExtraDeckMonster(card));
         addCard(id, destination, -1);
@@ -2248,9 +2183,9 @@ let onStart = function () {
     
     const VALIDATOR_ONTO_MAP = {
         "ATK": "attack",
-        "DEF": "i",
-        "ARROWS": "i",
-        "SCALE": "xa", // left scale
+        "DEF": "defence",
+        "ARROWS": "defence",
+        "SCALE": "lscale",
     };
     const VALIDATOR_LEVEL_MAP = {
         "LEVEL": isLevelMonster,
@@ -2333,9 +2268,9 @@ let onStart = function () {
             }
         }
         else if(tag.param === "NAME") {
-            let sub = sanitizeText(tag.value);
+            let sub = Engine.cleanText(tag.value);
             return function (cardObject) {
-                return sanitizeText(cardObject.Z).indexOf(sub) !== -1;
+                return Engine.cleanText(cardObject.Z).indexOf(sub) !== -1;
             };
         }
         else if(tag.param === "TYPE") {
@@ -2358,7 +2293,7 @@ let onStart = function () {
             if(attributeMask !== undefined) {
                 attributeMask = parseInt(attributeMask, 10);
                 return function (cardObject) {
-                    return tag.comp(attributeOf(cardObject), attributeMask);
+                    return tag.comp(cardObject.attribute, attributeMask);
                 };
             }
             else {
@@ -2441,7 +2376,7 @@ let onStart = function () {
         "Name": compareBy(x => x.name),
         "Level": compareBy(x => x.level),
         "ATK": compareBy(x => x.attack),
-        "DEF": compareBy(x => x.i),
+        "DEF": compareBy(x => x.defence),
         // "SCALE": compareBy(x => x.xa),
         
         // TODO: sort each sub-strata? e.g. all level 1s by name
@@ -2564,7 +2499,7 @@ let onStart = function () {
     // window.parseInputQuery=parseInputQuery;
     const ISOLATE_TAG_REGEX = /\{(!?)(\w+)([^\{\}]*?)\}/g;
     let updateSearchContents = function () {
-        clearVisualSearchOptions();
+        Editor.clearSearch();
         initializeMessageContainer();
         // TODO: move sanitation process later in the procedure
         let input = $("#editor-search-text").val();
@@ -2622,8 +2557,8 @@ let onStart = function () {
             
             // if the user is searching by ID
             if(!isNaN(cardId)) {
-                cardId = CARD_LIST[cardId];
-                if(cardId && isPlayableCard(cardId)) {
+                cardId = Engine.database.cards[cardId];
+                if(cardId && Editor.isCardFiltered(cardId)) {
                     fuzzyMatches.push(cardId);
                 }
             }
@@ -2641,9 +2576,9 @@ let onStart = function () {
             
             if (0 === fuzzyMatches.length) {
                 // for each card ID
-                for (var e in CARD_LIST) {
-                    let card = CARD_LIST[e];
-                    if(!isPlayableCard(card) || !allSatisfies(tags, card)) {
+                for (var e in Engine.database.cards) {
+                    let card = Engine.database.cards[e];
+                    if(!Editor.isCardFiltered(card) || !allSatisfies(tags, card)) {
                         continue;
                     }
                     let compareName = searchableCardName(card);
@@ -2678,8 +2613,6 @@ let onStart = function () {
             };
             exactMatches = sortCardList(exactMatches, params);
             fuzzyMatches = sortCardList(fuzzyMatches, params);
-            // exactMatches.sort(cardCompare);
-            // fuzzyMatches.sort(cardCompare);
             
             // display 
             let totalEntryCount = exactMatches.length + fuzzyMatches.length;
@@ -2815,7 +2748,7 @@ let onStart = function () {
 };
 
 let checkStartUp = function () {
-    if(Z.za) {
+    if(Editor.searchResultsElement) {
         onStart();
         // destroy reference; pseudo-closure
         onStart = null;
