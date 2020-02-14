@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Dueling Nexus Chat Improvements Plugin
 // @namespace    https://duelingnexus.com/
-// @version      0.8.1
+// @version      0.8.3
 // @description  Revamps the chat and visual features of dueling.
 // @author       Sock#3222
 // @grant        none
@@ -334,16 +334,6 @@ let onload = function () {
     // TODO: move chaining options on bottom right
     // TODO: add hide options for sleeves/avatars
     
-    // window.mg = function mg(a, offset = ChatImprovements.cardMargin) {
-        // a.a.data("sequence", a.D);
-        // if (a.location & O.c || a.location & O.v || a.location & O.u || a.location & O.h) {
-            // var b = 0 == a.controller ? 1 : -1;
-            // b *= a.location & O.h ? -1 : 1;
-            // a.a.css("left", b * a.D * offset + "%");
-            // a.a.css("top", offset * -a.D + "%");
-        // } else a.a.css("left", ""), a.a.css("top", "");
-    // }
-    
     // boilerplate
     const gameChatContent = $("#game-chat-content");
     const gameChatTextbox = $("#game-chat-textbox");
@@ -361,12 +351,6 @@ let onload = function () {
     const PLAYERS = {
         YOU: 0,
         OPPONENT: 1,
-    }
-    const revealLocation = function(player, location) {
-        Game.cancelSelection();
-        Game.closeActionMenu();
-        // fc(m[player].f[location], true);
-        Game.isAdvancedSelectionOpen = true;
     };
     
     const cardTypeMap = {};
@@ -410,6 +394,9 @@ let onload = function () {
     const serializePlayerLocation = (player, location) =>
         `${player};${location}`;
     const popupLocation = (player, location) => {
+        if(!Game.fields.length) {
+            return;
+        }
         let serialized = serializePlayerLocation(player, location);
         // toggle off if already present
         if(popupLocation.currentLocation === serialized) {
@@ -423,7 +410,7 @@ let onload = function () {
         // update serialized
         popupLocation.currentLocation = serialized;
         
-        let container = Game.fields[player].zones[location];
+        let container = Game.fields[player].cards[location];
         let content = $("<div>");
         for(let card of container) {
             if(!card) {
@@ -432,7 +419,8 @@ let onload = function () {
             let code = card.A || card.code;
             let img = $("<img>")
                 .attr("src", Engine.getCardPicturePath(code))
-                .attr("width", E + "px")
+                .attr("width", Game.cardWidth + "px")
+                .attr("height", Game.cardHeight + "px")
                 .attr("class", "popup-card-preview")
                 .hover(() => Engine.ui.setCardInfo(code));
             content.append(img);
@@ -443,7 +431,7 @@ let onload = function () {
         let name = "";
         name += ["Your", "Opponent's"][player];
         name += " ";
-        name += Bf[location] || "Unspecified Location";
+        name += I18n.locations[location] || "Unspecified Location";
         NexusGUI.popup(name, content, {
             style: "minimal-padded",
             ignoreForceClose: true
@@ -556,48 +544,6 @@ let onload = function () {
         addHoverReveal($(candidate));
     }
     
-    /*
-        GameDamage: Yd,
-        GameRecover: Zd,
-        GamePayLpCost: $d,
-        GameLpUpdate: ae,
-        GameAttack: be,
-        GameBattle: ce,
-        GameReloadField: de,
-        GameTagSwap: ee,
-        GameFieldDisabled: fe,
-        GameWaiting: ge,
-        GameEquip: he,
-        GameBecomeTarget: ie,
-        GameWin: je,
-        GameTossCoin: ke,
-        GameTossDice: le,
-        GameAddCounter: me,
-        GameRemoveCounter: ne,
-        GameConfirmCards: oe,
-        GameConfirmDeckTop: pe,
-        GameDeckTop: qe,
-        GameRetry: re,
-        GameSelectIdleCommand: se,
-        GameSelectBattleCommand: te,
-        GameSelectCard: ue,
-        GameSelectUnselect: ve,
-        GameSortCards: we,
-        GameSelectTribute: xe,
-        GameSelectYesNo: ye,
-        GameSelectEffectYesNo: ze,
-        GameSelectChain: Ae,
-        GameSelectPosition: Be,
-        GameSelectOption: Ce,
-        GameSelectSum: De,
-        GameSelectPlace: Ee,
-        GameSelectCounter: Fe,
-        GameAnnounceAttrib: Ge,
-        GameAnnounceRace: He,
-        GameAnnounceNumber: Ie,
-        GameAnnounceCard: Je
-    */
-    
     let eventTypeList = [
         
     ];
@@ -642,9 +588,23 @@ let onload = function () {
             else if(isLinkMonster(card)) {
                 style.background = "#0431CA";
             }
+            else if(isFusionMonster(card)) {
+                style.background = "#BA4CBF";
+            }
+            else if(isXyzMonster(card)) {
+                style.background = "#292929";
+            }
+            else if(isNormalMonster(card)) {
+                style.background = "#CABE4F";
+                style.color = "black";
+            }
+            else if(isSynchroMonster(card)) {
+                style.background = "#EAEAEA";
+                style.color = "black";
+            }
             
             if(isPendulumMonster(card)) {
-                style.background = `linear-gradient(180deg, ${style.background} 0%, rgba(29,158,116,1) 100%)`;
+                style.background = `linear-gradient(180deg, ${style.background} 15%, rgba(29,158,116,1) 100%)`;
             }
             
             return style;
@@ -724,7 +684,7 @@ let onload = function () {
         let color;
         
         if(0 <= playerId && 3 >= playerId) {
-            let name = B[playerId].name;
+            let name = Game.players[playerId].name;
             message = "[" + name + "]: " + message;
         }
         else {
@@ -1172,17 +1132,6 @@ let onload = function () {
         optionsColumn.append(table);
     }
     
-    /*.click(function() {
-                var a = $(this).data("option"),
-                b = $(this).val();
-                $("#options-" + a + "-value").text(b + "%");
-                f.options[a] = b;
-                f.save();
-                if(jd) {
-                    jd(a, b);
-                }
-            })*/
-    
     let miscSectionButtons = $("<div id=ci-ext-misc-buttons>");
     
     // moved earlier for hideMiscBut
@@ -1484,13 +1433,22 @@ let onload = function () {
         var b =
             $(window).width() - $("#ci-ext-misc-sections > div").width() - 50,
             c = $(window).height() - $("#game-chat-area").height() - 8 - 48;
-        9 * c / a < b ? ($("#game-field").css("height", c + "px"), b = c / a, $("#game-field").css("width", 9 * b + "px")) : ($("#game-field").css("width", b + "px"), b /= 9, $("#game-field").css("height", b * a + "px"));
+        
+        if(9 * c / a < b) {
+            ("#game-field").css("height", c + "px");
+            b = c / a;
+            $("#game-field").css("width", 9 * b + "px");
+        }
+        else {
+            $("#game-field").css("width", b + "px");
+            b /= 9;
+            $("#game-field").css("height", b * a + "px");
+        }
         $(".game-field-zone").css("width", b + "px").css("height", b + "px");
         $(".game-field-hand").css("width", 5 * b + "px").css("height", b + "px");
         Game.zoneWidth = b;
         Game.cardHeight = Math.floor(.95 * b);
-        Game.cardWidth = Game.cardHeight * Engine.CARD_WIDTH /
-            Engine.CARD_HEIGHT;
+        Game.cardWidth = Game.cardHeight * Engine.CARD_WIDTH / Engine.CARD_HEIGHT;
         Game.fields[0].resizeHand();
         Game.fields[1].resizeHand();
         $("#game-position-atk-up").css("width", Game.cardWidth);
@@ -1509,58 +1467,8 @@ let onload = function () {
         Game.isSiding && Game.sidingResize()
     };
     
-    /*
-    let resize = function resize() {
-        if(!m[0]) {
-            return;
-        }
-        $("#game-siding-column").css("max-height", 
-            roundTo(getBaseHeight())
-        );
-        let a = 4 <= Ab ? 7 : 6;
-        let b = $(window).width() - $("#ci-ext-misc").width() - 50;
-        let c = $(window).height() - 8 - 48 - RESIZE_OFFSET;
-            // c = $(window).height();// - $("#game-chat-area").height() - 8 - 48;
-            // c = $(window).height() - $("#game-chat-textbox").outerHeight() - 8 - 48;
-        if(9 * c / a < b) {
-            $("#game-field").css("height", c + "px");
-            b = c / a;
-            $("#game-field").css("width", 9 * b + "px");
-        }
-        else {
-            $("#game-field").css("width", b + "px");
-            b /= 9;
-            $("#game-field").css("height", b * a + "px");
-        }
-        
-        $(".game-field-zone").css("width", b + "px").css("height", b + "px");
-        $(".game-field-hand").css("width", 5 * b + "px").css("height", b + "px");
-        
-        Cb = b;
-        Db = Math.floor(.95 * b);
-        E = 177 * Db / 254;
-        
-        Zc(m[0]);
-        Zc(m[1]);
-        
-        $("#game-position-atk-up").css("width", E);
-        $("#game-position-atk-up").css("height", Db);
-        $("#game-position-atk-up").css("margin-right", Db - E + 3);
-        $("#game-position-atk-down").css("width", E);
-        $("#game-position-atk-down").css("height", Db);
-        $("#game-position-atk-down").css("margin-right", Db - E + 3);
-        $("#game-position-def-up").css("width", E);
-        $("#game-position-def-up").css("height", Db);
-        $("#game-position-def-up").css("margin-right", Db - E + 3);
-        $("#game-position-def-down").css("width", E);
-        $("#game-position-def-down").css("height", Db);
-        $(".game-selection-card-image").css("width", E);
-        if(zb) {
-            $c();
-        }
-    }
-    */
-    window.Wb = function Wb() {
+    $(window).off("resize");
+    $(window).resize(function () {
         try {
             resize();
         }
@@ -1568,9 +1476,7 @@ let onload = function () {
             console.warn("Error while window resizing (probably safe to ignore if everything is working)");
             console.warn(e);
         }
-    }
-    $(window).off("resize");
-    $(window).resize(Wb);
+    });
     
     let oldOnTarget = Game.onGameBecomeTarget;
     
@@ -1635,61 +1541,13 @@ let onload = function () {
                                .css("z-index", originalZ);
                 console.log("Completing animation");
                 if(callback) {
-                    callback();
+                    callback(); 
                 }
             }
         });
     };
     
-    window.df = function df(a, b, c, d, e) {
-        // TODO: fix
-        // if(listeners["cfReveal"]) {
-            // for(let cb of listeners["cfReveal"]) {
-                // cb(b);
-            // }
-        // }
-        // var g = a.a.offset(),
-            // k = a.location & O.j || c & 5 ? b : 0,
-            // w = hg(a.controller, a.location, c) - a.va,
-            // F = false;
-        // if(a.Kb !== k) {
-            // F = true;
-        // }
-        // if(null !== a.b) {
-            // a.b.hide();
-            // a.K.hide();
-        // }
-        // a.code = b;
-        // a.position = c;
-        // $("<div />").animate({
-            // height: 1
-        // }, {
-            // duration: d,
-            // step: function(b, c) {
-                // b = c.pos;
-                // c = "translate(";
-                // c += (a.ta.left - g.left) * (1 - b);
-                // c += "px, ";
-                // c += (a.ta.top - g.top) * (1 - b);
-                // c += "px)";
-                // c += " rotate(" + (a.va + w * b) + "deg)";
-                // if(F) {
-                    // if(.5 < b) {
-                        // ig(a, k);
-                    // }
-                    // c += " scalex(" + Math.abs(1 - 2 * b) + ")";
-                // }
-                // a.a.css("transform", c)
-            // },
-            // complete: function() {
-                // null !== a.b && (a.b.show(), a.K.show());
-                // a.a.css("position",
-                    // "");
-                // nf(a);
-                // e()
-            // }
-        // })
-    }
+    // TODO: fix cfReveal (og - `df` / `Card.prototype.applyMovement`)
     
     // re-add listener
     // remove current resize listener
