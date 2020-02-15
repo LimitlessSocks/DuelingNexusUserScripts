@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Dueling Nexus Chat Improvements Plugin
 // @namespace    https://duelingnexus.com/
-// @version      0.8.3
+// @version      0.8.4
 // @description  Revamps the chat and visual features of dueling.
 // @author       Sock#3222
 // @grant        none
@@ -1435,7 +1435,7 @@ let onload = function () {
             c = $(window).height() - $("#game-chat-area").height() - 8 - 48;
         
         if(9 * c / a < b) {
-            ("#game-field").css("height", c + "px");
+            $("#game-field").css("height", c + "px");
             b = c / a;
             $("#game-field").css("width", 9 * b + "px");
         }
