@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Dueling Nexus Notification System
 // @namespace    https://duelingnexus.com/
-// @version      0.2.2
+// @version      0.2.3
 // @description  Gives desktop notifications for joining matches.
 // @author       Sock#3222
 // @grant        none
