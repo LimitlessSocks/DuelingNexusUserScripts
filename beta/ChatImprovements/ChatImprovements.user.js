@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Dueling Nexus Chat Improvements Plugin
 // @namespace    https://duelingnexus.com/
-// @version      0.8.4
+// @version      0.8.5
 // @description  Revamps the chat and visual features of dueling.
 // @author       Sock#3222
 // @grant        none
@@ -1562,7 +1562,7 @@ let onload = function () {
         let index = $(this).data("index");
         let card = Game.getCard(player, location, index);
         if(!card) return;
-        let overlays = card.l;
+        let overlays = card.overlays;
         if(!overlayExtension) {
             overlayExtension = $("<p id=game-tooltip-overlay-extension></p>");
             $("#game-tooltip .card-if-monster").append(overlayExtension);
@@ -1570,7 +1570,7 @@ let onload = function () {
         if(overlays && overlays.length) {
             $(overlayExtension).empty();
             let { width, height } = this.querySelector("img");
-            console.log("width, height:", width, height);
+            // console.log("width, height:", width, height);
             let plural = overlays.length === 1 ? "" : "s";
             let msg = "[" + overlays.length.toString() + " material" + plural + "]\n";
             $(overlayExtension).append($("<p>" + msg + "</p>"));
