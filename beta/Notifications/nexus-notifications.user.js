@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Dueling Nexus Notification System
 // @namespace    https://duelingnexus.com/
-// @version      0.2.3
+// @version      0.2.4
 // @description  Gives desktop notifications for joining matches.
 // @author       Sock#3222
 // @grant        none
@@ -90,7 +90,7 @@ const launchLobbyNotifications = function () {
     augmentFunction(Game, "onRoomPlayerJoined", "RoomPlayerJoined", function (a) {
         console.log(">>> PLAYER JOIN <<<");
         if(a.name !== Game.username) {
-            notifyMessage(`Player "${a.name}" has joined the lobby.`);
+            notifyMessage(`Player "${a.name}" joined the lobby.`);
         }
         else if(!myPosition) {
             myPosition = a;
@@ -103,15 +103,17 @@ const launchLobbyNotifications = function () {
     augmentFunction(Game, "onRoomPlayerLeft", "RoomPlayerLeft", function (a) {
         let oldPlayer = Game.players[a.position];
         if(!oldPlayer) {
-            
+            console.log("shit");
+            return;
         }
-        console.log(">>> PLAYER LEFT <<<");
-        let kind = a.toObserver ? "moved to spectator" : "was kicked from the lobby";
+        // console.log(">>> PLAYER LEFT <<<");
+        let kind = a.toObserver ? "moved to spectator" : "left the lobby";
         
-        console.log("LEFT", a, oldPlayer, playersCopy);
+        // console.log("LEFT", a, oldPlayer, playersCopy);
         
+        console.log(a.toObserver);
         if(!a.toObserver || oldPlayer.name !== Game.username) {
-            // notifyMessage(`Player "${oldPlayer.name}" ${kind}.`);
+            notifyMessage(`Player "${oldPlayer.name}" ${kind}.`);
         }
     }, {
         before: true,
