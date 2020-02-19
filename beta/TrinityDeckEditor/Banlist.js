@@ -1,4 +1,4 @@
-const TrinityBanlist = {
+const TrinityBanlistRaw = {
     // forbidden
     91740879: 0,
     25533642: 0,
