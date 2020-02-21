@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.15.2
+// @version      0.15.3
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -704,6 +704,10 @@ let onStart = function () {
         #rs-ext-navigation {
             width: 100%;
         }
+        
+        #rs-ext-menu-expand {
+            background: rgba(30, 90, 30, 0.6);
+        }
     `;
     
     // extend jQuery
@@ -825,10 +829,22 @@ let onStart = function () {
         return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     };
     
-    const engineButton = function (content, id = null) {
-        let button = makeElement("button", id, content);
-        button.prop("classList").add("engine-button", "engine-button-default");
-        return button;
+    const augmentFunction = function (src, base, fn, opts) {
+        let oldFunction = src[base];
+        
+        opts = opts || { before: false };
+        
+        src[base] = function (...args) {
+            let [first, second] = opts.before ? [fn, oldFunction] : [oldFunction, fn];
+            first(...args);
+            second(...args);
+        };
+        
+        if(opts.accessory && src[opts.accessory]) {
+            src[opts.accessory] = src[base];
+        }
+        
+        return oldFunction;
     };
     
     const banlistIcons = {
@@ -1481,6 +1497,10 @@ let onStart = function () {
                 let banlist = el.data("banlist");
                 if(banlist) {
                     banlist.remove();
+                }
+                let tag = el.data("region");
+                if(tag) {
+                    tag.remove();
                 }
                 el.remove();
             }
@@ -2788,6 +2808,75 @@ let onStart = function () {
     };
     onDeckEdit(updateDeckNumbers);
     updateDeckNumbers();
+    
+    // hamburger menu
+    $(window).off("resize");
+    // let menu = $("<div>");
+    let menuButton = $("<button id=rs-ext-menu-expand>Expand</button>")
+        .addClass("engine-button engine-button-navbar engine-button-default");
+    menuButton.toggle(false);
+    editorMenuContent.append(menuButton);
+    
+    menuButton.click(() => {
+        // NexusGUI.popup("Items", $("<div>").append(...menuItems.map(e => e.clone("true"))));
+    });
+    
+    let oldWidth = editorMenuContent.width();
+    let hamburgerOffset = 0;
+    let hamburgerOffsetList = [0, 3, 4, 2];
+    let menuItems = [];
+    const HAMBURGER_WIDTH_MARGIN = 0;
+    let hamburgerOffsetWidths = [null, null, null, null];
+    window.hamburgerOffsetWidths = hamburgerOffsetWidths;
+    const offloadHamburgerMenuIfNecessary = function () {
+        let targetHeight = $("#editor-menu-container").height();
+        let currentHeight = editorMenuContent.height();
+        
+        if(editorMenuContent.width() <= oldWidth) {
+            while(currentHeight > targetHeight) {
+                hamburgerOffset++;
+                // hide buttons
+                menuButton.toggle(true);
+                let buttons = [...editorMenuContent.find("button:visible:not(#rs-ext-menu-expand)")];
+                if(buttons.length === 0) {
+                    return;
+                }
+                let popCount = hamburgerOffsetList[hamburgerOffset];
+                let section = [];
+                let sumWidth = 0;
+                while(popCount --> 0) {
+                    let button = $(buttons.pop());
+                    sumWidth += button.width();
+                    button.toggle(false);
+                    section.unshift(button);
+                }
+                menuItems[hamburgerOffset] = section;
+                hamburgerOffsetWidths[hamburgerOffset] = editorMenuContent.width() + sumWidth + HAMBURGER_WIDTH_MARGIN;
+                targetHeight = $("#editor-menu-container").height();
+                currentHeight = editorMenuContent.height();
+                // console.log(window.menuItems = menuItems);
+            }
+        }
+        else if(hamburgerOffset > 0) {
+            console.log("OFFSET", hamburgerOffset);
+            // add buttons if possible
+            while(hamburgerOffset > 0 && hamburgerOffsetWidths[hamburgerOffset] < editorMenuContent.width()) {
+                for(let el of menuItems[hamburgerOffset]) {
+                    el.toggle(true);
+                }
+                hamburgerOffset--;
+            }
+            if(hamburgerOffset === 0) {
+                menuButton.toggle(false);
+            }
+        }
+        oldWidth = editorMenuContent.width();
+    }
+    augmentFunction(Editor, "updateSizes", function (a) {
+        offloadHamburgerMenuIfNecessary();
+    });
+    $(window).resize(Editor.updateSizes);
+    Editor.updateSizes();
     
     // extension ready
     EDIT_API_READY = true;
