@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Dueling Nexus Chat Improvements Plugin
 // @namespace    https://duelingnexus.com/
-// @version      0.8.5
+// @version      0.8.6
 // @description  Revamps the chat and visual features of dueling.
 // @author       Sock#3222
 // @grant        none
@@ -1502,10 +1502,12 @@ let onload = function () {
     Game.messageHandlers.GameBecomeTarget = Game.onGameBecomeTarget;
     
     Game.Card.prototype.animateSelection = function (cb) {
-        let originalZ = this.imgElement.css("z-index");
+        let originalZ = this.imgElement.css("z-index") || "2";
         let callback = () => {
-            console.log("CALLING BACK!");
-            cb();
+            if(cb) {
+                console.log("CALLING BACK!");
+                cb();
+            }
         };
         this.imgElement
             .css("z-index", 10000)
