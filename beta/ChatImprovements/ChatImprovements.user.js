@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Dueling Nexus Chat Improvements Plugin
 // @namespace    https://duelingnexus.com/
-// @version      0.8.7
+// @version      0.9
 // @description  Revamps the chat and visual features of dueling.
 // @author       Sock#3222
 // @grant        none
@@ -1422,8 +1422,13 @@ let onload = function () {
     const announceMove = function (move) {
         // let cardName = move.cardCode ? "#@" + move.cardCode : "A card";
         let cardName = cardToInlineReference(move);
-        console.log("owo", move);
-        let card = Game.getCard(move.currentController, move.currentLocation, move.currentSequence);
+        let card;
+        try {
+            card = Game.getCard(move.currentController, move.currentLocation, move.currentSequence);
+        }
+        catch(e) {
+            card = null;
+        }
         if(move.cardCode) {
             cardCodeToSkip = move.cardCode;
         }
@@ -1468,6 +1473,10 @@ let onload = function () {
         else if(movedFromTo(move, GameLocations.EXTRA_DECK, GameLocations.HAND)) {
             status = "was added to the hand from the face-up Extra Deck";
         }
+        else if(move.currentLocation === GameLocations.TOKEN_PILE && move.previousLocation === GameLocations.FIELD_MONSTER) {
+        // else if(movedFromTo(move, GameLocations.TOKEN_PILE, GameLocations.FIELD_MONSTER)) {
+            status = "was removed from the field";
+        }
         // monster summons
         else if(move.currentLocation === GameLocations.FIELD_MONSTER) {
             status = "was Summoned from " + LocationNames[move.previousLocation];
@@ -1485,9 +1494,6 @@ let onload = function () {
                 action = "activated";
             }
             status = `was ${action} from ${LocationNames[move.previousLocation]}`;
-        }
-        else if(movedFromTo(move, GameLocations.FIELD, GameLocations.TOKEN_PILE)) {
-            status = "was removed from the field";
         }
         else {
             // 0 from 4
@@ -1766,6 +1772,20 @@ let onload = function () {
             }
         }
     });
+    
+    // sounds
+    const swapSound = (sound, src) => {
+        for(let i = 0; i < Engine.audio.sounds[sound].length; i++) {
+            Engine.audio.sounds[sound][i].src = src;
+        }
+    };
+    let oldLoadGame = Engine.Audio.prototype.loadGame;
+    Engine.Audio.prototype.loadGame = function() {
+        oldLoadGame.bind(this)();
+        // swapSound("summon", "https://freesound.org/people/wertstahl/sounds/106807/download/106807__wertstahl__mailinbox2.wav");
+        // swapSound("draw", "https://freesound.org/people/kila_vat/sounds/434379/download/434379__kila-vat__notification-sound-handmade.mp3");
+        // swapSound("activate", "https://freesound.org/people/Headphaze/sounds/277031/download/277031__headphaze__ui-completed-status-alert-notification-sfx003.wav");
+    }
 };
 
 waitForElementJQuery("#game-room-container:visible, #game-field:visible").then(() => {
