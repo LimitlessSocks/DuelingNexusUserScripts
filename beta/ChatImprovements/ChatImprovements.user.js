@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Dueling Nexus Chat Improvements Plugin
 // @namespace    https://duelingnexus.com/
-// @version      0.8.6
+// @version      0.8.7
 // @description  Revamps the chat and visual features of dueling.
 // @author       Sock#3222
 // @grant        none
@@ -380,6 +380,7 @@ let onload = function () {
     Game.messageHandlers.GameChaining = Game.onGameChaining = function onGameChaining(a) {
         Game.preloadImage(a.cardCode, function() {
             Game.playSound("activate");
+            console.log(a);
             let cardName = a.cardCode ? "#@" + a.cardCode : "A card";
             let message = `Chain Link ${a.chainCount}: ${cardName}`
             if(a.chainCount > 1) {
@@ -564,7 +565,7 @@ let onload = function () {
         }, 150);
     }
     
-    const MESSAGE_PARSE_REGEX = /#@(\d+)|.+?/g;
+    const MESSAGE_PARSE_REGEX = /#@(\d[\d&]*)|.+?(?=#@|$)/g;
     let cardStyle = function (card) {
         if(isTrapCard(card)) {
             return {
@@ -615,9 +616,23 @@ let onload = function () {
         let matches;
         let message = $("<p>");
         while(matches = MESSAGE_PARSE_REGEX.exec(content)) {
-            let id = parseInt(matches[1]);
-            let card = Engine.getCardData(id);
-            if(id && card) {
+            if(matches[1]) {
+                let segments = matches[1].split("&");
+                let id = parseInt(segments[0]);
+                if(id === 0) {
+                    message.append(
+                        $("<span>A card</span>")
+                        .css("background", "#333")
+                        .css("color", "white")
+                        .css("font-style", "italic")
+                    );
+                    continue;
+                }
+                let card = Engine.getCardData(id);
+                if(!card) {
+                    message.append(matches[0]);
+                    continue;
+                }
                 let interactive = $("<span>")
                     .css("color", "white")
                     .css(cardStyle(card))
@@ -639,6 +654,7 @@ let onload = function () {
         if(color) {
             message.css("color", color);
         }
+        // TODO: collapse multiple of the same message
         gameChatContent.append(message);
         let copy = message.clone(true);
         if(kinds.indexOf("notified-event") !== -1) {
@@ -1301,12 +1317,22 @@ let onload = function () {
     
     let cardCodeToSkip = null;
     
+    const cardToInlineReference = function (card) {
+        let info = [ card.cardCode, card.controller, card.location ]
+            .filter(e => typeof e !== "undefined")
+            .join("&");
+        return "#@" + info;
+    };
+    
     let movedFromTo = function (move, start, end) {
         return (move.previousLocation & start) !== 0 &&
                (move.currentLocation & end) !== 0;
     }
-    ChatImprovements.addEventListener("GameMove", function (move) {
-        let cardName = move.cardCode ? "#@" + move.cardCode : "A card";
+    const announceMove = function (move) {
+        // let cardName = move.cardCode ? "#@" + move.cardCode : "A card";
+        let cardName = cardToInlineReference(move);
+        console.log("owo", move);
+        let card = Game.getCard(move.currentController, move.currentLocation, move.currentSequence);
         if(move.cardCode) {
             cardCodeToSkip = move.cardCode;
         }
@@ -1357,9 +1383,17 @@ let onload = function () {
         }
         // spell card activations
         else if(move.currentLocation === GameLocations.FIELD_SPELLTRAP) {
-            // TODO: set vs. activate
-            // console.log(move);
-            status = "was activated/set from " + LocationNames[move.previousLocation];
+            let action;
+            if(!card) {
+                action = "activated/set";
+            }
+            else if(card.position & CardPosition.FACEDOWN) {
+                action = "set";
+            }
+            else {
+                action = "activated";
+            }
+            status = `was ${action} from ${LocationNames[move.previousLocation]}`;
         }
         else if(movedFromTo(move, GameLocations.FIELD, GameLocations.TOKEN_PILE)) {
             status = "was removed from the field";
@@ -1370,9 +1404,12 @@ let onload = function () {
         }
         notifyEvent(cardName + " " + status);
         // TODO: more
+    };
+    ChatImprovements.addEventListener("GameMove", function (move) {
+        setTimeout(announceMove, 50, move);
     });
     
-    ChatImprovements.addEventListener("cfReveal", function (code) {
+    ChatImprovements.addEventListener("reveal", function (code) {
         if(code && code !== cardCodeToSkip) {
             notifyEvent("Revealed #@" + code);
         }
@@ -1550,6 +1587,17 @@ let onload = function () {
     };
     
     // TODO: fix cfReveal (og - `df` / `Card.prototype.applyMovement`)
+    let oldApplyMovement = Game.Card.prototype.applyMovement;
+    Game.Card.prototype.applyMovement = function(code, position, duration, cb) {
+        // console.log(this);
+        
+        // console.log({
+            // code: code,
+            // position: position,
+            // duration: duration,
+        // });
+        oldApplyMovement.bind(this)(code, position, duration, cb);
+    };
     
     // re-add listener
     // remove current resize listener
