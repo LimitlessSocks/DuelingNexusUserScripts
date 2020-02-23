@@ -437,7 +437,7 @@ let onStartDeckSorter = async function () {
     const fetchDecks = async function (filterMeta = true) {
         let deckInfo = await requestJSON("https://duelingnexus.com/api/list-decks.php");
         if(!deckInfo.success) {
-            NexusGUI.popup("Error retrieving decks", "Your decks are not able to be accessed at this time.");
+            NexusGUI.popup("Error retrieving decks", "Your decks are not able to be accessed at this time. Try refreshing the page, your session may have expired.", { style: "minimal" });
             return null;
         }
         let decks = deckInfo.decks;
@@ -727,6 +727,49 @@ let onStartDeckSorter = async function () {
     }
     DeckSort.exportMetaInfo = exportMetaInfo;
     
+    const importDeck = function (name, text) {
+        let build = {
+            main: [],
+            extra: [],
+            side: []
+        };
+        let cards = text.split(/\r?\n/);
+        let dest = null;
+        for(let id of cards) {
+            id = id.trim();
+            if ("#main" === r) dest = s.main;
+            else if ("#extra" === r) dest = s.extra;
+            else if ("!side" === r) dest = s.side;
+            else if (!r.startsWith("#") && "" !== r) {
+                var l = parseInt(r, 10);
+                isNaN(l) || null === dest || dest.push(l)
+            }
+        }
+        null === dest || 0 === s.main.length && 0 === s.extra.length && 0 === s.side.length ? alert("Error: invalid or empty deck") : f.post("create-deck", {
+            name: e,
+            deck: O()(s)
+        }, function(e) {
+            n.retrieveDecks()
+        }, function(e) {
+            alert("Error: " + n.errorToMessage(e.error))
+        })
+    };
+    
+    const importFile = function (e) {
+        if (e.target.files.length === 1) {
+            let n = e.target.files[0];
+            if (n.size < 16 || n.size > 4096) {
+                return void alert("Error: the file is invalid");
+            }
+            let fr = new FileReader();
+            fr.onload = function(e) {
+                let destinationName = n.name.replace(".ydk", "");
+                importDeck(destinationName, e.target.result)
+            };
+            fr.readAsText(n);
+        }
+    };
+    
     for(let deck of decks) {
         let instance = new Deck(deck);
     }
@@ -757,6 +800,8 @@ let onStartDeckSorter = async function () {
     }
     
     let oldCreateNewDeck = $($("#decks-buttons button")[0]);
+    let oldImportDeck = $("#decks-buttons .fake-button");
+    
     let createNewDeck = oldCreateNewDeck.clone();
     oldCreateNewDeck.replaceWith(createNewDeck);
     createNewDeck.click(() => {
@@ -779,6 +824,12 @@ let onStartDeckSorter = async function () {
             // ensure sorted
             Folder.roster[deck.folder].resetChildren();
         });
+    });
+    
+    let importDeckButton = oldImportDeck.clone(true);
+    oldImportDeck.replaceWith(importDeckButton);
+    importDeckButton.find(".file-picker").change((t) => {
+        importFile(t);
     });
     
     let newFolder = $("<button>New Folder</button>");
