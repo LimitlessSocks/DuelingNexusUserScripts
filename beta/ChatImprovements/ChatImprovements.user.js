@@ -27,6 +27,7 @@ let makeReadOnly = function (obj, prop) {
 
 let ChatImprovements = {
     log: [],
+    playersMuted: {},
     storage: {
         _cache: null,
         get: null,
@@ -262,7 +263,8 @@ let onload = function () {
         margin: 3px;
     }
     
-    #ci-ext-event-log .interact-name {
+    #ci-ext-event-log .interact-name,
+    #ci-ext-event-log .interact-user {
         cursor: pointer;
     }
     
@@ -328,6 +330,16 @@ let onload = function () {
     }
     #ci-ext-chat-container td {
         padding: 0;
+    }
+    
+    /*.game-avatar-area {
+        background: black;
+        padding: 15px;
+    }*/
+    
+    #game-player-name, #game-opponent-name {
+        background: black;
+        padding: 0px;
     }
     </style>`));
     
@@ -565,7 +577,7 @@ let onload = function () {
         }, 150);
     }
     
-    const MESSAGE_PARSE_REGEX = /#@(\d[\d&]*)|.+?(?=#@|$)/g;
+    const MESSAGE_PARSE_REGEX = /#@(\d[\d&]*)|\[@(.+?)\]|.+?(?=[#\[]@|$)/g;
     let cardStyle = function (card) {
         if(isTrapCard(card)) {
             return {
@@ -611,11 +623,57 @@ let onload = function () {
             return style;
         }
     }
+    // colors thanks to Ech!
+    const PLAYER_COLORS = {
+        tag: {
+            [-1]: "#FFFFFF",
+            0: "#C22E28",
+            1: "#EE8130",
+            2: "#6390F0",
+            3: "#96D9D6",
+        },
+        normal: {
+            [-1]: "#FFFFFF",
+            0: "#DD2121",
+            1: "#6390F0",
+        },
+    };
+    const getPlayerColor = (id) => {
+        return PLAYER_COLORS[Game.isTag ? "tag" : "normal"][id];
+    };
+    for(let i = 0; i < Game.players.length; i++) {
+        $("#game-room-player" + (i + 1) + "-username").css("color", getPlayerColor(i));
+    }
+    // copied
+    Game.updatePlayerNames = function () {
+        let isMainFocus = 2 > Game.position || 4 <= Game.position;
+        if (Game.isTag)
+            if (isMainFocus) {
+                var a = Game.tagPlayer[0];
+                var b = Game.tagPlayer[1] + 2
+            } else a = Game.tagPlayer[0] + 2, b = Game.tagPlayer[1];
+        else a = 2 > Game.position ? Game.position : 0, b = 1 - a;
+        if (Game.isSpectator) {
+            var c = a;
+            a = b;
+            b = c
+        }
+        let aColor = getPlayerColor(a);
+        let bColor = getPlayerColor(b);
+        $("#game-player-name").text(Game.players[a].name)
+            .css("color", aColor);
+        $("#game-opponent-name").text(Game.players[b].name)
+            .css("color", bColor);
+        null !== Game.players[a].customAvatarPath ?
+            $("#game-avatar-player-image").attr("src", "uploads/avatars/" + Game.players[a].customAvatarPath) : $("#game-avatar-player-image").attr("src", Engine.getAssetPath("images/avatars/" + Game.players[a].avatar + ".jpg"));
+        null !== Game.players[b].customAvatarPath ? $("#game-avatar-opponent-image").attr("src", "uploads/avatars/" + Game.players[b].customAvatarPath) : $("#game-avatar-opponent-image").attr("src", Engine.getAssetPath("images/avatars/" + Game.players[b].avatar + ".jpg"))
+    };
     let displayMessage = function (content, color, ...kinds) {
         //Engine.ui.setCardInfo
         let matches;
         let message = $("<p>");
         while(matches = MESSAGE_PARSE_REGEX.exec(content)) {
+            let interactive = $("<span>")
             if(matches[1]) {
                 let segments = matches[1].split("&");
                 let id = parseInt(segments[0]);
@@ -633,7 +691,7 @@ let onload = function () {
                     message.append(matches[0]);
                     continue;
                 }
-                let interactive = $("<span>")
+                interactive
                     .css("color", "white")
                     .css(cardStyle(card))
                     .data("id", id)
@@ -642,6 +700,35 @@ let onload = function () {
                     Engine.ui.setCardInfo(id);
                 });
                 interactive.text('"' + card.name + '"');
+                message.append(interactive);
+            }
+            else if(matches[2]) {
+                let [sender, id] = matches[2].split(",") || ["?", -1];
+                interactive.css("color", getPlayerColor(id))
+                    .data("id", id)
+                    .addClass("interact-user")
+                    .click(() => {
+                        let form = new NexusGUI.Form();
+                        let mutePlayer = new NexusGUI.FormButton("Mute");
+                        let isMuted = false;
+                        mutePlayer.click(function (ev) {
+                            isMuted = !isMuted;
+                            ChatImprovements.playersMuted[sender] = isMuted;
+                            $(ev.target).text(isMuted ? "Unmute" : "Mute");
+                        });
+                        
+                        let doneButton = new NexusGUI.FormButton("Done");
+                        doneButton.click(function (ev, resolve) {
+                            resolve();
+                        });
+                        
+                        form.add(mutePlayer);
+                        form.add(NexusGUI.FormBreak);
+                        form.add(doneButton);
+                        
+                        form.popup(`Player Options: "${sender}"`);
+                    });
+                interactive.text(`[${sender}]`);
                 message.append(interactive);
             }
             else {
@@ -701,9 +788,14 @@ let onload = function () {
         
         if(0 <= playerId && 3 >= playerId) {
             let name = Game.players[playerId].name;
-            message = "[" + name + "]: " + message;
+            if(ChatImprovements.playersMuted[name]) {
+                console.info("Message from " + name + " muted.");
+                return;
+            }
+            message = `[@${name},${playerId}]: ${message}`;
         }
         else {
+            console.log("Yellow message!", message, playerId);
             color = "yellow";
         }
         
@@ -720,8 +812,7 @@ let onload = function () {
                 type: "SendChatMessage",
                 message: message
             });
-            message = unifyMessage("[" + Game.username + "]: " + message);
-            // TODO: assign each person a different color?
+            message = unifyMessage(`[@${Game.username},${Game.position}]: ${message}`);
             if(4 > Game.position) {
                 displayMessage(message);
             }
