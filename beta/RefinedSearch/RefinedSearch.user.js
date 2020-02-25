@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.15.3
+// @version      0.15.4
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -1411,7 +1411,7 @@ let onStart = function () {
         
         // remove all entries past the current edit location
         if(EXT.EDIT_API.EDIT_LOCATION >= EXT.EDIT_API.EDIT_HISTORY.length) {
-            EXT.EDIT_API.EDIT_HISTORY.splice(EXT.EDIT_API.EDIT_LOCATION);
+            EXT.EDIT_API.EDIT_HISTORY.splice(EXT.EDIT_API.EDIT_LOCATION + 1);
         }
         
         // add the state
@@ -2342,14 +2342,15 @@ let onStart = function () {
             };
         }
         else if(tag.param === "TYPE") {
-            let searchType = initialCapitalize(tag.value);
+            let value = tag.value.trim();
+            let searchType = initialCapitalize(value);
             if(TYPE_LIST.indexOf(searchType) !== -1) {
                 return function (cardObject) {
                     return tag.comp(monsterType(cardObject), searchType);
                 };
             }
             else {
-                addMessage(STATUS.ERROR, "Invalid type " + tag.value + ", ignoring tag");
+                addMessage(STATUS.ERROR, "Invalid type " + value + ", ignoring tag");
                 return function () {
                     return true;
                 };
