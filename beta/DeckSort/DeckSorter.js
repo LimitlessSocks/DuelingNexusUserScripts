@@ -86,6 +86,10 @@ let onStartDeckSorter = async function () {
         "https://duelingnexus.com/api/create-deck.php",
         "name"
     );
+    const createDeckWithContents = postData(
+        "https://duelingnexus.com/api/create-deck.php",
+        "name", "deck"
+    );
     
     // name is the newName
     const copyDeck = postData(
@@ -261,6 +265,12 @@ let onStartDeckSorter = async function () {
         updateVisuals() {
             this.title.css("color", this.color);
             this.title.find(".folder-name").text("[" + this.name + "]");
+        }
+        
+        scrollTo() {
+            $([document.documentElement, document.body]).animate({
+                scrollTop: this.title.offset().top
+            }, 100);
         }
         
         changeName(newName) {
@@ -551,6 +561,7 @@ let onStartDeckSorter = async function () {
                     }
                     this.move(value);
                     Folder.roster[this.folder].resetChildren();
+                    this.scrollTo();
                 });
             });
             
@@ -561,6 +572,12 @@ let onStartDeckSorter = async function () {
             ele.data("deck", this);
             
             this.updateElement();
+        }
+        
+        scrollTo() {
+            Folder.roster[this.folder].scrollTo();
+            this.element.css("background", "#767676");
+            setTimeout(() => this.element.css("background", ""), 1400);
         }
         
         displayName() {
@@ -622,6 +639,23 @@ let onStartDeckSorter = async function () {
             if(!folder.parent) {
                 folder.attachTo(decksContainer);
             }
+            folder.resetChildren();
+            return deck;
+        }
+        
+        static async createNewWithList(name, build) {
+            let info = await createDeckWithContents(name, JSON.stringify(build));
+            if(!info.success) {
+                // TODO: better error
+                alert("Deck could not be made");
+            }
+            let deck = new Deck({ name: name, id: info.id });
+            
+            let folder = Folder.roster[deck.folder];
+            if(!folder.parent) {
+                folder.attachTo(decksContainer);
+            }
+            folder.resetChildren();
             return deck;
         }
         
@@ -737,22 +771,23 @@ let onStartDeckSorter = async function () {
         let dest = null;
         for(let id of cards) {
             id = id.trim();
-            if ("#main" === r) dest = s.main;
-            else if ("#extra" === r) dest = s.extra;
-            else if ("!side" === r) dest = s.side;
-            else if (!r.startsWith("#") && "" !== r) {
-                var l = parseInt(r, 10);
+            if ("#main" === id) dest = build.main;
+            else if ("#extra" === id) dest = build.extra;
+            else if ("!side" === id) dest = build.side;
+            else if (!id.startsWith("#") && "" !== id) {
+                var l = parseInt(id, 10);
                 isNaN(l) || null === dest || dest.push(l)
             }
         }
-        null === dest || 0 === s.main.length && 0 === s.extra.length && 0 === s.side.length ? alert("Error: invalid or empty deck") : f.post("create-deck", {
-            name: e,
-            deck: O()(s)
-        }, function(e) {
-            n.retrieveDecks()
-        }, function(e) {
-            alert("Error: " + n.errorToMessage(e.error))
-        })
+        if(null === dest || 0 === build.main.length && 0 === build.extra.length && 0 === build.side.length) {
+            // error
+            NexusGUI.popup("ERROR", "Problem importing your deck");
+        }
+        else {
+            Deck.createNewWithList(name, build).then((deck) => {
+                deck.scrollTo();
+            });
+        }
     };
     
     const importFile = function (e) {
@@ -805,14 +840,44 @@ let onStartDeckSorter = async function () {
     let createNewDeck = oldCreateNewDeck.clone();
     oldCreateNewDeck.replaceWith(createNewDeck);
     createNewDeck.click(() => {
-        NexusGUI.prompt("Please enter new deck name").then(async (name) => {
-            if(!name) {
+        let form = new NexusGUI.Form();
+        let namePrompt = new NexusGUI.FormInput("Deck Name");
+        let folderPrompt = new NexusGUI.FormDropdown("Destination", 10);
+        let options = [...Folder.allFolders()].map(folder =>
+            ({
+                text: folder.name,
+                css: {
+                    color: folder.color
+                }
+            })
+        );
+        options.unshift({
+            text: "default",
+            value: null,
+            css: {
+                fontStyle: "italic"
+            }
+        });
+        folderPrompt.addOption(...options);
+        form.add(namePrompt, folderPrompt);
+        form.add(NexusGUI.FormOKCancel(
+            function (ev, resolve) {
+                resolve({
+                    name: namePrompt.element.find("input").val(),
+                    folder: folderPrompt.element.val()
+                });
+            },
+            () => NexusGUI.closePopup()
+        ));
+        form.popup("Create New Deck").then(async (data) => {
+            if(!data || !data.name) {
                 return;
             }
+            let { name, folder } = data;
             
             if(name.length < 3) {
-                NexusGUI.closePopup();
                 NexusGUI.popup("Error", "Your deck's name must be at least 3 characters.", { style: "minimal" } );
+                return;
             }
             
             if(Deck.usedNames.has(name)) {
@@ -820,9 +885,14 @@ let onStartDeckSorter = async function () {
             }
             
             let deck = await Deck.createNew(name);
+            if(folder) {
+                deck.move(folder);
+            }
             
-            // ensure sorted
+            // ensure sorted and in correct place
             Folder.roster[deck.folder].resetChildren();
+            
+            deck.scrollTo();
         });
     });
     
