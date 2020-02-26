@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CustomNexusGUI API
 // @namespace    https://duelingnexus.com/
-// @version      0.8.1
+// @version      0.9
 // @description  To enable custom GUI elements, such as popups.
 // @author       Sock#3222
 // @grant        none
@@ -33,10 +33,11 @@ const versionCompare = (ver1, ver2) => {
 class NexusForm {
     constructor() {
         this.elements = [];
+        this.content = null;
     }
     
-    add(formElement) {
-        this.elements.push(formElement);
+    add(...formElements) {
+        this.elements.push(...formElements);
     }
     
     popup(title = "Form") {
@@ -52,16 +53,17 @@ class NexusForm {
                 content.append(element);
             }
             
+            this.content = content;
             NexusGUI.popup(title, content).then(() => {
                 resolve();
             });
             
-            console.log("THONK", promises);
+            // console.log("THONK", promises);
             if(promises.length === 0) {
                 // resolve();
                 return;
             }
-            Promise.race(promises).then((...values) => {
+            Promise.race(promises.flat()).then((...values) => {
                 resolve(...values);
                 NexusGUI.closePopup();
             });
@@ -93,11 +95,36 @@ class NexusFormElement {
     
     info() {
         // order here is important; toElement instantiates `this.promise`
-        let element = this.toElement();
+        this.element = this.toElement();
         return {
             promise: this.promise,
-            element: element,
+            element: this.element,
         };
+    }
+}
+
+class NexusFormElementCollection extends NexusFormElement {
+    constructor(...children) {
+        super(null);
+        this.children = children;
+        this.enclosed = false;
+    }
+    
+    enclose(status = true) {
+        this.enclosed = status;
+        return this;
+    }
+    
+    toElement() {
+        let container = $("<div>");
+        // console.log(this.children);
+        container.append(...this.children.map(child => child.toElement()));
+        this.promise = Promise.race(
+            this.children
+                .map(child => child.promise)
+                .filter(child => child !== null)
+        );
+        return this.enclosed ? container : container.children();
     }
 }
 
@@ -146,6 +173,7 @@ class NexusFormButton extends NexusFormElement {
     
     click(cb) {
         this.listeners.push(cb);
+        return this;
     }
     
     removeListener(cb) {
@@ -180,17 +208,19 @@ class NexusFormDropdown extends NexusFormElement {
         this.options = [];
     }
     
-    addOption(option) {
-        let config;
-        if(typeof option === "string") {
-            config = { text: option };
+    addOption(...options) {
+        for(let option of options) {
+            let config;
+            if(typeof option === "string") {
+                config = { text: option };
+            }
+            else {
+                config = option;
+            }
+            config.value = typeof config.value === "undefined" ? config.text : config.value;
+            config.css = config.css || {};
+            this.options.push(config);
         }
-        else {
-            config = option;
-        }
-        config.value = typeof config.value === "undefined" ? config.text : config.value;
-        config.css = config.css || {};
-        this.options.push(config);
     }
     
     simpleElement() {
@@ -512,6 +542,7 @@ const NexusGUI = {
     },
 };
 NexusGUI.FormElement = NexusFormElement;
+NexusGUI.FormElementCollection = NexusFormElementCollection;
 NexusGUI.Form = NexusForm;
 NexusGUI.FormInput = NexusFormInput;
 NexusGUI.FormButton = NexusFormButton;
@@ -519,6 +550,13 @@ NexusGUI.FormDropdown = NexusFormDropdown;
 NexusGUI.FormHTML = NexusFormHTML;
 NexusGUI.FormBreakConstructor = NexusFormBreak;
 NexusGUI.FormBreak = new NexusFormBreak();
+NexusGUI.FormOKCancel = (okfn, cancelfn, separate = true) => {
+    let ok = new NexusGUI.FormButton("OK")
+        .click(okfn);
+    let cancel = new NexusGUI.FormButton("Cancel")
+        .click(cancelfn);
+    return new NexusFormElementCollection(ok, cancel).enclose(separate);
+};
 
 let onLoad = function () {
     NexusGUI.addCSS(NexusGUI.q`
