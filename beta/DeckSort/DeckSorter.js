@@ -627,7 +627,12 @@ let onStartDeckSorter = async function () {
             // return info[0];
         // }
         
+        static unifyName(name) {
+            return name.replace(/^(\[.+?\])(\w)/, "$1 $2");
+        }
+        
         static async createNew(name) {
+            name = Deck.unifyName(name);
             let info = await createDeck(name);
             if(!info.success) {
                 // TODO: better error
@@ -636,7 +641,7 @@ let onStartDeckSorter = async function () {
             let deck = new Deck({ name: name, id: info.id });
             
             let folder = Folder.roster[deck.folder];
-            if(!folder.parent) {
+            if(!folder.container.parent().length) {
                 folder.attachTo(decksContainer);
             }
             folder.resetChildren();
@@ -644,6 +649,7 @@ let onStartDeckSorter = async function () {
         }
         
         static async createNewWithList(name, build) {
+            name = Deck.unifyName(name);
             let info = await createDeckWithContents(name, JSON.stringify(build));
             if(!info.success) {
                 // TODO: better error
@@ -652,7 +658,7 @@ let onStartDeckSorter = async function () {
             let deck = new Deck({ name: name, id: info.id });
             
             let folder = Folder.roster[deck.folder];
-            if(!folder.parent) {
+            if(!folder.container.parent().length) {
                 folder.attachTo(decksContainer);
             }
             folder.resetChildren();
@@ -842,6 +848,7 @@ let onStartDeckSorter = async function () {
     createNewDeck.click(() => {
         let form = new NexusGUI.Form();
         let namePrompt = new NexusGUI.FormInput("Deck Name");
+        // TODO: add "on enter, submit"
         let folderPrompt = new NexusGUI.FormDropdown("Destination", 10);
         let options = [...Folder.allFolders()].map(folder =>
             ({
