@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CustomNexusGUI API
 // @namespace    https://duelingnexus.com/
-// @version      0.7.2
+// @version      0.8.1
 // @description  To enable custom GUI elements, such as popups.
 // @author       Sock#3222
 // @grant        none
@@ -29,6 +29,192 @@ const versionCompare = (ver1, ver2) => {
     }
     return segment1.length - segment2.length;
 };
+
+class NexusForm {
+    constructor() {
+        this.elements = [];
+    }
+    
+    add(formElement) {
+        this.elements.push(formElement);
+    }
+    
+    popup(title = "Form") {
+        return new Promise((resolve, reject) => {
+            let content = $("<div>");
+            let promises = [];
+            
+            for(let el of this.elements) {
+                let { promise, element } = el.info();
+                if(promise) {
+                    promises.push(promise);
+                }
+                content.append(element);
+            }
+            
+            NexusGUI.popup(title, content).then(() => {
+                resolve();
+            });
+            
+            console.log("THONK", promises);
+            if(promises.length === 0) {
+                // resolve();
+                return;
+            }
+            Promise.race(promises).then((...values) => {
+                resolve(...values);
+                NexusGUI.closePopup();
+            });
+        });
+    }
+}
+
+class NexusFormElement {
+    constructor(name) {
+        this.name = name;
+        this.promise = null;
+    }
+    
+    nameElement() {
+        return this.name && $("<b>").text(this.name + ": ");
+    }
+    
+    simpleElement() {
+        // this.promise = null;
+        return $("<span>Uninstantiated NexusFormElement</span>");
+    }
+    
+    toElement() {
+        return $("<div>").append(
+            this.nameElement(),
+            this.simpleElement()
+        );
+    }
+    
+    info() {
+        // order here is important; toElement instantiates `this.promise`
+        let element = this.toElement();
+        return {
+            promise: this.promise,
+            element: element,
+        };
+    }
+}
+
+// freeform
+class NexusFormHTML extends NexusFormElement {
+    constructor(html) {
+        super(null);
+        this.html = html;
+    }
+    
+    toElement() {
+        return $(this.html);
+    }
+}
+
+// line break
+class NexusFormBreak extends NexusFormHTML {
+    constructor(lined = false) {
+        super(document.createElement(lined ? "hr" : "br"));
+    }
+}
+
+class NexusFormInput extends NexusFormElement {
+    constructor(name, type = "text", defaultValue = null) {
+        super(name);
+        this.type = type;
+        this.defaultValue = defaultValue;
+    }
+    
+    simpleElement() {
+        let input = NexusGUI.input(this.type);
+        
+        if(this.defaultValue !== null) {
+            input.val(this.defaultValue);
+        }
+        
+        return input;
+    }
+}
+
+class NexusFormButton extends NexusFormElement {
+    constructor(name) {
+        super(name);
+        this.listeners = [];
+    }
+    
+    click(cb) {
+        this.listeners.push(cb);
+    }
+    
+    removeListener(cb) {
+        let oldListenerCount = this.listeners.length;
+        this.listeners = this.listeners.filter(fn => fn !== cb);
+        return oldListenerCount > this.listeners.length;
+    }
+    
+    simpleElement() {
+        let button = NexusGUI.button(this.name);
+        
+        this.promise = new Promise((resolve, reject) => {
+            button.click((ev) => {
+                for(let cb of this.listeners) {
+                    cb.bind(this)(ev, resolve, reject);
+                }
+            });
+        });
+        
+        return button;
+    }
+    
+    toElement() {
+        return this.simpleElement();
+    }
+}
+
+class NexusFormDropdown extends NexusFormElement {
+    constructor(name, size) {
+        super(name);
+        this.size = size;
+        this.options = [];
+    }
+    
+    addOption(option) {
+        let config;
+        if(typeof option === "string") {
+            config = { text: option };
+        }
+        else {
+            config = option;
+        }
+        config.value = typeof config.value === "undefined" ? config.text : config.value;
+        config.css = config.css || {};
+        this.options.push(config);
+    }
+    
+    simpleElement() {
+        let select = $("<select>");
+        
+        if(typeof this.size !== "undefined") {
+            select.attr("size", this.size.toString());
+        }
+        
+        for(let option of this.options) {
+            let optionElement = $("<option>")
+                .val(option.value)
+                .text(option.text)
+                .css(option.css);
+            select.append(optionElement);
+        }
+        
+        return select;
+    }
+    
+    toElement() {
+        return this.simpleElement();
+    }
+}
 
 const NexusGUI = {
     // loaded: false,
@@ -128,28 +314,7 @@ const NexusGUI = {
         }
     },
     button: (text) => $("<button>").addClass("nexus-gui-button").text(text),
-    Form: class NexusGUIForm {
-        constructor() {
-            this.content = $("<div>");
-        }
-        
-        addInput(type = "text", defaultValue = null) {
-            let input = $("<input>")
-                .attr("type", "text");
-                
-            if(defaultValue !== null) {
-                input.val(defaultValue);
-            }
-            
-            return input;
-        }
-        
-        addDropdown() {
-            
-        }
-        
-        
-    },
+    input: (type) => $("<input>").attr("type", type).addClass(`engine-${type}-box`),
     prompt: function (message, defaultValue = null) {
         let content = $("<div>");
         let input = $("<input type=text>");
@@ -346,6 +511,14 @@ const NexusGUI = {
         NexusGUI.loadScript(url);
     },
 };
+NexusGUI.FormElement = NexusFormElement;
+NexusGUI.Form = NexusForm;
+NexusGUI.FormInput = NexusFormInput;
+NexusGUI.FormButton = NexusFormButton;
+NexusGUI.FormDropdown = NexusFormDropdown;
+NexusGUI.FormHTML = NexusFormHTML;
+NexusGUI.FormBreakConstructor = NexusFormBreak;
+NexusGUI.FormBreak = new NexusFormBreak();
 
 let onLoad = function () {
     NexusGUI.addCSS(NexusGUI.q`
