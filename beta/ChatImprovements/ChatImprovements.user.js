@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Dueling Nexus Chat Improvements Plugin
 // @namespace    https://duelingnexus.com/
-// @version      0.9
+// @version      0.10
 // @description  Revamps the chat and visual features of dueling.
 // @author       Sock#3222
 // @grant        none
@@ -292,6 +292,18 @@ let onload = function () {
     #ci-ext-misc-buttons > button {
         flex-grow: 1;
         flex-basis: 0;
+        margin: 3px;
+        background: #111925;
+        cursor: pointer;
+        transition: background 0.1s linear;
+        border-color: #595e67;
+    }
+    #ci-ext-misc-buttons > button.current {
+        background: #4f1158;
+        border-color: #84598b;
+    }
+    #ci-ext-misc-buttons > button:hover {
+        background: #831c92;
     }
     
     /*#ci-ext-misc-sections > div {
@@ -299,7 +311,13 @@ let onload = function () {
     }*/
     
     #game-container {
-        margin: 16px 16px 0px 16px;
+        /*margin: 16px 16px 0px 16px;*/
+        margin: 0;
+    }
+    #ci-ext-misc {
+        background: rgba(0,0,0,0.3);
+        border-right: 1px solid #9b9c9e;
+        padding-top: 8px;
     }
     
     .popup-card-preview:hover {
@@ -327,8 +345,11 @@ let onload = function () {
     }
     #ci-ext-chat-container {
         width: 100%;
+        border-top: 1px solid #9b9c9e;
+        padding-top: 8px;
+        padding-bottom: 8px;
     }
-    #ci-ext-chat-container td {
+    #ci-ext-chat-table td {
         padding: 0;
     }
     
@@ -340,6 +361,44 @@ let onload = function () {
     #game-player-name, #game-opponent-name {
         background: black;
         padding: 0px;
+    }
+    
+    #ci-ext-chat-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    #game-chat-textbox {
+        border-radius: 6px 0 0 6px !important;
+        padding-right: 0;
+    }
+    #game-chat-textbox, #ci-ext-chat-buttons-cell > button {
+        background: #111925;
+        border-color: #595e67;
+    }
+    #ci-ext-chat-buttons-cell > button {
+        border-left: none;
+        cursor: pointer;
+        transition: background 0.1s linear;
+    }
+    #ci-ext-chat-buttons-cell > button:hover {
+        background: #4b6ea3;
+    }
+    #ci-ext-button-clear-chat {
+        border-radius: 0 6px 6px 0;
+    }
+    #ci-ext-button-minimize-chat.toggled {
+        border-radius: 6px 0 0 6px;
+        border-left: 1px solid #595e67;
+        margin-left: -1px;
+        background: #2a3e5c;
+    }
+    #game-field {
+        margin-top: 12px;
+        margin-left: 7px;
+    }
+    #card-description-box {
+        background: #111925 !important;
+        border: 1px solid #595e67 !important;
     }
     </style>`));
     
@@ -456,6 +515,15 @@ let onload = function () {
     popupLocation.currentLocation = null;
     ChatImprovements.popupLocation = popupLocation;
     
+    const cancelSelection = () => {
+        if(NexusGUI.isPopupOpen) {
+            NexusGUI.closePopup();
+        }
+        else {
+            Game.cancelSelection();
+        }
+    };
+    
     ChatImprovements.KeyModifiers = {};
     $(window).keydown((ev) => {
         switch(ev.originalEvent.key) {
@@ -489,7 +557,7 @@ let onload = function () {
                 break;
             // binds
             case ChatImprovements.keybinds.cancelSelection.key:
-                Game.cancelSelection();
+                cancelSelection();
                 break;
             case ChatImprovements.keybinds.showYourGY.key:
                 popupLocation(PLAYERS.YOU, LOCATIONS.GY);
@@ -1242,24 +1310,30 @@ let onload = function () {
     let miscSectionButtons = $("<div id=ci-ext-misc-buttons>");
     
     // moved earlier for hideMiscBut
-    let minimizeToggle = $("<button class=engine-button title=minimize>➖</button>")
+    let minimizeToggle = $("<button id=ci-ext-button-minimize-chat class=engine-button title=minimize>➖</button>")
         .data("toggled", false)
         .click(function () {
             let toggled = $(this).data("toggled");
             gameChatContent.toggle(toggled);
             gameChatTextbox.toggle(toggled);
             toggled = !toggled;
-            $(this).data("toggled", toggled);
+            $(this).data("toggled", toggled)
+                   .toggleClass("toggled", toggled);
             scrollToBottom(gameChatContent);
         });
     
-    let clearChatButton = $("<button class=engine-button title='clear chat'>🗑️</button>")
+    let clearChatButton = $("<button id=ci-ext-button-clear-chat class=engine-button title='clear chat'>🗑️</button>")
         .click(function() {
             gameChatContent.empty();
         });
     
     const hideMiscBut = function (but) {
         return function (ev) {
+            for(let el of miscSectionButtons.children()) {
+                $(el).toggleClass("current", false);
+            }
+            $(this).toggleClass("current", true);
+            
             for(let child of miscSections.children()) {
                 let isVisible = child.id === but;
                 $(child).toggle(isVisible);
@@ -1272,7 +1346,7 @@ let onload = function () {
     };
     
     // button toggles for sections
-    let showCardColumn = $("<button id=ci-ext-show-card-column class=engine-button>Card Info</button>");
+    let showCardColumn = $("<button id=ci-ext-show-card-column class='engine-button current'>Card Info</button>");
     let showChatLog = $("<button id=ci-ext-show-chat-log class=engine-button>Chat Log</button>");
     let showEventLog = $("<button id=ci-ext-show-event-log class=engine-button>Event Log</button>");
     let showOptions = $("<button id=ci-ext-show-options class=engine-button>Options</button>");
@@ -1296,8 +1370,8 @@ let onload = function () {
     miscContainer.append(miscSections);
     
     // update ui
-    let chatContainer = $("<table id=ci-ext-chat-container>");
-    miscContainer.append(chatContainer);
+    let chatContainer = $("<table id=ci-ext-chat-table>");
+    miscContainer.append($("<div id=ci-ext-chat-container>").append(chatContainer));
     
     waitForElementJQuery("#ci-ext-misc-sections:visible").then(function () {
         gameChatArea.toggle(false);
@@ -1542,7 +1616,7 @@ let onload = function () {
     let updateColumnHeight = function () {
         let diffHeight = getBaseHeight() - chatContainer.height();
         $("#ci-ext-misc-sections > div").css("height",
-            roundTo(diffHeight)
+            roundTo(diffHeight) - 8
         );
     };
     
@@ -1562,11 +1636,12 @@ let onload = function () {
             roundTo(getBaseHeight())
         );
         
-        
         a = 4 <= Game.masterRule ? 7 : 6;
         var b =
-            $(window).width() - $("#ci-ext-misc-sections > div").width() - 50,
-            c = $(window).height() - $("#game-chat-area").height() - 8 - 48;
+            $(window).width() - $("#ci-ext-misc-sections > div:visible").width()//- 50,
+            c = $(window).height();
+        
+        
         
         if(9 * c / a < b) {
             $("#game-field").css("height", c + "px");
@@ -1786,6 +1861,7 @@ let onload = function () {
         // swapSound("draw", "https://freesound.org/people/kila_vat/sounds/434379/download/434379__kila-vat__notification-sound-handmade.mp3");
         // swapSound("activate", "https://freesound.org/people/Headphaze/sounds/277031/download/277031__headphaze__ui-completed-status-alert-notification-sfx003.wav");
     }
+    setTimeout(() => $(window).resize(), 200);
 };
 
 waitForElementJQuery("#game-room-container:visible, #game-field:visible").then(() => {
