@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Dueling Nexus Chat Improvements Plugin
 // @namespace    https://duelingnexus.com/
-// @version      0.10
+// @version      0.10.1
 // @description  Revamps the chat and visual features of dueling.
 // @author       Sock#3222
 // @grant        none
@@ -399,6 +399,10 @@ let onload = function () {
     #card-description-box {
         background: #111925 !important;
         border: 1px solid #595e67 !important;
+    }
+    html {
+        background: url(https://cdn.discordapp.com/attachments/486534021992677378/683119685407211556/20201002_-_DN_-_TEMP_BG_-_v1-1.jpg) no-repeat 50% fixed !important;    
+        background-size: 100% 100% !important;
     }
     </style>`));
     
