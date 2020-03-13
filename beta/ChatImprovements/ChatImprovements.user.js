@@ -158,6 +158,9 @@ let defaultProperties = {
         showHand: {
             key: "8",
         },
+        textify: {
+            key: "t",
+        },
         invokeSequence: {
             key: "j",
         },
@@ -499,6 +502,7 @@ let onload = function () {
                 .attr("height", Game.cardHeight + "px")
                 .attr("class", "popup-card-preview")
                 .hover(() => Engine.ui.setCardInfo(code));
+            img.data("card", card);
             content.append(img);
         }
         if(content.children().length === 0) {
@@ -516,8 +520,20 @@ let onload = function () {
             popupLocation.currentLocation = null;
         });
     };
+    
     popupLocation.currentLocation = null;
     ChatImprovements.popupLocation = popupLocation;
+    
+    const textifySelection = () => {
+        if(NexusGUI.isPopupOpen) {
+            [...NexusGUI._popupElements.content.find("img.popup-card-preview")].map(img => {
+                let el = $(img);
+                let card = Engine.database.cards[el.data("card").code];
+                let name = card ? card.name : "Face-down card";
+                el.replaceWith($("<div>").text(name));
+            });
+        }
+    };
     
     const cancelSelection = () => {
         if(NexusGUI.isPopupOpen) {
@@ -542,6 +558,7 @@ let onload = function () {
                 break;
         }
     });
+    
     /* keybinds */
     $(window).keyup((ev) => {
         let target = $(ev.target);
@@ -562,6 +579,9 @@ let onload = function () {
             // binds
             case ChatImprovements.keybinds.cancelSelection.key:
                 cancelSelection();
+                break;
+            case ChatImprovements.keybinds.textify.key:
+                textifySelection();
                 break;
             case ChatImprovements.keybinds.showYourGY.key:
                 popupLocation(PLAYERS.YOU, LOCATIONS.GY);
@@ -1395,6 +1415,7 @@ let onload = function () {
                 )
             )
         );
+        $(window).resize();
     });
     
     // listeners[type] = [...];
