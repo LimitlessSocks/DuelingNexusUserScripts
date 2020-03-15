@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.16.1
+// @version      0.16.2
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -725,6 +725,10 @@ let onStart = function () {
         }
         #rs-ext-menu-expand:hover {
             background: rgba(60, 180, 60, 0.6);
+        }
+    
+        textarea {
+            font-family: "Consolas", monospace;
         }
     `;
     
@@ -1788,8 +1792,25 @@ let onStart = function () {
     
     exportRawButton.click(function () {
         let message = outputDeck();
-        download(message, Deck.name + ".txt", "text");
+        let content = $("<div>");
+        let textarea = $("<textarea spellcheck=false>")
+            .text(message)
+            .css("min-width", "95%")
+            .css("min-height", "20em")
+            .css("color", "white")
+            .css("background-color", "#172132")
+            .css("padding", "8px")
+            .css("border", "1px solid #2a3e5c");
+        let downloadButton = NexusGUI.button("Download");
+        downloadButton.click(() => download(message, Deck.name + ".txt", "text"));
+        content.append(textarea, downloadButton);
+        NexusGUI.popup("Deck Contents", content);
+        textarea.select();
+        textarea.scrollTop();
     });
+    
+    let deckStatitsticsButton = makeElement("button", "rs-ext-show-statistics", "Statistics");
+    
     
     let helpButton = makeElement("button", "rs-ext-show-help", "Help");
     helpButton.prop("classList").add("engine-button", "engine-button", "engine-button-default", "engine-button-navbar");
