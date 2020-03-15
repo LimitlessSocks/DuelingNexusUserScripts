@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CustomNexusGUI API
 // @namespace    https://duelingnexus.com/
-// @version      0.9
+// @version      0.10
 // @description  To enable custom GUI elements, such as popups.
 // @author       Sock#3222
 // @grant        none
@@ -281,11 +281,14 @@ const NexusGUI = {
             }
         }
         
-        elements.popupWrapper = $("<div id='nexus-gui-popup-wrapper'><div id='nexus-gui-popup-background'></div><div id='nexus-gui-popup'><h2 id='nexus-gui-popup-title'></h2><div id='nexus-gui-popup-content'>WOOOOO</div></div></div>");
+        elements.popupWrapper = $("<div id='nexus-gui-popup-wrapper'><div id='nexus-gui-popup-background'></div><div id='nexus-gui-popup'><h2 id='nexus-gui-popup-title'></h2><button id='nexus-gui-close-button'>X</button><div id='nexus-gui-popup-content'>WOOOOO</div></div></div>");
         elements.popup = elements.popupWrapper.find("#nexus-gui-popup");
         elements.background = elements.popupWrapper.find("#nexus-gui-popup-background");
         elements.title = elements.popupWrapper.find("#nexus-gui-popup-title");
         elements.content = elements.popupWrapper.find("#nexus-gui-popup-content");
+        elements.closeButton = elements.popupWrapper.find("#nexus-gui-close-button");
+        
+        elements.closeButton.click(() => NexusGUI.closePopup());
         
         // elements.background.click(function () {
             // elements.popupWrapper.toggle(false);
@@ -476,6 +479,7 @@ const NexusGUI = {
     paginatedPopup: function (title, pages) {
         let content = $("<div>");
         let current = $("<p>");
+        let pageContainer = $("<div class=nexus-gui-page-container>");
         let previousPage = NexusGUI.button("<");
         let pagePreview = $("<span></span>");
         let nextPage = NexusGUI.button(">");
@@ -492,6 +496,9 @@ const NexusGUI = {
             
             pagePreview.text((currentPage + 1) + " / " + pages.length);
             
+            // hide if only 1 page
+            pageContainer.toggle(pages.length !== 1);
+            
             current.text(pages[currentPage]);
         };
         
@@ -507,7 +514,6 @@ const NexusGUI = {
             update();
         });
         
-        let pageContainer = $("<div class=nexus-gui-page-container>");
         pageContainer.append(previousPage, pagePreview, nextPage);
         
         content.append(current);
@@ -629,6 +635,18 @@ let onLoad = function () {
             margin: 0;
             margin-bottom: 0.2em;
             border-bottom: 1px #7A7A7A;
+        }
+        #nexus-gui-close-button {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: #8c281b;
+            color: white;
+            border: 1px solid #701f14;
+            cursor: pointer;
+        }
+        #nexus-gui-close-button:hover {
+            background: #d73d29;
         }
         .nexus-gui-danger-button {
             background: rgba(255, 107, 107, 0.8);
