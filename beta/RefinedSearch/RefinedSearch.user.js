@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.16.2
+// @version      0.16.3
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -729,6 +729,29 @@ let onStart = function () {
     
         textarea {
             font-family: "Consolas", monospace;
+        }
+        
+        #rs-ext-overflow-menu {
+            position: fixed;
+            top: 51px;
+            right: 0;
+            width: 25%;
+            background: rgba(0, 0, 0, 0.6);
+            height: 100%;
+            transition:
+                right 0.2s,
+                background 0.2s;
+        }
+        #rs-ext-overflow-menu:hover {
+            background: rgba(0, 0, 0, 0.8);
+        }
+        #rs-ext-overflow-menu button {
+            display: block;
+            margin: 15px;
+        }
+        
+        #editor-menu-content button {
+            margin-right: 5px;
         }
     `;
     
@@ -1608,9 +1631,16 @@ let onStart = function () {
     let editorMenuContent = $("#editor-menu-content");
     let saveButton = $("#editor-save-button");
     
-    // remove annoying spacer
-    
+    // remove annoying spacers
     $("#editor-menu-spacer").toggle(false);
+    
+    $("#editor-menu-content")
+        .contents()
+        .filter(function() {
+            return this.nodeType === 3; //Node.TEXT_NODE
+        })
+        .detach();
+    
     
     const banlistSelector = makeElement("select", "rs-ext-banlist"); // used later
     
@@ -1750,7 +1780,6 @@ let onStart = function () {
     
     let undoButton = makeElement("button", "rs-ext-editor-export-button", "Undo");
     undoButton.prop("classList").add("engine-button", "engine-button", "engine-button-default", "engine-button-navbar");
-    editorMenuContent.append(" ");
     editorMenuContent.append(undoButton);
     undoButton.attr("disabled", true);
     
@@ -1758,7 +1787,6 @@ let onStart = function () {
     
     let redoButton = makeElement("button", "rs-ext-editor-export-button", "Redo");
     redoButton.prop("classList").add("engine-button", "engine-button", "engine-button-default", "engine-button-navbar");
-    editorMenuContent.append(" ");
     editorMenuContent.append(redoButton);
     redoButton.attr("disabled", true);
     
@@ -1767,7 +1795,6 @@ let onStart = function () {
     let exportButton = makeElement("button", "rs-ext-editor-export-button", "Export .ydk");
     exportButton.prop("classList").add("engine-button", "engine-button", "engine-button-default", "engine-button-navbar");
     exportButton.title = "Export Saved Version of Deck";
-    editorMenuContent.append(" ");
     editorMenuContent.append(exportButton);
     
     exportButton.click(function () {
@@ -1787,7 +1814,6 @@ let onStart = function () {
     let exportRawButton = makeElement("button", "rs-ext-editor-export-button", "Export Readable");
     exportRawButton.prop("classList").add("engine-button", "engine-button", "engine-button-default", "engine-button-navbar");
     exportRawButton.title = "Export Human Readable Version of Deck";
-    editorMenuContent.append(" ");
     editorMenuContent.append(exportRawButton);
     
     exportRawButton.click(function () {
@@ -1814,7 +1840,6 @@ let onStart = function () {
     
     let helpButton = makeElement("button", "rs-ext-show-help", "Help");
     helpButton.prop("classList").add("engine-button", "engine-button", "engine-button-default", "engine-button-navbar");
-    editorMenuContent.append(" ");
     editorMenuContent.append(helpButton);
     
     class Page {
@@ -2866,11 +2891,30 @@ let onStart = function () {
     
     // hamburger menu
     $(window).off("resize");
-    // let menu = $("<div>");
     let menuButton = $("<button id=rs-ext-menu-expand>Ξ</button>")
         .addClass("engine-button engine-button-navbar engine-button-default");
-    // menuButton.toggle(false);
+    
     $("#editor-menu-container").append(menuButton);
+    
+    let overflowMenu = $("<div id=rs-ext-overflow-menu></div>");
+    overflowMenu.css("right", "-25%");
+    overflowMenu.data("hidden", true);
+    
+    const toggleOverflowMenu = (hide = !overflowMenu.data("hidden")) => {
+        if(hide) {
+            overflowMenu.css("right", "-25%");
+        }
+        else {
+            overflowMenu.css("right", "0%");
+        }
+        overflowMenu.data("hidden", hide);
+    };
+    
+    $("body").append(overflowMenu);
+    
+    menuButton.click(() => {
+        toggleOverflowMenu();
+    });
     
     // menuButton.css("opacity", 0);
     
@@ -2885,15 +2929,21 @@ let onStart = function () {
             if(visibileChildren.length === 0) {
                 break;
             }
-            visibileChildren.last().toggle(false);
+            let child = visibileChildren.last();
+            child.detach();
+            overflowMenu.prepend(child);
             unchanged = false;
         }
         
-        menuButton.toggle(editorMenuContent.children("button:hidden").length !== 0);
+        let hasOverflow = overflowMenu.children("button").length !== 0;
+        menuButton.toggle(hasOverflow);
+        if(!hasOverflow) {
+            toggleOverflowMenu(true);
+        }
         
         if(unchanged) {
             do {
-                let hiddenChildren = editorMenuContent.children("button:hidden");
+                let hiddenChildren = overflowMenu.children("button");
                 if(hiddenChildren.length === 0) {
                     break;
                 }
@@ -2901,7 +2951,10 @@ let onStart = function () {
                 if(candidate.outerWidth() + editorMenuContent.outerWidth() > maxWidth) {
                     break;
                 }
-                candidate.toggle(true);
+                console.log(candidate.outerWidth(), editorMenuContent.outerWidth(), maxWidth);
+                // candidate.toggle(true);
+                candidate.detach();
+                editorMenuContent.append(candidate);
             } while(true);
         }
     };
