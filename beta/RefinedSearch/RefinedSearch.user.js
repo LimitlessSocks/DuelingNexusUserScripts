@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.16.3
+// @version      0.17
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -749,9 +749,18 @@ let onStart = function () {
             display: block;
             margin: 15px;
         }
-        
+        #editor-decks-column {
+            overflow-y: auto;
+        }
+        #card-column, #editor-decks-column, #editor-search-column {
+            position: relative;
+        }
         #editor-menu-content button {
             margin-right: 5px;
+        }
+        #editor-menu-container {
+            position: relative;
+            z-index: 1;
         }
     `;
     
@@ -2960,11 +2969,124 @@ let onStart = function () {
     };
     
     augmentFunction(Editor, "updateSizes", function (a) {
-        // offloadHamburgerMenuIfNecessary();
+        var a = $("#editor-decks-column").position().top;
+        const offset = 25;
+        $("#card-column").css("max-height", $(window).height() - a - offset);
+        $("#editor-decks-column").css("max-height", $(window).height() -
+            a - offset);
+        $("#editor-search-column").css("max-height", $(window).height() - a - offset);
         calculateSize();
     });
     $(window).resize(Editor.updateSizes);
     Editor.updateSizes();
+    
+    const HIDE_DURATION = 200;
+    const cardColumn = $("#card-column");
+    const editorSearchColumn = $("#editor-search-column");
+    const editorColumn = $("#editor-decks-column");
+    let editorColumnWidth = 40;
+    const hideMainTab = (element, originalWidth) => new Promise((resolve, reject) => {
+        editorColumnWidth += originalWidth;
+        element.animate({
+            width: "0%",
+        }, {
+            step: () => $(window).resize(),
+            duration: HIDE_DURATION,
+            complete: () => {
+                element.toggle(false);
+                editorColumn.animate({
+                    width: `${editorColumnWidth}%`
+                }, {
+                    duration: HIDE_DURATION,
+                    step: () => $(window).resize(),
+                    complete: () => {
+                        resolve();
+                        $(window).resize();
+                    },
+                });
+            }
+        });
+    });
+    const showMainTab = (element, originalWidth) => new Promise((resolve, reject) => {
+        editorColumnWidth -= originalWidth;
+        editorColumn.animate({
+            width: `${editorColumnWidth}%`,
+        }, {
+            duration: HIDE_DURATION,
+            step: () => $(window).resize(),
+            complete: () => {
+                element.toggle(true);
+                element.animate({
+                    width: `${originalWidth}%`,
+                }, {
+                step: () => $(window).resize(),
+                    duration: HIDE_DURATION,
+                    complete: () => {
+                        resolve();
+                        $(window).resize();
+                    },
+                });
+            },
+        });
+    });
+    editorColumn.scroll(() => updateBanlist());
+    window.updateBanlist=updateBanlist;
+    
+    const setupButton = (button, container, width) => {
+        let hidden = false;
+        let invertTextAndDirection = () => {
+            let newText = button.text() === "<<" ? ">>" : "<<";
+            button.text(newText);
+            if(button[0].style.right) {
+                button.css("left", "5px");
+                button.css("right", "");
+            }
+            else {
+                button.css("right", "5px");
+                button.css("left", "");
+            }
+        };
+        button.click(() => {
+            if(hidden) {
+                showMainTab(container, width).then(() => {
+                    button.detach();
+                    container.append(button);
+                    invertTextAndDirection();
+                });
+            }
+            else {
+                hideMainTab(container, width).then(() => {
+                    button.detach();
+                    editorColumn.append(button);
+                    invertTextAndDirection();
+                });
+            }
+            hidden = !hidden;
+        });
+    };
+    
+    // editorColumn.scroll(() => $(window).resize());
+    
+    let cardColumnMinimize = NexusGUI.button("<<");
+    cardColumnMinimize.css({
+        position: "absolute",
+        top: "5px",
+        right: "5px",
+    });
+    setupButton(cardColumnMinimize, cardColumn, 25);
+    cardColumn.append(cardColumnMinimize);
+    
+    let editorSearchColumnMinimize = NexusGUI.button(">>");
+    editorSearchColumnMinimize.css({
+        position: "absolute",
+        top: "5px",
+        left: "5px",
+    });
+    setupButton(editorSearchColumnMinimize, editorSearchColumn, 35);
+    editorSearchColumn.append(editorSearchColumnMinimize);
+    
+    window.hideMainTab = hideMainTab;
+    window.showMainTab = showMainTab;
     
     // extension ready
     EDIT_API_READY = true;
