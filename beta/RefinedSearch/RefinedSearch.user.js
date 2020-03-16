@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.17
+// @version      0.17.1
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -2950,6 +2950,8 @@ let onStart = function () {
             toggleOverflowMenu(true);
         }
         
+        // console.log("unchanged?", unchanged);
+        
         if(unchanged) {
             do {
                 let hiddenChildren = overflowMenu.children("button");
@@ -2977,7 +2979,11 @@ let onStart = function () {
         $("#editor-search-column").css("max-height", $(window).height() - a - offset);
         calculateSize();
     });
-    $(window).resize(Editor.updateSizes);
+    
+    $(window).resize(() => {
+        // console.log("resizing");
+        Editor.updateSizes();
+    });
     Editor.updateSizes();
     
     const HIDE_DURATION = 200;
