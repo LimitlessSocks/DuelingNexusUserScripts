@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.17.1
+// @version      0.18.0
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -42,6 +42,10 @@ const EXT = {
                 }
             });
         }
+    },
+    // contents defined later
+    STATISTICS_API: {
+        
     }
 };
 window.EXT = EXT;
@@ -282,16 +286,31 @@ let onStart = function () {
     
     const ADVANCED_SETTINGS_HTML_STRING = `
         <div id=rs-ext-advanced-search-bar>
-          <button id=rs-ext-monster-toggle class="engine-button engine-button-default">monster</button><button id=rs-ext-spell-toggle class="engine-button engine-button-default">spell</button><button id=rs-ext-trap-toggle class="engine-button engine-button-default">trap</button>
-          <button id=rs-ext-sort-toggle class="engine-button engine-button-default rs-ext-right-float">sort</button>
-          <button id=rs-ext-clear-filter class="engine-button engine-button-default engine-button-danger rs-ext-right-float">clear filter</button>
+          <button id=rs-ext-monster-toggle class="engine-button engine-button-default">Monster</button><button id=rs-ext-spell-toggle class="engine-button engine-button-default">Spell</button><button id=rs-ext-trap-toggle class="engine-button engine-button-default">Trap</button>
+          <button id=rs-ext-general-toggle class="engine-button engine-button-default rs-ext-right-float">General</button>
+          <button id=rs-ext-clear-filter class="engine-button engine-button-default engine-button-danger rs-ext-right-float">Clear Filter</button>
           <div id=rs-ext-advanced-pop-outs>
-            <div id=rs-ext-sort class="rs-ext-shrinkable rs-ext-shrunk">
-              <table id=rs-ext-sort-table class=rs-ext-table>
+            <div id=rs-ext-general class="rs-ext-shrinkable rs-ext-shrunk">
+              <table id=rs-ext-general-table class=rs-ext-table>
+                <tr>
+                  <th>Limit</th>
+                  <td><input class=rs-ext-input id=rs-ext-general-limit></td>
+                </tr>
+                <tr>
+                  <th>Cardpool</th>
+                  <td>
+                    <select class=rs-ext-input id=rs-ext-general-cardpool>
+                      <option value=""></option>
+                      <option value=3>TCG/OCG</option>
+                      <option value=2>TCG</option>
+                      <option value=1>OCG</option>
+                    </select>
+                  </td>
+                </tr>
                 <tr>
                   <th>Sort By</th>
                   <td>
-                    <select class=rs-ext-input id=rs-ext-sort-by>
+                    <select class=rs-ext-input id=rs-ext-general-by>
                       <option>Name</option>
                       <option>Level</option>
                       <option>ATK</option>
@@ -302,7 +321,7 @@ let onStart = function () {
                 <tr>
                   <th>Sort Order</th>
                   <td>
-                    <select class=rs-ext-input id=rs-ext-sort-order>
+                    <select class=rs-ext-input id=rs-ext-general-order>
                       <option>Ascending</option>
                       <option>Descending</option>
                     </select>
@@ -310,7 +329,7 @@ let onStart = function () {
                 </tr>
                 <tr>
                   <th>Stratify?</th>
-                  <td><input type=checkbox id=rs-ext-sort-stratify checked></td>
+                  <td><input type=checkbox id=rs-ext-general-stratify checked></td>
                 </tr>
               </table>
             </div>
@@ -330,10 +349,6 @@ let onStart = function () {
                     </select>
                   </td>
                 </tr>
-                <tr>
-                  <th>Limit</th>
-                  <td><input class=rs-ext-input id=rs-ext-spell-limit></td>
-                </tr>
               </table>
             </div>
             <div id=rs-ext-trap class="rs-ext-shrinkable rs-ext-shrunk">
@@ -348,10 +363,6 @@ let onStart = function () {
                       <option>Counter</option>
                     </select>
                   </td>
-                </tr>
-                <tr>
-                  <th>Limit</th>
-                  <td><input class=rs-ext-input id=rs-ext-trap-limit></td>
                 </tr>
               </table>
             </div>
@@ -465,10 +476,6 @@ let onStart = function () {
                     </td>
                   </tr>
                   <tr>
-                    <th>Limit</th>
-                    <td><input class=rs-ext-input id=rs-ext-monster-limit></td>
-                  </tr>
-                  <tr>
                     <th>Level/Rank/Link Rating</th>
                     <td><input class=rs-ext-input id=rs-ext-level></td>
                   </tr>
@@ -549,7 +556,7 @@ let onStart = function () {
         #rs-ext-monster,
         #rs-ext-spell,
         #rs-ext-trap,
-        #rs-ext-sort {
+        #rs-ext-general {
             background: rgba(0, 0, 0, .7)
         }
 
@@ -569,7 +576,7 @@ let onStart = function () {
         }
 
         #rs-ext-monster-table th,
-        #rs-ext-sort-table th {
+        #rs-ext-general-table th {
             text-align: right
         }
 
@@ -582,7 +589,7 @@ let onStart = function () {
             transition: height .3s ease-out
         }
 
-        #rs-ext-sort {
+        #rs-ext-general {
             transition-property: top, transform
         }
 
@@ -1244,7 +1251,7 @@ let onStart = function () {
                 window.URL.revokeObjectURL(url);  
             }, 0); 
         }
-    }
+    };
     
     /* TODO: allow larger deck sizes */
     
@@ -1405,7 +1412,7 @@ let onStart = function () {
             extra: mapIDs(Editor.extra, useAlias),
             side: mapIDs(Editor.side, useAlias),
         };
-    }
+    };
     const clearLocation = function (location) {
         while(Editor[location].length) {
             EXT.EDIT_API.removeCardSilent(location, 0);
@@ -1611,7 +1618,7 @@ let onStart = function () {
     // code for Export readable
     const countIn = function (arr, el) {
         return arr.filter(e => e === el).length;
-    }
+    };
 
     const cardNamesInDeck = function (el) {
         let names = [...el.children()].map(e =>
@@ -1845,7 +1852,119 @@ let onStart = function () {
     });
     
     let deckStatitsticsButton = makeElement("button", "rs-ext-show-statistics", "Statistics");
+    deckStatitsticsButton.prop("classList").add("engine-button", "engine-button", "engine-button-default", "engine-button-navbar");
+    editorMenuContent.append(deckStatitsticsButton);
     
+    EXT.STATISTICS_API.deckInfos = [];
+    const registerInformation = function (position, fn) {
+        EXT.STATISTICS_API.deckInfos.push(fn);
+    };
+    const renderInformation = function () {
+        let content = $("<div>");
+        let deck = currentDeckState();
+        for(let info of EXT.STATISTICS_API.deckInfos) {
+            let res = info(deck);
+            if(typeof res === "string") {
+                res = $("<p>").text(res);
+            }
+            content.append(res);
+        }
+        NexusGUI.popup("Deck Statistics", content);
+    };
+    const arrayMake = (n, fill = 0) => {
+        let arr = [];
+        while(n --> 0) {
+            arr[n] = fill;
+        }
+        return arr;
+    };
+    const countFulfulling = (arr, ...fns) => {
+        let counts = arrayMake(fns.length);
+        for(let el of arr) {
+            fns.forEach((fn, i) => {
+                if(fn(el)) {
+                    counts[i]++;
+                }
+            });
+        }
+        return counts.length === 1 ? counts[0] : counts;
+    };
+    
+    class Breakdown {
+        constructor(types) {
+            this.types = types;
+            this.names = types.map(e => e[0]);
+            this.fns   = types.map(e => e[1]);
+        }
+        
+        composition(arr) {
+            let res;
+            if(Array.isArray(arr)) {
+                res = arr;
+            }
+            else {
+                res = [];
+                for(let val of Object.values(arr)) {
+                    res.push(...val);
+                }
+            }
+            res = res.map(Engine.getCardData);
+            
+            let counts = countFulfulling(res, ...this.fns);
+            let map = this.names.map((type, i) => `${type}: ${counts[i]}`);
+            return map;
+        }
+    }
+    Breakdown.Basic = new Breakdown([
+        ["Monster", isMonster],
+        ["Spell",   isSpellCard],
+        ["Trap",    isTrapCard],
+    ]);
+    Breakdown.MainMonster = new Breakdown([
+        ["Normal",      isNormalMonster],
+        ["Effect",      (card) => isEffectMonster(card) && !isRitualMonster(card) && !isPendulumMonster(card)],
+        ["Ritual",      isRitualMonster],
+        ["Pendulum",    isPendulumMonster],
+    ]);
+    Breakdown.ExtraDeck = new Breakdown([
+        ["Fusion",      isFusionMonster],
+        ["Synchro",     isSynchroMonster],
+        ["Xyz",         isXyzMonster],
+        ["Link",        isLinkMonster],
+    ]);
+    Breakdown.SideDeck = new Breakdown([
+        ["Spell",       isSpellCard],
+        ["Trap",        isTrapCard],
+        ["Monster",     (card) => isMonster(card) && !isExtraDeckMonster(card)],
+        ["Extra Deck",  isExtraDeckMonster],
+    ]);
+    Breakdown.SideDeck = new Breakdown([
+        ["Spell",       isSpellCard],
+        ["Trap",        isTrapCard],
+        ["Monster",     (card) => isMonster(card) && !isExtraDeckMonster(card)],
+        ["Extra Deck",  isExtraDeckMonster],
+    ]);
+    Breakdown.LimitStatus = new Breakdown([
+        ["Unlimited",       (card) => allowedCount(card) === 3],
+        ["Semi-limited",    (card) => allowedCount(card) === 2],
+        ["Limited",         (card) => allowedCount(card) === 1],
+        ["Banned",          (card) => allowedCount(card) === 0],
+    ]);
+    EXT.STATISTICS_API.Breakdown = Breakdown;
+    
+    registerInformation(null, (deck) => `Cards in main deck: ${deck.main.length}`);
+    registerInformation(null, (deck) => Breakdown.Basic.composition(deck.main).join(", "));
+    registerInformation(null, (deck) => Breakdown.MainMonster.composition(deck.main).join(", "));
+    registerInformation(null, (deck) => `Cards in extra deck: ${deck.extra.length}`);
+    registerInformation(null, (deck) => Breakdown.ExtraDeck.composition(deck.extra).join(", "));
+    registerInformation(null, (deck) => `Cards in side deck: ${deck.side.length}`);
+    registerInformation(null, (deck) => Breakdown.SideDeck.composition(deck.side).join(", "));
+    registerInformation(null, (deck) => Breakdown.LimitStatus.composition(deck).map(e => $("<p>").text(e)));
+    
+    EXT.STATISTICS_API.registerInformation = registerInformation;
+    EXT.STATISTICS_API.renderInformation = renderInformation;
+    
+    deckStatitsticsButton.click(renderInformation);
     
     let helpButton = makeElement("button", "rs-ext-show-help", "Help");
     helpButton.prop("classList").add("engine-button", "engine-button", "engine-button-default", "engine-button-navbar");
@@ -1952,7 +2071,7 @@ let onStart = function () {
     
     // todo: finish
     let addRandomCardButton = $("<button id=rs-ext-add-random-card class='engine-button engine-button-default'>")
-        .text("Random card")
+        .text("Random Card")
         .attr("title", "Ech Button");
     
     addRandomCardButton.click(() => {
@@ -2025,7 +2144,7 @@ let onStart = function () {
     let monsterTab = $("#rs-ext-monster");
     let spellTab = $("#rs-ext-spell");
     let trapTab = $("#rs-ext-trap");
-    let sortTab = $("#rs-ext-sort");
+    let sortTab = $("#rs-ext-general");
     
     let spacer = $("#rs-ext-spacer");
     
@@ -2066,7 +2185,7 @@ let onStart = function () {
         .click(createToggleOtherListener(trapTab,    monsterTab, spellTab));
     
     
-    $("#rs-ext-sort-toggle").click(() => {
+    $("#rs-ext-general-toggle").click(() => {
         toggleShrinkable(sortTab);
     });
     
@@ -2138,7 +2257,6 @@ let onStart = function () {
         ATTRIBUTE:  $("#rs-ext-monster-attribute"),
         LEVEL:      $("#rs-ext-level"),
         SCALE:      $("#rs-ext-scale"),
-        LIMIT:      $("#rs-ext-monster-limit"),
         ATK:        $("#rs-ext-atk"),
         DEF:        $("#rs-ext-def"),
         CATEGORY:   $("#rs-ext-monster-category"),
@@ -2152,7 +2270,6 @@ let onStart = function () {
         ATK: "ATK",
         DEF: "DEF",
         SCALE: "SCALE",
-        LIMIT: "LIMIT",
     };
     const CATEGORY_TO_KEYWORD = {
         // primary
@@ -2229,9 +2346,7 @@ let onStart = function () {
     
     const SPELL_TRAP_INPUTS = {
         SPELL:       $("#rs-ext-spell-type"),
-        SPELL_LIMIT: $("#rs-ext-spell-limit"),
         TRAP:        $("#rs-ext-trap-type"),
-        TRAP_LIMIT:  $("#rs-ext-trap-limit"),
     };
     const SPELL_TO_KEYWORD = {
         "Normal": "NORMALST",
@@ -2248,11 +2363,6 @@ let onStart = function () {
         if(value) {
             let keyword = SPELL_TO_KEYWORD[value];
             tagString += tagStringOf(keyword);
-        }
-        
-        let limit = SPELL_TRAP_INPUTS.SPELL_LIMIT.val();
-        if(limit) {
-            tagString += tagStringOf("LIM", limit);
         }
         
         return tagString;
@@ -2272,14 +2382,17 @@ let onStart = function () {
             tagString += tagStringOf(keyword);
         }
         
-        let limit = SPELL_TRAP_INPUTS.TRAP_LIMIT.val();
-        if(limit) {
-            tagString += tagStringOf("LIM", limit);
-        }
-        
         return tagString;
     }
     
+    const GENERIC_INPUTS = {
+        LIMIT:      $("#rs-ext-general-limit"),
+        CARDPOOL:   $("#rs-ext-general-cardpool")
+    };
+    const GENERIC_INPUT_LABELS = {
+        LIMIT:      "LIMIT",
+        CARDPOOL:   "CPOOL",
+    };
     const generateSearchFilters = function () {
         let tags = "";
         for(let section of currentSections()) {
@@ -2301,6 +2414,15 @@ let onStart = function () {
                     break;
             }
         }
+        
+        for(let [key, value] of Object.entries(GENERIC_INPUTS)) {
+            let tagName = GENERIC_INPUT_LABELS[key];
+            let val = value.val();
+            if(val) {
+                tags += tagStringOf(tagName, val);
+            }
+        }
+        
         return tags;
     }
     
@@ -2341,6 +2463,7 @@ let onStart = function () {
         "ATK": "attack",
         "DEF": "defence",
         "ARROWS": "defence",
+        "CPOOL": "ot",
         "SCALE": "lscale",
     };
     const VALIDATOR_LEVEL_MAP = {
@@ -2755,9 +2878,9 @@ let onStart = function () {
             }
             
             // sort the results
-            let method = $("#rs-ext-sort-by").val();
-            let reverseResults = $("#rs-ext-sort-order").val() === "Descending";
-            let stratify = $("#rs-ext-sort-stratify").prop("checked");
+            let method = $("#rs-ext-general-by").val();
+            let reverseResults = $("#rs-ext-general-order").val() === "Descending";
+            let stratify = $("#rs-ext-general-stratify").prop("checked");
             let strataKind;
             if(method === "Level") {
                 strataKind = "LEVELED";
@@ -2850,7 +2973,7 @@ let onStart = function () {
     let allInputs = [
         [...document.querySelectorAll("#rs-ext-monster-table input, #rs-ext-monster-table select")],
         Object.values(SPELL_TRAP_INPUTS),
-        [...document.querySelectorAll("#rs-ext-sort-table input, #rs-ext-sort-table select")],
+        [...document.querySelectorAll("#rs-ext-general-table input, #rs-ext-general-table select")],
     ].flat();
     
     for(let input of allInputs) {
