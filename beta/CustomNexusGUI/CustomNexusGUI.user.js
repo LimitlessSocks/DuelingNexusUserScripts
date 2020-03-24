@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CustomNexusGUI API
 // @namespace    https://duelingnexus.com/
-// @version      0.10
+// @version      0.11
 // @description  To enable custom GUI elements, such as popups.
 // @author       Sock#3222
 // @grant        none
@@ -610,7 +610,8 @@ let onLoad = function () {
             position: fixed;
             top: 50%;
             left: 50%;
-            transform: translate(-50%, -50%);
+            /* 50.1 is a weird fix for borders */
+            transform: translate(-50%, -50.1%);
             min-height: 300px;
             width: 480px;
             padding: 0.5em;
