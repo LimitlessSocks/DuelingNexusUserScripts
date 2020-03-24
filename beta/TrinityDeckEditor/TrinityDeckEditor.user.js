@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Dueling Nexus Trinity Deck Editor
 // @namespace    https://duelingnexus.com/
-// @version      0.2.1
+// @version      0.3.0
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -11,6 +11,7 @@
 // @downloadURL  https://github.com/LimitlessSocks/DuelingNexusUserScripts/raw/master/beta/TrinityDeckEditor/TrinityDeckEditor.user.js
 // ==/UserScript==
 
+let oldLimitStatus;
 const TrinityBanlist = {
     name: "2020.01 TRIN",
     banlistIds: TrinityBanlistRaw, // defined in ./Banlist.js
@@ -18,9 +19,12 @@ const TrinityBanlist = {
     
     load: function () {
         EXT.RECALCULATE_BANLIST = true;
+        oldLimitStatus = EXT.STATISTICS_API.Breakdown.LimitStatus;
+        EXT.STATISTICS_API.Breakdown.LimitStatus = TrinityBanlist.Breakdown;
     },
     unload: function () {
         EXT.RECALCULATE_BANLIST = false;
+        EXT.STATISTICS_API.Breakdown.LimitStatus = oldLimitStatus;
     },
     
     isRestricted: function (limitStatus) {
@@ -86,8 +90,10 @@ const TrinityBanlist = {
         info.unbound = sorted.categories.unbound.length;
         info.forbidden = sorted.categories.forbidden.length;
         info.trinity = sorted.categories.trinity.length;
+        info.normal = sorted.categories.normal.length;
         
         let points = info.coforbidden / 2 + info.semiforbidden + info.trinity;
+        info.points = points;
         points = Math.ceil(points);
         info.excess = 5 * points;
         info.minSize = currentSize + info.excess;
@@ -135,5 +141,24 @@ const TrinityBanlist = {
 window.TrinityBanlist = TrinityBanlist;
 
 EXT.EDIT_API.waitForReady().then(() => {
+    class TrinityBreakdown {
+        constructor() { }
+        
+        composition(state) {
+            let stats = TrinityBanlist.deckStats(state);
+            
+            return [
+                `Unrestricted: ${stats.normal}`,
+                `Unbound: ${stats.unbound}`,
+                `Trinities: ${stats.trinity}`,
+                `Half Points: ${stats.coforbidden}`,
+                `One Points: ${stats.semiforbidden}`,
+                `Banned: ${stats.forbidden}`,
+                `Total Points: ${stats.points}`,
+                `Smallest Main Deck: ${stats.minSize}`,
+            ];
+        }
+    }
+    TrinityBanlist.Breakdown = new TrinityBreakdown();
     EXT.EDIT_API.registerBanlist(TrinityBanlist);
 });
