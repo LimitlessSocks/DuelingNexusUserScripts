@@ -2459,11 +2459,13 @@ let onStart = function () {
         }
     }
     
+    const VALIDATOR_GENERIC_MAP = {
+        "CPOOL": "ot",
+    };
     const VALIDATOR_ONTO_MAP = {
         "ATK": "attack",
         "DEF": "defence",
         "ARROWS": "defence",
-        "CPOOL": "ot",
         "SCALE": "lscale",
     };
     const VALIDATOR_LEVEL_MAP = {
@@ -2522,6 +2524,14 @@ let onStart = function () {
                     return false;
                 }
                 return isMonster(cardObject) && tag.comp(objectValue, value);
+            };
+        }
+        else if(VALIDATOR_GENERIC_MAP[tag.param]) {
+            let prop = VALIDATOR_GENERIC_MAP[tag.param];
+            let value = parseInt(tag.value, 10);
+            return function (cardObject) {
+                let objectValue = cardObject[prop];
+                return tag.comp(objectValue, value);
             };
         }
         else if(VALIDATOR_LEVEL_MAP[tag.param]) {
