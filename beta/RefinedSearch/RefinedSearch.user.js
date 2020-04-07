@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.18.0
+// @version      0.18.1
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -306,6 +306,8 @@ let onStart = function () {
                       <option value=1>OCG</option>
                     </select>
                   </td>
+                  <th>Exclusive?</th>
+                  <td><input type=checkbox class=rs-ext-input id=rs-ext-general-cardpool-exclusive></td>
                 </tr>
                 <tr>
                   <th>Sort By</th>
@@ -338,7 +340,7 @@ let onStart = function () {
                 <tr>
                   <th>Spell Card Type</th>
                   <td>
-                    <select id=rs-ext-spell-type>
+                    <select id=rs-ext-spell-type class=rs-ext-input>
                       <option></option>
                       <option>Normal</option>
                       <option>Quick-play</option>
@@ -356,7 +358,7 @@ let onStart = function () {
                 <tr>
                   <th>Trap Card Type</th>
                   <td>
-                    <select id=rs-ext-trap-type>
+                    <select id=rs-ext-trap-type class=rs-ext-input>
                       <option></option>
                       <option>Normal</option>
                       <option>Continuous</option>
@@ -415,7 +417,7 @@ let onStart = function () {
                   <tr>
                     <th>Ability</th>
                     <td>
-                      <select id=rs-ext-monster-ability class=rs-exit-input>
+                      <select id=rs-ext-monster-ability class=rs-ext-input>
                         <option></option>
                         <option>Tuner</option>
                         <option>Toon</option>
@@ -507,25 +509,31 @@ let onStart = function () {
         #rs-ext-advanced-search-bar {
             width: 100%
         }
-
-        .rs-ext-toggle-button {
+        
+        #editor-search-box select.rs-ext-input {
+            width: 100%;
+        }
+        
+        button.rs-ext-toggle-button {
+            cursor: pointer;
             width: 3em;
             height: 3em;
             background: #ddd;
-            border: 1px solid #000
+            background: black;
+            color: white;
+            border: 1px solid white;
         }
 
-        .rs-ext-toggle-button:hover {
-            background: #fff
+        button.rs-ext-toggle-button:hover {
+            background: #003355;
         }
 
         button.rs-ext-selected {
-            background: #00008b;
-            color: #fff
+            background: #005599;
         }
 
         button.rs-ext-selected:hover {
-            background: #55d
+            background: #0088CC;
         }
 
         .rs-ext-left-float {
@@ -768,6 +776,12 @@ let onStart = function () {
         #editor-menu-container {
             position: relative;
             z-index: 1;
+        }
+        .rs-ext-input {
+            background: black;
+            color: white;
+            border: 1px solid white;
+            padding: 3px;
         }
     `;
     
@@ -1659,6 +1673,7 @@ let onStart = function () {
     
     
     const banlistSelector = makeElement("select", "rs-ext-banlist"); // used later
+    banlistSelector.addClass("rs-ext-input");
     
     const registerBanlist = function (json) {
         banlists.unshift(json);
@@ -2385,13 +2400,15 @@ let onStart = function () {
         return tagString;
     }
     
+    const CARDPOOL_INPUT = $("#rs-ext-general-cardpool");
+    const CARDPOOL_EXCLUSIVE_INPUT = $("#rs-ext-general-cardpool-exclusive");
     const GENERIC_INPUTS = {
         LIMIT:      $("#rs-ext-general-limit"),
-        CARDPOOL:   $("#rs-ext-general-cardpool")
+        // CARDPOOL:   $("#rs-ext-general-cardpool")
     };
     const GENERIC_INPUT_LABELS = {
         LIMIT:      "LIMIT",
-        CARDPOOL:   "CPOOL",
+        // CARDPOOL:   "CPOOL",
     };
     const generateSearchFilters = function () {
         let tags = "";
@@ -2412,6 +2429,18 @@ let onStart = function () {
                 // case null:
                 default: 
                     break;
+            }
+        }
+        
+        if(CARDPOOL_INPUT.val()) {
+            let cpool = CARDPOOL_INPUT.val();
+            let exclusive = CARDPOOL_EXCLUSIVE_INPUT.is(":checked");
+            
+            if(exclusive) {
+                tags += tagStringOf("cpool", cpool);
+            }
+            else {
+                tags += tagStringOf("cpool", [cpool, 3].join(" OR "), "=");
             }
         }
         
