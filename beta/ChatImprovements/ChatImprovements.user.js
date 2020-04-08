@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Dueling Nexus Chat Improvements Plugin
 // @namespace    https://duelingnexus.com/
-// @version      0.10.1
+// @version      0.11.0
 // @description  Revamps the chat and visual features of dueling.
 // @author       Sock#3222
 // @grant        none
@@ -12,6 +12,25 @@
 
 // TODO: show chat during ranked
 // TODO: show options during pre-round
+
+// Game.Card = function(a, b) {
+    // this.code = a || 0;
+    // this.alias = 0;
+    // this.type = CardType.MONSTER;
+    // this.controller = this.owner = this.rightScale = this.leftScale = this.baseDefence = this.baseAttack = this.defence = this.attack = this.race = this.attribute = this.rank = this.level = 0;
+    // this.location = CardLocation.DECK;
+    // this.sequence = 0;
+    // this.position = b || CardPosition.FACEUP_ATTACK;
+    // this.isDisabled = false;
+    // this.overlays = [];
+    // this.counters = {};
+    // this.linkArrows = this.linkRating = 0;
+    // this.zoneElement = null;
+    // this.imgElement = $("<img>").addClass("game-field-card");
+    // this.negatedElement =
+        // this.levelElement = this.textElement = null;
+    // this.sumValue = 0
+// };
 
 let makeReadOnly = function (obj, prop) {
     let val = obj[prop];
@@ -96,7 +115,7 @@ ChatImprovements.storage.get = function (item) {
     
     if(typeof entry === "object") {
         return onObjectUpdate(entry, function () {
-            console.log("UPDATE!", item, entry);
+            // console.log("UPDATE!", item, entry);
             ChatImprovements.storage.set(item, entry);
         });
     }
@@ -458,7 +477,7 @@ let onload = function () {
     Game.messageHandlers.GameChaining = Game.onGameChaining = function onGameChaining(a) {
         Game.preloadImage(a.cardCode, function() {
             Game.playSound("activate");
-            console.log(a);
+            // console.log(a);
             let cardName = a.cardCode ? "#@" + a.cardCode : "A card";
             let message = `Chain Link ${a.chainCount}: ${cardName}`
             if(a.chainCount > 1) {
@@ -1053,6 +1072,7 @@ let onload = function () {
                              .css("cursor", "pointer");
                 
                 updateValueTd.click(() => {
+                    // TODO: fix this.tag
                     NexusGUI.prompt("Enter the new value for \"" + this.tag + "\":").then((newValue) => {
                         if(newValue !== null) {
                             base.val(newValue);
@@ -1634,12 +1654,18 @@ let onload = function () {
     // originally: - 24
     const RESIZE_OFFSET = 10;
     const getBaseHeight = () => {
+        if($("#ci-ext-misc-sections").length === 0) {
+            return 0;
+        }
         let upperMargin = $("#ci-ext-misc-sections").position().top;
         let baseHeight = $(window).height() - upperMargin - RESIZE_OFFSET;
         return baseHeight;
     };
     let updateColumnHeight = function () {
         let diffHeight = getBaseHeight() - chatContainer.height();
+        if(diffHeight < 0) {
+            return;
+        }
         $("#ci-ext-misc-sections > div").css("height",
             roundTo(diffHeight) - 8
         );
@@ -1654,34 +1680,19 @@ let onload = function () {
         if(!Game.fields[0]) {
             return;
         }
-        
-        var a = $("#ci-ext-misc-sections").position().top;
-        // $("#card-column").css("max-height", $(window).height() - a - 24);
-        $("#game-siding-column").css("max-height", 
-            roundTo(getBaseHeight())
-        );
-        
+        var a = $("#ci-ext-misc > div:visible").position().top;
+        $("#ci-ext-misc > div").css("max-height", $(window).height() - a - 24);
+        $("#game-siding-column").css("max-height",
+            $(window).height() - a - 24);
         a = 4 <= Game.masterRule ? 7 : 6;
-        var b =
-            $(window).width() - $("#ci-ext-misc-sections > div:visible").width()//- 50,
-            c = $(window).height();
-        
-        
-        
-        if(9 * c / a < b) {
-            $("#game-field").css("height", c + "px");
-            b = c / a;
-            $("#game-field").css("width", 9 * b + "px");
-        }
-        else {
-            $("#game-field").css("width", b + "px");
-            b /= 9;
-            $("#game-field").css("height", b * a + "px");
-        }
+        var b = $(window).width() - $("#ci-ext-misc > div:visible").width() - 50,
+            c = $(window).height() - $("#game-chat-area").height() - 8 - 48;
+        9 * c / a < b ? ($("#game-field").css("height", c + "px"), b = c / a, $("#game-field").css("width", 9 * b + "px")) : ($("#game-field").css("width", b + "px"), b /= 9, $("#game-field").css("height", b * a + "px"));
         $(".game-field-zone").css("width", b + "px").css("height", b + "px");
         $(".game-field-hand").css("width", 5 * b + "px").css("height", b + "px");
         Game.zoneWidth = b;
-        Game.cardHeight = Math.floor(.95 * b);
+        Game.cardHeight = Math.floor(.95 *
+            b);
         Game.cardWidth = Game.cardHeight * Engine.CARD_WIDTH / Engine.CARD_HEIGHT;
         Game.fields[0].resizeHand();
         Game.fields[1].resizeHand();
@@ -1690,9 +1701,9 @@ let onload = function () {
         $("#game-position-atk-up").css("margin-right", Game.cardHeight - Game.cardWidth + 3);
         $("#game-position-atk-down").css("width", Game.cardWidth);
         $("#game-position-atk-down").css("height", Game.cardHeight);
-        $("#game-position-atk-down").css("margin-right", Game.cardHeight - Game.cardWidth + 3);
-        $("#game-position-def-up").css("width",
-            Game.cardWidth);
+        $("#game-position-atk-down").css("margin-right", Game.cardHeight - Game.cardWidth +
+            3);
+        $("#game-position-def-up").css("width", Game.cardWidth);
         $("#game-position-def-up").css("height", Game.cardHeight);
         $("#game-position-def-up").css("margin-right", Game.cardHeight - Game.cardWidth + 3);
         $("#game-position-def-down").css("width", Game.cardWidth);
@@ -1786,13 +1797,19 @@ let onload = function () {
     // TODO: fix cfReveal (og - `df` / `Card.prototype.applyMovement`)
     let oldApplyMovement = Game.Card.prototype.applyMovement;
     Game.Card.prototype.applyMovement = function(code, position, duration, cb) {
-        // console.log(this);
+        // console.log("applyMovement", this);
         
-        // console.log({
-            // code: code,
-            // position: position,
-            // duration: duration,
-        // });
+        if(this.code) {
+            console.log("THIS.CODE", this.code);
+            console.log({
+                code: code,
+                position: position,
+                duration: duration,
+            });
+            if(position === CardPosition.FACEDOWN || position === CardPosition.FACEUP_ATTACK) {
+                ChatImprovements.triggerListener("reveal", this.code);
+            }
+        }
         oldApplyMovement.bind(this)(code, position, duration, cb);
     };
     
