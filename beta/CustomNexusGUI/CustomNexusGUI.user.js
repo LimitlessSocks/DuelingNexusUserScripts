@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CustomNexusGUI API
 // @namespace    https://duelingnexus.com/
-// @version      0.11
+// @version      0.11.1
 // @description  To enable custom GUI elements, such as popups.
 // @author       Sock#3222
 // @grant        none
@@ -636,6 +636,7 @@ let onLoad = function () {
             margin: 0;
             margin-bottom: 0.2em;
             border-bottom: 1px #7A7A7A;
+            width: calc(100% - 25px); /* -25px because of the x button */
         }
         #nexus-gui-close-button {
             position: absolute;
@@ -645,6 +646,8 @@ let onLoad = function () {
             color: white;
             border: 1px solid #701f14;
             cursor: pointer;
+            padding: 0;
+            width: 25px;
         }
         #nexus-gui-close-button:hover {
             background: #d73d29;
