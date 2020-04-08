@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Dueling Nexus Notification System
 // @namespace    https://duelingnexus.com/
-// @version      0.2.5
+// @version      0.2.6
 // @description  Gives desktop notifications for joining matches.
 // @author       Sock#3222
 // @grant        none
@@ -120,13 +120,20 @@ const launchLobbyNotifications = function () {
     });
 };
 
+let duelAreaStatus;
 const launchDuelReadyNotifications = function () {
     // might break easily
     const duelAreaReadyElement = "#duel-area button.bigger-button";
     
     waitForElement(duelAreaReadyElement).then(function (button) {
         console.info("Match found! " + formatTime(new Date()));
-        $("#duel-area").append(formatTime(new Date()));
+        
+        if(!duelAreaStatus) {
+            duelAreaStatus = $("<div id=duel-area-status>");
+            $("#duel-area").append(duelAreaStatus);
+        }
+        duelAreaStatus.text(formatTime(new Date()));
+        
         let notif = new Notification("Your match is ready!");
         let closeNotif = notif.close.bind(notif);
         button.addEventListener("click", closeNotif);
