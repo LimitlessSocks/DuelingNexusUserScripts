@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.18.1
+// @version      0.18.2
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -1838,6 +1838,8 @@ let onStart = function () {
             // TODO: add option to use card.alias rather than card.id
             lines.push(...Deck[kind]);
         }
+        // add empty line at end
+        lines.push("");
         let message = lines.join("\n");
         download(message, Deck.name + ".ydk", "text");
     });
@@ -2015,12 +2017,12 @@ let onStart = function () {
     inlineSyntaxHelp.addPage(`You can place the "^" character at the beginning of your input to specify that you only want to match cards/effects which start with your given text. For example, "^blue" will match cards that begin with the word "blue", such as "Blue-Eyes White Dragon". Similarly, you can place "$" at the end of your input to specify that you only want to match ones which end with your given text. For example, "turtle$" will match cards that end with the word "turtle", such as "Gora Turtle". You can also use both! "^bat$" will only match "bat". No more, no less.`);
     inlineSyntaxHelp.addPage(`You can separate search queries with "&&" to represent that you want to match both queries in no particular order. If you want to search for a card effect that contains both "Tribute" and "GY" where you don't care about the order, you can use "Tribute&&GY", or "GY&&Tribute". You can also have a single "~" in your search query. Everything after that "~" indicates a search query you wish to exclude from your search. For example, if you want all effects which do not have the words "once per turn" in them, you could use "~once per turn". If you want to search for "GY" but not "discard", you could use "GY~discard".`);
     
-    let filterHelp = new HelpPage("Filters");
-    filterHelp.addPage("Oh");
+    let filterHelp = new HelpPage("Queries");
+    filterHelp.addPage("If you look at the \u201cSearch by name/query\u201d box, you can easily see that it allows queries. Queries follow the form {stuff}, where stuff is the filter you are trying to access. There's a variety of filters available, and all of the various inputs offered by the filter tabs use these queries internally.");
     
     helpButton.click(function () {
         let b1 = NexusGUI.button("Inline Syntax");
-        let b2 = NexusGUI.button("Filters");
+        let b2 = NexusGUI.button("Queries");
         let container = $("<div>").append(b1, b2);
         NexusGUI.popup("Help", container, { style: "minimal" });
         inlineSyntaxHelp.attachToClick(b1);
@@ -3010,7 +3012,7 @@ let onStart = function () {
     
     // add relevant listeners
     let allInputs = [
-        [...document.querySelectorAll("#rs-ext-monster-table input, #rs-ext-monster-table select")],
+        [...document.querySelectorAll("#rs-ext-monster-table input, #rs-ext-monster-table select, #rs-ext-link-arrows button")],
         Object.values(SPELL_TRAP_INPUTS),
         [...document.querySelectorAll("#rs-ext-general-table input, #rs-ext-general-table select")],
     ].flat();
@@ -3025,11 +3027,11 @@ let onStart = function () {
             if(jq.tagEquals("select")) {
                 jq.val(jq.children()[0].text).change();
             }
-            else if(jq.val) {
-                jq.val("");
-            }
             else if(jq.hasClass("rs-ext-selected")) {
                 jq.click();
+            }
+            else if(jq.val) {
+                jq.val("");
             }
         }
         // shrink existing sections
