@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.18.2
+// @version      0.19
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -46,7 +46,8 @@ const EXT = {
     // contents defined later
     STATISTICS_API: {
         
-    }
+    },
+    Cardpool: "!=?", // 0 or 1, currently
 };
 window.EXT = EXT;
 const FN = {
@@ -304,6 +305,7 @@ let onStart = function () {
                       <option value=3>TCG/OCG</option>
                       <option value=2>TCG</option>
                       <option value=1>OCG</option>
+                      <option value=4>Rush Duels</option>
                     </select>
                   </td>
                   <th>Exclusive?</th>
@@ -689,7 +691,11 @@ let onStart = function () {
         }
         
         #rs-ext-banlist {
-            margin: 5px;
+            margin-left: 5px;
+        }
+        
+        #editor-menu-content select {
+            margin-right: 5px;
         }
         
         #rs-ext-advanced-search-bar > button {
@@ -1675,6 +1681,19 @@ let onStart = function () {
     const banlistSelector = makeElement("select", "rs-ext-banlist"); // used later
     banlistSelector.addClass("rs-ext-input");
     
+    const gamemodeSelector = makeElement("select", "rs-ext-gamemode"); // used later
+    gamemodeSelector.addClass("rs-ext-input");
+    for(let [mode, value] of [["Any Format", "!=?"], ["TCG/OCG", "1 OR 2 OR 3"], ["Rush Duels", "4"]]) {
+        let option = makeElement("option", null, mode);
+        option.attr("value", value);
+        gamemodeSelector.append(option);
+    }
+    gamemodeSelector.change(() => {
+        EXT.Cardpool = gamemodeSelector.val();
+        // updateBanlist();
+        updateSearchContents();
+    });
+    
     const registerBanlist = function (json) {
         banlists.unshift(json);
         banlistNames.unshift(json.name);
@@ -1805,7 +1824,8 @@ let onStart = function () {
     
     banlistSelector.change(updateBanlist);
     
-    banlistSelector.insertBefore(saveButton);
+    gamemodeSelector.insertBefore(saveButton);
+    banlistSelector.insertBefore(gamemodeSelector);
     
     // add new buttons
     
@@ -2438,12 +2458,15 @@ let onStart = function () {
             let cpool = CARDPOOL_INPUT.val();
             let exclusive = CARDPOOL_EXCLUSIVE_INPUT.is(":checked");
             
-            if(exclusive) {
+            if(exclusive || cpool === "4") {
                 tags += tagStringOf("cpool", cpool);
             }
             else {
                 tags += tagStringOf("cpool", [cpool, 3].join(" OR "), "=");
             }
+        }
+        else if(EXT.Cardpool !== "!=?") {
+            tags += tagStringOf("cpool", EXT.Cardpool);
         }
         
         for(let [key, value] of Object.entries(GENERIC_INPUTS)) {
@@ -3200,7 +3223,7 @@ let onStart = function () {
         });
     });
     editorColumn.scroll(() => updateBanlist());
-    window.updateBanlist=updateBanlist;
+    window.updateBanlist = updateBanlist;
     
     const setupButton = (button, container, width) => {
         let hidden = false;
