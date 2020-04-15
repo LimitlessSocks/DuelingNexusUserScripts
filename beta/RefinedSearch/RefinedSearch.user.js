@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.19
+// @version      0.19.1
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -963,6 +963,8 @@ let onStart = function () {
         }
         template.data("id", card.id);
         template.data("alias", card.alias);
+        template.data("category", card.category);
+        template.data("ot", card.ot);
         template.mouseover(function () {
             Engine.ui.setCardInfo($(this).data("id"));
         });
@@ -1006,7 +1008,13 @@ let onStart = function () {
         }
         
         let regionalIndicator = template.find(".editor-search-region-icon");
-        1 == card.ot ? regionalIndicator.attr("src", "assets/images/ocg.png") : 2 == card.ot ? regionalIndicator.attr("src", "assets/images/tcg.png") : regionalIndicator.toggle(false);
+        let regionIconSrc = cardRegionIndicators[card.ot];
+        if(regionIconSrc) {
+            regionalIndicator.attr("src", regionIconSrc);
+        }
+        else {
+            regionalIndicator.toggle(false);
+        }
         
         let container = $("<table width=100% class=rs-ext-card-entry-table>");
         let cardTd = $("<td width=74% class=card-preview></td>");
@@ -1274,6 +1282,12 @@ let onStart = function () {
     };
     
     /* TODO: allow larger deck sizes */
+    const cardRegionIndicators = {
+        1: "assets/images/ocg.png",
+        2: "assets/images/tcg.png",
+        4: "assets/images/rush.png",
+    };
+    EXT.cardRegionIndicators = cardRegionIndicators;
     
     /* UNDO / REDO */
     const addCardSilent = function(a, destination, c, d) {
@@ -1288,8 +1302,10 @@ let onStart = function () {
                    isExtra && toMainDeck
                 || !isExtra && toExtraDeck
                 || Editor[destination].length >= sizeLimit
-                // cannot have more than 3 copies!
+                // cannot have more than 3 copies
                 || Editor.getCardCount(ident) >= (EXT.BYPASS_LIMIT ? 3 : allowedCount(ident))
+                // cannot have more than 1 of a Rush Duel Legend card
+                || 4 === card.ot && 1 === card.category && 1 === Editor.getLegendCount()
             );
             
             if (!isInvalidLocation) {
@@ -1307,7 +1323,7 @@ let onStart = function () {
                             c = $(this).parent().children().index($(this));
                         removeCard(b, c);
                         Editor.selectCard(a);
-                        return false
+                        return false;
                     }
                     if (3 == a.which) return false
                 });
@@ -1327,8 +1343,11 @@ let onStart = function () {
                     return false;
                 });
                 d.data("id", a);
+                d.data("ot", card.ot);
+                d.data("category", card.category);
                 d.data("alias", card.alias);
-                d.data("location", destination); 
+                d.data("location", destination);
+                
                 if(c === -1) {
                     k.append(d);
                     g.push(d);
@@ -1343,20 +1362,14 @@ let onStart = function () {
                     };
                 }
                 
-                
-                // let iconStatus = getBanlistIconImage(sourceId);
-                // if(iconStatus.restricted) {
-                    // banlistIcon.attr("src", iconStatus.src);
-                    
-                // }
-                // else {
-                    // banlistIcon.toggle(false);
-                // }
-                
                 g = allowedCount(card);
                 if(g !== 3) {
                     a = banlistIcons[a];
                     a = $("<img>").attr("src", "assets/images/" + a);
+                    d.data("banlist", a);
+                    $("#editor-banlist-icons").append(a);
+                } else if(card.ot === 4 && card.category === 1) {
+                    a = $("<img>").attr("src", "assets/images/legend.png");
                     d.data("banlist", a);
                     $("#editor-banlist-icons").append(a);
                 } else {
@@ -1364,18 +1377,14 @@ let onStart = function () {
                 }
                 
                 // console.log(card, card.ot);
-                if(card.ot === 1) {
+                let regionIconSrc = cardRegionIndicators[card.ot];
+                if(regionIconSrc) {
                     let img = $("<img>")
-                        .attr("src", "assets/images/ocg.png");
+                        .attr("src", regionIconSrc);
                     d.data("region", img);
                     $("#editor-region-icons").append(img);
                 }
-                else if(card.ot === 2) {
-                    let img = $("<img>")
-                        .attr("src", "assets/images/tcg.png");
-                    d.data("region", img);
-                    $("#editor-region-icons").append(img);
-                } else {
+                else {
                     d.data("region", null);
                 }
                 // refreshBanlistIcons(destination);
@@ -1669,6 +1678,7 @@ let onStart = function () {
     
     // remove annoying spacers
     $("#editor-menu-spacer").toggle(false);
+    $("#editor-menu-spacer-small").toggle(false);
     
     $("#editor-menu-content")
         .contents()
@@ -1742,6 +1752,14 @@ let onStart = function () {
         if(result.restricted) {
             let iconSource = banlist.icons || banlistIcons;
             result.src = iconSource[result.limitStatus];
+        }
+        
+        else {
+            let card = Engine.database.cards[id];
+            if(card.ot === 4 && card.category === 1) {
+                result.restricted = true;
+                result.src = "assets/images/legend.png";
+            }
         }
         
         return result;
@@ -1845,23 +1863,30 @@ let onStart = function () {
     
     let exportButton = makeElement("button", "rs-ext-editor-export-button", "Export .ydk");
     exportButton.prop("classList").add("engine-button", "engine-button", "engine-button-default", "engine-button-navbar");
-    exportButton.title = "Export Saved Version of Deck";
+    exportButton.title = "Export Saved Version of Deck (Right click to export alternate arts)";
     editorMenuContent.append(exportButton);
     
-    exportButton.click(function () {
+    const exportYdk = function (useAlias = true) {
         let lines = [
             "#created by RefinedSearch plugin"
         ];
         for(let kind of ["main", "extra", "side"]) {
             let header = (kind === "side" ? "!" : "#") + kind;
             lines.push(header);
-            // TODO: add option to use card.alias rather than card.id
-            lines.push(...Deck[kind]);
+            let cardSource = Deck[kind];
+            if(useAlias) cardSource = cardSource.map(card => Engine.database.cards[card].alias || card);
+            lines.push(...cardSource);
         }
         // add empty line at end
         lines.push("");
         let message = lines.join("\n");
         download(message, Deck.name + ".ydk", "text");
+    }
+    
+    exportButton.click(exportYdk);
+    exportButton.contextmenu(function (e) {
+        e.preventDefault();
+        exportYdk(false);
     });
     
     let exportRawButton = makeElement("button", "rs-ext-editor-export-button", "Export Readable");
