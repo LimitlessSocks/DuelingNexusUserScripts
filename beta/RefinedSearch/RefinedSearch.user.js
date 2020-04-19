@@ -916,6 +916,19 @@ let onStart = function () {
         
         return 3;
     };
+    const allowedCountWithRushDuels = function (card, ...params) {
+        let ident = card.alias || card.id || card;
+        
+        let testCard = card;
+        if(typeof ident === "number") {
+            testCard = Engine.database.cards[ident];
+        }
+        if(isLegendMonster(testCard)) {
+            return 1 - Editor.getLegendCount();
+        }
+        
+        return allowedCount(card, ...params);
+    };
     const lastElement = function (arr) {
         return arr[arr.length - 1];
     };
@@ -2190,18 +2203,20 @@ let onStart = function () {
     const addRandomCard = function () {
         let pool = EXT.Search.cache;
         if(!pool || pool.length === 0) {
-            pool = Object.keys(Engine.database.cards);
+            pool = Object.values(Engine.database.cards);
         }
-        else {
-            pool = pool.map(card => card.id);
-        }
+        pool = pool.map(card => ({
+            id: card.alias || card.id,
+            sourceId: card.id
+        }));
+        
         if(pool.length < 100) {
-            pool = pool.filter(id => Editor.getCardCount(id) < allowedCount(id));
+            pool = pool.filter(card => Editor.getCardCount(card.id) < allowedCountWithRushDuels(card.id));
             if(!pool.length) {
                 return false;
             }
         }
-        let id, card, rind, destination;
+        let id, sourceId, card, rind, destination;
         
         if(Editor["main"].length === 60 && Editor["extra"].length === 15) {
             return false;
@@ -2212,17 +2227,18 @@ let onStart = function () {
                 pool.splice(rind, 1);
             }
             if(!pool.length) {
-                return;
+                return false;
             }
             rind = Math.random() * pool.length | 0;
-            // console.log("new rind:", rind, pool.length);
-            id = pool[rind];
-            card = Engine.database.cards[id];
+            sourceId = pool[rind].sourceId;
+            id = pool[rind].id;
+            card = Engine.database.cards[sourceId];
             destination = isExtraDeckMonster(card) ? "extra" : "main";
-        } while(Editor.getCardCount(id) >= allowedCount(id) || Editor[destination].length === (destination === "extra" ? 15 : 60));
+            // console.log("new rind:", rind, pool.length, allowedCountWithRushDuels(id), Editor.getCardCount(id));
+        } while(Editor.getCardCount(id) >= allowedCountWithRushDuels(id) || Editor[destination].length === (destination === "extra" ? 15 : 60));
         
         // console.log(card, isExtraDeckMonster(card));
-        addCard(id, destination, -1);
+        addCard(sourceId, destination, -1);
         
         return true;
     };
