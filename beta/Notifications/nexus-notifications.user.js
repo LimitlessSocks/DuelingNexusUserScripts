@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Dueling Nexus Notification System
 // @namespace    https://duelingnexus.com/
-// @version      0.2.7
+// @version      0.2.8
 // @description  Gives desktop notifications for joining matches.
 // @author       Sock#3222
 // @grant        none
@@ -130,6 +130,9 @@ const launchDuelReadyNotifications = function () {
         
         if(!duelAreaStatus) {
             duelAreaStatus = $("<div id=duel-area-status>");
+        }
+        
+        if(!duelAreaStatus.parent().length) {
             $("#duel-area").append(duelAreaStatus);
         }
         duelAreaStatus.text(formatTime(new Date()));
