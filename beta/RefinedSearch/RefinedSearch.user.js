@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.19.6
+// @version      0.19.7
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -372,6 +372,7 @@ let onStart = function () {
                 <tr>
                   <th>Is Trap Monster?</th>
                   <td><input type=checkbox id=rs-ext-is-trap-monster></td>
+                </tr>
               </table>
             </div>
             <div id=rs-ext-monster class="rs-ext-shrinkable rs-ext-shrunk">
@@ -499,6 +500,10 @@ let onStart = function () {
                   <tr>
                     <th>DEF</th>
                     <td><input class=rs-ext-input id=rs-ext-def></td>
+                  </tr>
+                  <tr>
+                    <th>Is Trap Monster?</th>
+                    <td><input type=checkbox id=rs-ext-is-monster-trap></td>
                   </tr>
                 </table>
               </div>
@@ -2383,6 +2388,7 @@ let onStart = function () {
         DEF:        $("#rs-ext-def"),
         CATEGORY:   $("#rs-ext-monster-category"),
         ABILITY:    $("#rs-ext-monster-ability"),
+        IS_TRAP:    $("#rs-ext-is-monster-trap"),
     };
     const INPUT_TO_KEYWORD = {
         // ARROWS: "ARROWS",
@@ -2417,7 +2423,13 @@ let onStart = function () {
     };
     const CATEGORY_SOURCES = [ "CATEGORY", "ABILITY" ];
     const monsterSectionTags = function () {
-        let tagString = "{MONSTER}";
+        let tagString;
+        if(MONSTER_INPUTS.IS_TRAP.is(":checked")) {
+            tagString = "{TRAPMONSTER}";
+        }
+        else {
+            tagString = "{MONSTER}";
+        }
         
         // links
         let selectedArrows = MONSTER_INPUTS.ARROWS.filter(arrow => arrow.classList.contains("rs-ext-selected"));
