@@ -2106,10 +2106,14 @@ let onStart = function () {
     buttonHelp.addPage("[Export] Left click: Exports your deck as a .ydk file that is compatible with major Yu-Gi-Oh! simulators. Right click: Export the deck as a .nexus.ydk file, which saves whether or not certain cards use alternate arts. Alternate arts are treated differently by different simulators, which is why this secondary functionality exists.");
     buttonHelp.addPage("[Random Card] Left click: Adds 1 random card. Right click: Adds 5 random cards. Shift+Left click: Fill the rest of your deck with random cards.");
     
+    let whoMadeThis = new HelpPage("Who made this?");
+    whoMadeThis.addPage("This extension was developed by Sock. Sock#3222 on discord. Last time this message was updated, the code is almost 3500 lines long. If you're feeling generous, you can drop some money to his Ko-fi: https://ko-fi.com/limitlesssocks . Otherwise, please enjoy this extension, and be sure to report any bugs. Happy dueling and deckbuilding! :)");
+    
     let helpButtonPages = [
         inlineSyntaxHelp,
         filterHelp,
-        buttonHelp
+        buttonHelp,
+        whoMadeThis
     ];
     helpButton.click(function () {
         let container = $("<div>");
