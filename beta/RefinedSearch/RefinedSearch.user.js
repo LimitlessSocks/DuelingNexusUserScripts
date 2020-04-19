@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.19.7
+// @version      0.19.8
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -2680,7 +2680,7 @@ let onStart = function () {
                 if(tag.param === "SCALE" && !isPendulumMonster(cardObject)) {
                     return false;
                 }
-                return isMonster(cardObject) && tag.comp(objectValue, value);
+                return (isMonster(cardObject) || isTrapMonster(cardObject)) && tag.comp(objectValue, value);
             };
         }
         else if(VALIDATOR_GENERIC_MAP[tag.param]) {
