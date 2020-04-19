@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.19.2
+// @version      0.19.3
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -1880,7 +1880,7 @@ let onStart = function () {
     
     let exportButton = makeElement("button", "rs-ext-editor-export-button", "Export .ydk");
     exportButton.prop("classList").add("engine-button", "engine-button", "engine-button-default", "engine-button-navbar");
-    exportButton.title = "Export Saved Version of Deck (Right click to export alternate arts)";
+    exportButton.attr("title", "Export Saved Version of Deck (Right click to export alternate arts)");
     editorMenuContent.append(exportButton);
     
     const exportYdk = function (useAlias = true) {
@@ -2090,6 +2090,7 @@ let onStart = function () {
     buttonHelp.addPage("This help sequence will explain some of the less obvious functions of the deck editor. Some buttons have additional functionalities when they are right clicked instead of left clicked.");
     buttonHelp.addPage("[Shuffle] Left click: Shuffle all three sections of the deck builder. Right click: Shuffle only the main deck.");
     buttonHelp.addPage("[Export] Left click: Exports your deck as a .ydk file that is compatible with major Yu-Gi-Oh! simulators. Right click: Export the deck as a .nexus.ydk file, which saves whether or not certain cards use alternate arts. Alternate arts are treated differently by different simulators, which is why this secondary functionality exists.");
+    buttonHelp.addPage("[Random Card] Left click: Adds 1 random card. Right click: Adds 5 random cards. Shift+Left click: Fill the rest of your deck with random cards.");
     
     let helpButtonPages = [
         inlineSyntaxHelp,
@@ -2168,7 +2169,7 @@ let onStart = function () {
         .text("Random Card")
         .attr("title", "Ech Button");
     
-    addRandomCardButton.click(() => {
+    const addRandomCard = function () {
         let pool = EXT.Search.cache;
         if(!pool || pool.length === 0) {
             pool = Object.keys(Engine.database.cards);
@@ -2179,13 +2180,13 @@ let onStart = function () {
         if(pool.length < 100) {
             pool = pool.filter(id => Editor.getCardCount(id) < allowedCount(id));
             if(!pool.length) {
-                return;
+                return false;
             }
         }
         let id, card, rind, destination;
         
         if(Editor["main"].length === 60 && Editor["extra"].length === 15) {
-            return;
+            return false;
         }
         
         do {
@@ -2204,14 +2205,30 @@ let onStart = function () {
         
         // console.log(card, isExtraDeckMonster(card));
         addCard(id, destination, -1);
-    });
+        
+        return true;
+    };
     
-    spacerRight.append(addRandomCardButton);
+    addRandomCardButton.click(function (e) {
+        if(e.shiftKey) {
+            while(addRandomCard());
+        }
+        else {
+            addRandomCard();
+        }
+    });
+    addRandomCardButton.contextmenu(function (e) {
+        e.preventDefault();
+        for(let i = 0; i < 5; i++) {
+            addRandomCard();
+        }
+    });
     
     let buttonHolder = $("<td id=rs-ext-button-holder>");
     buttonHolder.append(leftButton, pageInfo, rightButton);
     
-    navigationHolder.append(spacerLeft, buttonHolder, spacerRight);
+    // navigationHolder.append(spacerLeft, buttonHolder, spacerRight);
+    navigationHolder.append(buttonHolder);
     
     styleHeaderNeutral(navigationHolder);
     noSelect(navigationHolder);
@@ -2238,7 +2255,9 @@ let onStart = function () {
     let monsterTab = $("#rs-ext-monster");
     let spellTab = $("#rs-ext-spell");
     let trapTab = $("#rs-ext-trap");
-    let sortTab = $("#rs-ext-general");
+    let generalTab = $("#rs-ext-general");
+    
+    generalTab.append(addRandomCardButton);
     
     let spacer = $("#rs-ext-spacer");
     
@@ -2280,11 +2299,11 @@ let onStart = function () {
     
     
     $("#rs-ext-general-toggle").click(() => {
-        toggleShrinkable(sortTab);
+        toggleShrinkable(generalTab);
     });
     
     const currentSections = function () {
-        return [monsterTab, spellTab, trapTab, sortTab].filter(el => !el.hasClass("rs-ext-shrunk")) || null;
+        return [monsterTab, spellTab, trapTab, generalTab].filter(el => !el.hasClass("rs-ext-shrunk")) || null;
     }
     window.currentSections = currentSections;
     
@@ -2293,9 +2312,9 @@ let onStart = function () {
         let sections = currentSections();
         let height = FN.sum(sections.map(section => section[0].clientHeight));
         spacer.css("height", height + "px");
-        // update top position of sort, if necessary
-        if(!sortTab.hasClass("rs-ext-shrunk")) {
-            sortTab.css("top", (height - sortTab[0].clientHeight) + "px");
+        // update top position, if necessary
+        if(!generalTab.hasClass("rs-ext-shrunk")) {
+            generalTab.css("top", (height - generalTab[0].clientHeight) + "px");
         }
     }
     let interval = setInterval(updatePaddingHeight, 1);
