@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.19.1
+// @version      0.19.2
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -658,6 +658,10 @@ let onStart = function () {
             .editor-search-banlist-icon {
                 width: 5%
             }
+        }
+        
+        #editor-menu-spacer {
+            width: 5px;
         }
 
         .rs-ext-table-button {
@@ -1640,9 +1644,21 @@ let onStart = function () {
         refreshBanlistIcons();
     }
     
+    const shuffleMain = function () {
+        Editor.detachCards();
+        Editor.shuffleArray(Editor["main"]);
+        Editor.attachCards();
+        addEditPoint();
+        refreshBanlistIcons();
+    };
+    
     let shuffleButton = $("#editor-shuffle-button");
     shuffleButton.unbind();
     shuffleButton.click(shuffleAll);
+    shuffleButton.contextmenu(function (e) {
+        e.preventDefault();
+        shuffleMain();
+    });
     
     // code for Export readable
     const countIn = function (arr, el) {
@@ -1677,7 +1693,7 @@ let onStart = function () {
     let saveButton = $("#editor-save-button");
     
     // remove annoying spacers
-    $("#editor-menu-spacer").toggle(false);
+    // $("#editor-menu-spacer").toggle(false);
     $("#editor-menu-spacer-small").toggle(false);
     
     $("#editor-menu-content")
@@ -1691,18 +1707,18 @@ let onStart = function () {
     const banlistSelector = makeElement("select", "rs-ext-banlist"); // used later
     banlistSelector.addClass("rs-ext-input");
     
-    const gamemodeSelector = makeElement("select", "rs-ext-gamemode"); // used later
-    gamemodeSelector.addClass("rs-ext-input");
-    for(let [mode, value] of [["Any Format", "!=?"], ["TCG/OCG", "1 OR 2 OR 3"], ["Rush Duels", "4"]]) {
-        let option = makeElement("option", null, mode);
-        option.attr("value", value);
-        gamemodeSelector.append(option);
-    }
-    gamemodeSelector.change(() => {
-        EXT.Cardpool = gamemodeSelector.val();
-        // updateBanlist();
-        updateSearchContents();
-    });
+    // const gamemodeSelector = makeElement("select", "rs-ext-gamemode"); // used later
+    // gamemodeSelector.addClass("rs-ext-input");
+    // for(let [mode, value] of [["Any Format", "!=?"], ["TCG/OCG", "1 OR 2 OR 3"], ["Rush Duels", "4"]]) {
+        // let option = makeElement("option", null, mode);
+        // option.attr("value", value);
+        // gamemodeSelector.append(option);
+    // }
+    // gamemodeSelector.change(() => {
+        // EXT.Cardpool = gamemodeSelector.val();
+        // // updateBanlist();
+        // updateSearchContents();
+    // });
     
     const registerBanlist = function (json) {
         banlists.unshift(json);
@@ -1842,8 +1858,9 @@ let onStart = function () {
     
     banlistSelector.change(updateBanlist);
     
-    gamemodeSelector.insertBefore(saveButton);
-    banlistSelector.insertBefore(gamemodeSelector);
+    banlistSelector.insertBefore(saveButton);
+    // gamemodeSelector.insertBefore(saveButton);
+    // banlistSelector.insertBefore(gamemodeSelector);
     
     // add new buttons
     
@@ -1880,7 +1897,11 @@ let onStart = function () {
         // add empty line at end
         lines.push("");
         let message = lines.join("\n");
-        download(message, Deck.name + ".ydk", "text");
+        let name = Deck.name;
+        if(!useAlias) {
+            name += ".nexus";
+        }
+        download(message, name + ".ydk", "text");
     }
     
     exportButton.click(exportYdk);
@@ -2065,13 +2086,24 @@ let onStart = function () {
     let filterHelp = new HelpPage("Queries");
     filterHelp.addPage("If you look at the \u201cSearch by name/query\u201d box, you can easily see that it allows queries. Queries follow the form {stuff}, where stuff is the filter you are trying to access. There's a variety of filters available, and all of the various inputs offered by the filter tabs use these queries internally.");
     
+    let buttonHelp = new HelpPage("Buttons");
+    buttonHelp.addPage("This help sequence will explain some of the less obvious functions of the deck editor. Some buttons have additional functionalities when they are right clicked instead of left clicked.");
+    buttonHelp.addPage("[Shuffle] Left click: Shuffle all three sections of the deck builder. Right click: Shuffle only the main deck.");
+    buttonHelp.addPage("[Export] Left click: Exports your deck as a .ydk file that is compatible with major Yu-Gi-Oh! simulators. Right click: Export the deck as a .nexus.ydk file, which saves whether or not certain cards use alternate arts. Alternate arts are treated differently by different simulators, which is why this secondary functionality exists.");
+    
+    let helpButtonPages = [
+        inlineSyntaxHelp,
+        filterHelp,
+        buttonHelp
+    ];
     helpButton.click(function () {
-        let b1 = NexusGUI.button("Inline Syntax");
-        let b2 = NexusGUI.button("Queries");
-        let container = $("<div>").append(b1, b2);
+        let container = $("<div>");
+        for(let page of helpButtonPages) {
+            let button = NexusGUI.button(page.name.replace("Help: ", ""));
+            page.attachToClick(button);
+            container.append(button);
+        }
         NexusGUI.popup("Help", container, { style: "minimal" });
-        inlineSyntaxHelp.attachToClick(b1);
-        filterHelp.attachToClick(b2);
     });
     
     // add options tile
