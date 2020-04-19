@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.19.3
+// @version      0.19.4
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -319,6 +319,7 @@ let onStart = function () {
                       <option>Level</option>
                       <option>ATK</option>
                       <option>DEF</option>
+                      <option>Scale</option>
                     </select>
                   </td>
                 </tr>
@@ -2797,7 +2798,7 @@ let onStart = function () {
         "Level": compareBy(x => x.level),
         "ATK": compareBy(x => x.attack),
         "DEF": compareBy(x => x.defence),
-        // "SCALE": compareBy(x => x.xa),
+        "Scale": compareBy(x => x.lscale),
         
         // TODO: sort each sub-strata? e.g. all level 1s by name
         // "Level": compareByAlterantives("level", "name"),
