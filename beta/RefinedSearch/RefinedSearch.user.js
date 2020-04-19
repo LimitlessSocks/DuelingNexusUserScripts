@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.19.4
+// @version      0.19.5
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -407,6 +407,7 @@ let onStart = function () {
                         <option>Xyz</option>
                         <option>Pendulum</option>
                         <option>Link</option>
+                        <option>Legend</option>
                         <option>Leveled</option>
                         <option>Extra Deck</option>
                         <option>Non-Effect</option>
@@ -1079,6 +1080,7 @@ let onStart = function () {
     const isUnionMonster        = (card) => card.type & cardTypeMap["Union"];
     const isXyzMonster          = (card) => card.type & cardTypeMap["Xyz"];
     const isPendulumMonster     = (card) => card.type & cardTypeMap["Pendulum"];
+    const isLegendMonster       = (card) => 4 === card.ot && 1 === card.category;
     
     const isExtraDeckMonster = (card) => [
         isFusionMonster,
@@ -1126,6 +1128,7 @@ let onStart = function () {
         "PEND": isPendulumMonster,
         "LEVELED": isLevelMonster,
         "EXTRA": isExtraDeckMonster,
+        "LEGEND": isLegendMonster,
     };
     
     
@@ -1310,7 +1313,7 @@ let onStart = function () {
                 // cannot have more than 3 copies
                 || Editor.getCardCount(ident) >= (EXT.BYPASS_LIMIT ? 3 : allowedCount(ident))
                 // cannot have more than 1 of a Rush Duel Legend card
-                || 4 === card.ot && 1 === card.category && 1 === Editor.getLegendCount()
+                || isLegendMonster(card) && 1 === Editor.getLegendCount()
             );
             
             if (!isInvalidLocation) {
@@ -2395,6 +2398,7 @@ let onStart = function () {
         "Xyz": "XYZ",
         "Pendulum": "PEND",
         "Link": "LINK",
+        "Legend": "LEGEND",
         // derived
         "Leveled": "LEVELED",
         "Extra Deck": "EXTRA",
