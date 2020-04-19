@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.19.5
+// @version      0.19.6
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -369,6 +369,9 @@ let onStart = function () {
                     </select>
                   </td>
                 </tr>
+                <tr>
+                  <th>Is Trap Monster?</th>
+                  <td><input type=checkbox id=rs-ext-is-trap-monster></td>
               </table>
             </div>
             <div id=rs-ext-monster class="rs-ext-shrinkable rs-ext-shrunk">
@@ -1081,6 +1084,7 @@ let onStart = function () {
     const isXyzMonster          = (card) => card.type & cardTypeMap["Xyz"];
     const isPendulumMonster     = (card) => card.type & cardTypeMap["Pendulum"];
     const isLegendMonster       = (card) => 4 === card.ot && 1 === card.category;
+    const isTrapMonster         = (card) => (card.type & 131076) && card.race !== 0;
     
     const isExtraDeckMonster = (card) => [
         isFusionMonster,
@@ -1129,6 +1133,7 @@ let onStart = function () {
         "LEVELED": isLevelMonster,
         "EXTRA": isExtraDeckMonster,
         "LEGEND": isLegendMonster,
+        "TRAPMONSTER": isTrapMonster,
     };
     
     
@@ -2463,8 +2468,9 @@ let onStart = function () {
     }
     
     const SPELL_TRAP_INPUTS = {
-        SPELL:       $("#rs-ext-spell-type"),
-        TRAP:        $("#rs-ext-trap-type"),
+        SPELL:         $("#rs-ext-spell-type"),
+        TRAP:          $("#rs-ext-trap-type"),
+        TRAP_MONSTER:  $("#rs-ext-is-trap-monster"),
     };
     const SPELL_TO_KEYWORD = {
         "Normal": "NORMALST",
@@ -2498,6 +2504,10 @@ let onStart = function () {
         if(value) {
             let keyword = TRAP_TO_KEYWORD[value];
             tagString += tagStringOf(keyword);
+        }
+        
+        if(SPELL_TRAP_INPUTS.TRAP_MONSTER.is(":checked")) {
+            tagString += "{TRAPMONSTER}";
         }
         
         return tagString;
