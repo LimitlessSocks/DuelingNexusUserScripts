@@ -3160,6 +3160,9 @@ let onStart = function () {
             else if(jq.hasClass("rs-ext-selected")) {
                 jq.click();
             }
+            else if(jq.attr("type") === "checkbox") {
+                jq.prop("checked", false);
+            }
             else if(jq.val) {
                 jq.val("");
             }
