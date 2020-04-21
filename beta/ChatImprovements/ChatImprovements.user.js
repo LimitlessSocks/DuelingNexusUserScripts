@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Dueling Nexus Chat Improvements Plugin
 // @namespace    https://duelingnexus.com/
-// @version      0.11.0
+// @version      0.12.0
 // @description  Revamps the chat and visual features of dueling.
 // @author       Sock#3222
 // @grant        none
@@ -10,7 +10,7 @@
 // @downloadURL  https://raw.githubusercontent.com/LimitlessSocks/DuelingNexusUserScripts/master/beta/ChatImprovements/ChatImprovements.user.js
 // ==/UserScript==
 
-// TODO: show chat during ranked
+// TODO: show chat during ranked - game-container
 // TODO: show options during pre-round
 
 // Game.Card = function(a, b) {
@@ -425,6 +425,19 @@ let onload = function () {
     html {
         background: url(https://cdn.discordapp.com/attachments/486534021992677378/683119685407211556/20201002_-_DN_-_TEMP_BG_-_v1-1.jpg) no-repeat 50% fixed !important;    
         background-size: 100% 100% !important;
+    }
+    #game-selection-window {
+        overflow-y: auto;
+    }
+    #game-rps-container {
+        position: fixed;
+        top: 3%;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 30px;
+        background: rgba(0, 0, 0, 0.8);
+        border-radius: 30px;
+        border: 3px solid rgb(20, 20, 20);
     }
     </style>`));
     
@@ -1072,8 +1085,7 @@ let onload = function () {
                              .css("cursor", "pointer");
                 
                 updateValueTd.click(() => {
-                    // TODO: fix this.tag
-                    NexusGUI.prompt("Enter the new value for \"" + this.tag + "\":").then((newValue) => {
+                    NexusGUI.prompt("Enter the new value for \"" + this.name + "\":").then((newValue) => {
                         if(newValue !== null) {
                             base.val(newValue);
                             onValueChange();
@@ -1890,6 +1902,16 @@ let onload = function () {
         }
     });
     
+    let oldGameWin = Game.onGameWin;
+    Game.onGameWin = function (a) {
+        Game.players[a.player].score = Game.players[a.player].score || 0;
+        Game.players[a.player].score++;
+        oldGameWin(a);
+    };
+    if(Game.messageHandlers.GameWin) {
+        Game.messageHandlers.GameWin = Game.onGameWin;
+    }
+    
     // sounds
     const swapSound = (sound, src) => {
         for(let i = 0; i < Engine.audio.sounds[sound].length; i++) {
@@ -1904,6 +1926,42 @@ let onload = function () {
         // swapSound("activate", "https://freesound.org/people/Headphaze/sounds/277031/download/277031__headphaze__ui-completed-status-alert-notification-sfx003.wav");
     }
     setTimeout(() => $(window).resize(), 200);
+    
+    // let oldOnSidingRequested = Game.onSidingRequested;
+    // Game.onSidingRequested = function (a) {
+        // oldOnSidingRequested(a);
+        
+        // $("#game-siding-done").off("click").on("click", function() {
+            // Game.sendMessage({
+                // type: "UpdateDeck",
+                // main: Game.sidingDeck.main,
+                // extra: Game.sidingDeck.extra,
+                // side: Game.sidingDeck.side
+            // });
+            // $("#ci-ext-misc").show();
+        // })
+    // };
+    let oldOnDuelStarted = Game.onDuelStarted;
+    Game.onDuelStarted = function () {
+        oldOnDuelStarted();
+        if(Game.isInitialized) {
+            $("#game-container").show();
+            for (var a = 0; 2 > a; ++a) Game.fields[a].clear();
+        }
+    };
+    if(Game.messageHandlers.DuelStarted) {
+        Game.messageHandlers.DuelStarted = Game.onDuelStarted;
+    }
+    let oldOnRequestStartingPlayer = Game.onRequestStartingPlayer;
+    Game.onRequestStartingPlayer = function () {
+        if($("#game-container")) {
+            // $("#game-container").hide();
+        }
+        oldOnRequestStartingPlayer();
+    };
+    if(Game.messageHandlers.RequestStartingPlayer) {
+        Game.messageHandlers.RequestStartingPlayer = Game.onRequestStartingPlayer;
+    }
 };
 
 waitForElementJQuery("#game-room-container:visible, #game-field:visible").then(() => {
