@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.19.10
+// @version      0.19.11
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -334,7 +334,7 @@ let onStart = function () {
                 </tr>
                 <tr>
                   <th>Stratify?</th>
-                  <td><input type=checkbox id=rs-ext-general-stratify checked></td>
+                  <td><input type=checkbox id=rs-ext-general-stratify checked default="true"></td>
                 </tr>
               </table>
             </div>
@@ -3177,7 +3177,7 @@ let onStart = function () {
                 jq.click();
             }
             else if(jq.attr("type") === "checkbox") {
-                jq.prop("checked", false);
+                jq.prop("checked", a.attr("default") || false);
             }
             else if(jq.val) {
                 jq.val("");
