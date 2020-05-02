@@ -1,13 +1,14 @@
 // ==UserScript==
 // @name         Dueling Nexus Trinity Deck Editor
 // @namespace    https://duelingnexus.com/
-// @version      0.4.2
+// @version      0.4.3
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
 // @include      https://duelingnexus.com/editor/*
 // @require      BanlistInit.js
 // @require      Banlist2020-1.js
+// @require      Banlist2020-5.js
 // @updateURL    https://github.com/LimitlessSocks/DuelingNexusUserScripts/raw/master/beta/TrinityDeckEditor/TrinityDeckEditor.user.js
 // @downloadURL  https://github.com/LimitlessSocks/DuelingNexusUserScripts/raw/master/beta/TrinityDeckEditor/TrinityDeckEditor.user.js
 // ==/UserScript==
