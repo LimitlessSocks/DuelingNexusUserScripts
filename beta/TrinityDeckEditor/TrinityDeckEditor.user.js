@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Dueling Nexus Trinity Deck Editor
 // @namespace    https://duelingnexus.com/
-// @version      0.4.0
+// @version      0.4.1
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -91,7 +91,7 @@ class TrinityBanlist {
         return status;
     }
     // TODO: potential model of get initial card counts then keep track with onEdit functions
-    sortRestricted: function (state = EXT.EDIT_API.currentDeckState(true)) {
+    sortRestricted (state = EXT.EDIT_API.currentDeckState(true)) {
         let statistics = {
             normal: [],
             coforbidden: [],
@@ -159,7 +159,7 @@ class TrinityBanlist {
         }
         let info = this.sortRestricted();
         return info.statuses[id][index];
-    },
+    }
 }
 
 TrinityBanlistExtension.TrinityBanlist = TrinityBanlist;
@@ -170,7 +170,7 @@ EXT.EDIT_API.waitForReady().then(() => {
 // {        name: "2020.01 TRIN",
         // banlistIds: TrinityBanlistRaw, // defined in ./Banlist.js
     for(let banlistInfo of TRINITY_BANLISTS) {
-        let banlist = makeNewTrinityBanlist(banlistInfo.name, banlistInfo.ids);
+        let banlist = new TrinityBanlist(banlistInfo.name, banlistInfo.ids);
         TrinityBanlistExtension.formats.push(banlist);
         EXT.EDIT_API.registerBanlist(banlist);
     }
