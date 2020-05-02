@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.19.12
+// @version      0.19.13
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -1785,11 +1785,22 @@ let onStart = function () {
     const getBanlistIconImage = function (id, alias = 0, index = null) {
         let banlist = enabledBanlist();
         
-        let result = restrictedStatus(id, banlist, index);
-        let aliasResult = alias ? result : restrictedStatus(alias, banlist, index);
+        let ident = alias || id;
         
-        result.restricted = aliasResult.restricted || aliasResult.restricted;
-        if(aliasResult.limitStatus < result.limitStatus) {
+        let result = restrictedStatus(ident, banlist, index);
+        let aliasResult;
+        if(alias) {
+            try {
+                aliasResult = result;
+                result = restrictedStatus(id, banlist, index);
+            }
+            catch(e) {
+                aliasResult = null;
+            }
+        }
+        
+        if(aliasResult && aliasResult.restricted) {
+            result.restricted = aliasResult.restricted;
             result.limitStatus = aliasResult.limitStatus;
         }
         
