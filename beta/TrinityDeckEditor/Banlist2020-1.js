@@ -1,4 +1,4 @@
-const TrinityBanlistRaw = {
+const Banlist2020_1 = {
     // forbidden
     91740879: 0,
     25533642: 0,
@@ -1101,3 +1101,5 @@ const TrinityBanlistRaw = {
     7459013: 3,
     4148264: 3,
 };
+
+registerFormatBanlist("2020.01 TRIN", Banlist2020_1);
