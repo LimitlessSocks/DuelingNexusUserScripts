@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Dueling Nexus Trinity Deck Editor
 // @namespace    https://duelingnexus.com/
-// @version      0.4.1
+// @version      0.4.2
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
