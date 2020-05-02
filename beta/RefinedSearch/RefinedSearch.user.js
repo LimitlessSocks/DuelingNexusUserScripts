@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.19.11
+// @version      0.19.12
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -1025,8 +1025,8 @@ let onStart = function () {
         });
         /* BANLIST TOKEN GENERATION */
         let banlistIcon = template.find(".editor-search-banlist-icon");
-        let sourceId = card.alias || card.id;
-        let iconStatus = getBanlistIconImage(sourceId);
+        // let sourceId = card.alias || card.id;
+        let iconStatus = getBanlistIconImage(card.id, card.alias, null);
         if(iconStatus.restricted) {
             banlistIcon.attr("src", iconStatus.src);
         }
@@ -1393,16 +1393,11 @@ let onStart = function () {
                     };
                 }
                 
-                g = allowedCount(card);
-                if(g !== 3) {
-                    a = banlistIcons[a];
-                    a = $("<img>").attr("src", "assets/images/" + a);
-                    d.data("banlist", a);
-                    $("#editor-banlist-icons").append(a);
-                } else if(card.ot === 4 && card.category === 1) {
-                    a = $("<img>").attr("src", "assets/images/legend.png");
-                    d.data("banlist", a);
-                    $("#editor-banlist-icons").append(a);
+                let iconStatus = getBanlistIconImage(card.id, card.alias, null);
+                if(iconStatus.restricted) {
+                    let img = $("<img>").attr("src", iconStatus.src);
+                    d.data("banlist", img);
+                    $("#editor-banlist-icons").append(img);
                 } else {
                     d.data("banlist", null);
                 }
@@ -1787,10 +1782,16 @@ let onStart = function () {
     };
     EXT.EDIT_API.restrictedStatus = restrictedStatus;
     
-    const getBanlistIconImage = function (id, index = null) {
+    const getBanlistIconImage = function (id, alias = 0, index = null) {
         let banlist = enabledBanlist();
         
         let result = restrictedStatus(id, banlist, index);
+        let aliasResult = alias ? result : restrictedStatus(alias, banlist, index);
+        
+        result.restricted = aliasResult.restricted || aliasResult.restricted;
+        if(aliasResult.limitStatus < result.limitStatus) {
+            result.limitStatus = aliasResult.limitStatus;
+        }
         
         if(result.restricted) {
             let iconSource = banlist.icons || banlistIcons;
@@ -1798,10 +1799,14 @@ let onStart = function () {
         }
         
         else {
-            let card = Engine.database.cards[id];
-            if(card.ot === 4 && card.category === 1) {
-                result.restricted = true;
-                result.src = "assets/images/legend.png";
+            for(let testId of [id, alias]) {
+                let card = Engine.database.cards[testId];
+                if(card && card.ot === 4 && card.category === 1) {
+                    result.restricted = true;
+                    result.limitStatus = 1;
+                    result.src = "assets/images/legend.png";
+                    break;
+                }
             }
         }
         
@@ -1812,9 +1817,10 @@ let onStart = function () {
     const updateSearchBanlistIcons = function () {
         for(let entry of $(".editor-search-result")) {
             let template = $(entry);
-            let id = template.data("alias") || template.data("id");
+            let id = template.data("id");
+            let alias = template.data("alias");
             let banlistIcon = template.find(".editor-search-banlist-icon");
-            let iconStatus = getBanlistIconImage(id);
+            let iconStatus = getBanlistIconImage(id, alias);
             if(iconStatus.restricted) {
                 banlistIcon.attr("src", iconStatus.src);
             }
@@ -1836,12 +1842,14 @@ let onStart = function () {
             let collection = document.querySelectorAll("#editor-" + destination + "-deck .editor-card-small");
             for(let pic of collection) {
                 let el = $(pic);
-                let id = el.data("alias") || el.data("id");
+                let id = el.data("id");
+                let alias = el.data("alias");
+                let base = alias || id;
                 // let id = el.data("id");
                 // console.log(id);
-                counts[id] = counts[id] || 0;
-                let iconStatus = getBanlistIconImage(id, counts[id]);
-                counts[id]++;
+                counts[base] = counts[base] || 0;
+                let iconStatus = getBanlistIconImage(id, alias, counts[base]);
+                counts[base]++;
                 
                 let banlistIcon = el.find(".editor-search-banlist-icon");
                 
