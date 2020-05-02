@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Dueling Nexus Trinity Deck Editor
 // @namespace    https://duelingnexus.com/
-// @version      0.4.3
+// @version      0.4.4
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -79,7 +79,7 @@ class TrinityBanlist {
     
     unload () {
         EXT.RECALCULATE_BANLIST = false;
-        EXT.STATISTICS_API.Breakdown.LimitStatus = oldLimitStatus;
+        EXT.STATISTICS_API.Breakdown.LimitStatus = this.oldLimitStatus;
     }
     
     isRestricted (limitStatus) {
