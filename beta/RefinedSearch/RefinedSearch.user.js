@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.19.13
+// @version      0.19.14
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -336,6 +336,10 @@ let onStart = function () {
                   <th>Stratify?</th>
                   <td><input type=checkbox id=rs-ext-general-stratify checked default="true"></td>
                 </tr>
+                <tr>
+                  <th>Is Legend?</th>
+                  <td><input type=checkbox id=rs-ext-general-legend></td>
+                </tr>
               </table>
             </div>
             <div id=rs-ext-spell class="rs-ext-shrinkable rs-ext-shrunk">
@@ -411,7 +415,6 @@ let onStart = function () {
                         <option>Xyz</option>
                         <option>Pendulum</option>
                         <option>Link</option>
-                        <option>Legend</option>
                         <option>Leveled</option>
                         <option>Extra Deck</option>
                         <option>Non-Effect</option>
@@ -2448,7 +2451,7 @@ let onStart = function () {
         "Xyz": "XYZ",
         "Pendulum": "PEND",
         "Link": "LINK",
-        "Legend": "LEGEND",
+        // "Legend": "LEGEND",
         // derived
         "Leveled": "LEVELED",
         "Extra Deck": "EXTRA",
@@ -2568,10 +2571,12 @@ let onStart = function () {
     const CARDPOOL_EXCLUSIVE_INPUT = $("#rs-ext-general-cardpool-exclusive");
     const GENERIC_INPUTS = {
         LIMIT:      $("#rs-ext-general-limit"),
+        LEGEND:     $("#rs-ext-general-legend"),
         // CARDPOOL:   $("#rs-ext-general-cardpool")
     };
     const GENERIC_INPUT_LABELS = {
         LIMIT:      "LIMIT",
+        LEGEND:     "LEGEND",
         // CARDPOOL:   "CPOOL",
     };
     const generateSearchFilters = function () {
@@ -2615,7 +2620,14 @@ let onStart = function () {
             let tagName = GENERIC_INPUT_LABELS[key];
             let val = value.val();
             if(val) {
-                tags += tagStringOf(tagName, val);
+                if(value.attr("type") === "checkbox") {
+                    if(value.is(":checked")) {
+                        tags += tagStringOf(tagName);
+                    }
+                }
+                else {
+                    tags += tagStringOf(tagName, val);
+                }
             }
         }
         
