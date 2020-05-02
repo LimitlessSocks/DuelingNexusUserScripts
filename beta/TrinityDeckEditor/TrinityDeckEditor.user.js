@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Dueling Nexus Trinity Deck Editor
 // @namespace    https://duelingnexus.com/
-// @version      0.3.0
+// @version      0.3.1
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -120,9 +120,7 @@ const TrinityBanlist = {
     
     icons: {
         0: "https://cdn.discordapp.com/attachments/486534021992677378/676477606270468146/Forbidden.png",
-        // 1: "https://cdn.discordapp.com/attachments/486534021992677378/676480207762489355/Semi_Forbidden.png",
         2: "https://cdn.discordapp.com/attachments/405527007384829962/676594683991949332/P-symbol.png",
-        // 2: "https://cdn.discordapp.com/attachments/486534021992677378/676480197494833152/Co_Forbidden.png",
         1: "https://cdn.discordapp.com/attachments/405527007384829962/676594703956836412/P-2-symbol.png",
         3: "https://cdn.discordapp.com/attachments/486534021992677378/676480226376548363/Unbound.png",
         4: "https://cdn.discordapp.com/attachments/486534021992677378/676480217564577812/Trinity_Format.png",
@@ -134,8 +132,6 @@ const TrinityBanlist = {
         2: "https://static.wixstatic.com/media/e92756_84a95aca5554478193ec85637c732605~mv2.png/v1/crop/x_2,y_2,w_998,h_983/fill/w_64,h_63,al_c,q_85,usm_0.66_1.00_0.01/Semi.webp",
         3: "https://i.imgur.com/XexL4Ra.png",
         4: "https://i.imgur.com/lNHKGqb.png",
-        // 3: "https://i.imgur.com/nwLcKmU.png",
-        // 3: "https://static.wixstatic.com/media/e92756_e4a4a871625142b2aa104650f96380ad~mv2.png/v1/fill/w_63,h_63,al_c,q_85,usm_0.66_1.00_0.01/yellow.webp",
     },
 };
 window.TrinityBanlist = TrinityBanlist;
