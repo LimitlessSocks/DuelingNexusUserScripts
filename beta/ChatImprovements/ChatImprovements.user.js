@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Dueling Nexus Chat Improvements Plugin
 // @namespace    https://duelingnexus.com/
-// @version      0.12.0
+// @version      0.12.1
 // @description  Revamps the chat and visual features of dueling.
 // @author       Sock#3222
 // @grant        none
@@ -1699,6 +1699,7 @@ let onload = function () {
         a = 4 <= Game.masterRule ? 7 : 6;
         var b = $(window).width() - $("#ci-ext-misc > div:visible").width() - 50,
             c = $(window).height() - $("#game-chat-area").height() - 8 - 48;
+        console.log(a, b, c);
         9 * c / a < b ? ($("#game-field").css("height", c + "px"), b = c / a, $("#game-field").css("width", 9 * b + "px")) : ($("#game-field").css("width", b + "px"), b /= 9, $("#game-field").css("height", b * a + "px"));
         $(".game-field-zone").css("width", b + "px").css("height", b + "px");
         $(".game-field-hand").css("width", 5 * b + "px").css("height", b + "px");
@@ -1721,11 +1722,9 @@ let onload = function () {
         $("#game-position-def-down").css("width", Game.cardWidth);
         $("#game-position-def-down").css("height", Game.cardHeight);
         $(".game-selection-card-image").css("width", Game.cardWidth);
-        Game.isSiding && Game.sidingResize()
+        Game.isSiding && Game.sidingResize();
     };
-    
-    $(window).off("resize");
-    $(window).resize(function () {
+    Game.updateSizes = function () {
         try {
             resize();
         }
@@ -1733,7 +1732,9 @@ let onload = function () {
             console.warn("Error while window resizing (probably safe to ignore if everything is working)");
             console.warn(e);
         }
-    });
+    }
+    $(window).off("resize");
+    $(window).resize(Game.updateSizes);
     
     let oldOnTarget = Game.onGameBecomeTarget;
     
@@ -1762,7 +1763,7 @@ let onload = function () {
         let originalZ = this.imgElement.css("z-index") || "2";
         let callback = () => {
             if(cb) {
-                console.log("CALLING BACK!");
+                // console.log("CALLING BACK!");
                 cb();
             }
         };
