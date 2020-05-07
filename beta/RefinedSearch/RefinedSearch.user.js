@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.19.14
+// @version      0.19.15
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -3208,7 +3208,7 @@ let onStart = function () {
                 jq.click();
             }
             else if(jq.attr("type") === "checkbox") {
-                jq.prop("checked", a.attr("default") || false);
+                jq.prop("checked", jq.attr("default") || false);
             }
             else if(jq.val) {
                 jq.val("");
