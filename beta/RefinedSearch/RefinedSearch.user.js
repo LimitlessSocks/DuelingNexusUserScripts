@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.19.15
+// @version      0.20.1
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -87,6 +87,67 @@ const FN = {
     },
 };
 window.FN = FN;
+
+// custom filters
+const CUSTOM_FILTERS_KEY = "RefinedSearchCustomFilters";
+const CustomFilters = {
+    Filter: class Filter {
+        constructor(name, body, advanced = false) {
+            this.name = name;
+            this.body = body;
+            this.advanced = advanced;
+        }
+        
+        static fromObject({ name, body, advanced }) {
+            return new CustomFilters.Filter(name, body, advanced);
+        }
+    },
+    filters: {},
+    names: [],
+    
+    resetCache () {
+        if(localStorage.getItem(CUSTOM_FILTERS_KEY)) {
+            return localStorage.removeItem("RefinedSearchCustomFilters");
+        }
+        return null;
+    },
+    initializeCache () {
+        if(!localStorage.getItem(CUSTOM_FILTERS_KEY)) {
+            CustomFilters.updateCache();
+        }
+        CustomFilters.filters = JSON.parse(localStorage.getItem(CUSTOM_FILTERS_KEY));
+        CustomFilters.names = Object.keys(CustomFilters.filters)
+        for(let name of CustomFilters.names) {
+            let parsed = CustomFilters.Filter.fromObject(CustomFilters.filters[name]);
+            CustomFilters.filters[name] = parsed;
+        }
+    },
+    updateCache () {
+        localStorage.setItem(CUSTOM_FILTERS_KEY, JSON.stringify(CustomFilters.filters));
+    },
+    insertItem (key, value) {
+        CustomFilters.names.push(key);
+        CustomFilters.filters[key] = value;
+        CustomFilters.updateCache();
+    },
+    addFilter (name, body) {
+        name = name.toUpperCase();
+        let newFilter = new CustomFilters.Filter(name, body);
+        CustomFilters.insertItem(name, newFilter);
+    },
+    addAdvancedFilter (name, body) {
+        name = name.toUpperCase();
+        let newAdvancedFilter = new CustomFilters.Filter(name, body, true);
+        CustomFilters.insertItem(name, newAdvancedFilter);
+    },
+    removeFilter (name) {
+        name = name.toUpperCase();
+        delete CustomFilters.filters[name];
+        CustomFilters.updateCache();
+    }
+};
+EXT.CustomFilters = CustomFilters;
+CustomFilters.initializeCache();
 
 const TokenTypes = {
     OPERATOR: Symbol("TokenTypes.OPERATOR"),
@@ -1655,7 +1716,7 @@ let onStart = function () {
     };
     
     // reset listener for editor's sort button
-    let sortButton = $("editor-sort-button");
+    let sortButton = $("#editor-sort-button");
     sortButton.unbind();
     sortButton.click(sort);
     
@@ -2657,11 +2718,32 @@ let onStart = function () {
         }
     }
     
+    // modified from https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error#ES6_Custom_Error_Class
+    class CustomFilterException extends Error {
+        constructor(tagName, ...params) {
+            // Pass remaining arguments (including vendor specific ones) to parent constructor
+            super(...params);
+            
+            this.tagName = tagName;
+
+            // Maintains proper stack trace for where our error was thrown (only available on V8)
+            if(Error.captureStackTrace) {
+                Error.captureStackTrace(this, CustomFilterException);
+            }
+
+            this.name = "CustomFilterException";
+        }
+    }
+    
     const createKindValidator = function (tagName) {
         tagName = tagName.toUpperCase();
         if(kindMap[tagName]) {
             return kindMap[tagName];
-        } else {
+        }
+        else if(EXT.CustomFilters.filters[tagName]) {
+            throw new CustomFilterException(tagName);
+        }
+        else {
             addMessage(STATUS.ERROR, "No such kind tag: " + tagName);
             return null;
         }
@@ -2799,6 +2881,19 @@ let onStart = function () {
                 return function () {
                     return true;
                 };
+            }
+        }
+        else if(EXT.CustomFilters.filters[tag.param]) {
+            let filter = EXT.CustomFilters.filters[tag.param];
+            if(filter.advanced) {
+                let body = new Function("card", "X", "comp", filter.body);
+                // console.log("TAG:", tag);
+                return function (card) {
+                    return body(card, tag.value, tag.comp);
+                };
+            }
+            else {
+                throw new CustomFilterException(tag.param);
             }
         }
         else {
@@ -2997,6 +3092,70 @@ let onStart = function () {
     };
     // window.parseInputQuery=parseInputQuery;
     const ISOLATE_TAG_REGEX = /\{(!?)(\w+)([^\{\}]*?)\}/g;
+    const formTagsFromInput = function (input) {
+        let tags = [];
+        let messages = [];
+        input = input.replace(ISOLATE_TAG_REGEX, function (match, isNegation, param, info) {
+            // tag is usually just removed
+            let remnant = "";
+            // over each tag:
+            let validator;
+            try {
+                try {
+                    if(info) {
+                        validator = textToPredicate(info, param);
+                    }
+                    else {
+                        validator = createKindValidator(param);
+                    }
+                }
+                catch(e) {
+                    if(!(e instanceof CustomFilterException)) {
+                        throw e;
+                    }
+                    let filter = EXT.CustomFilters.filters[e.tagName];
+                    if(filter.advanced) {
+                        validator = new Function("card", filter.body);
+                    }
+                    else {
+                        let body = filter.body;
+                        if(info) {
+                            body = body.replace(/_/g, info);
+                        }
+                        let isolatedData = formTagsFromInput(body);
+                        remnant += isolatedData.result;
+                        let localTags = isolatedData.tags;
+                        validator = function (...args) {
+                            return localTags.every(fn => fn(...args));
+                        };
+                        for(let message of isolatedData.messages) {
+                            messages.push(...message);
+                        }
+                    }
+                }
+            } catch(error) {
+                messages.push([(STATUS.ERROR, "Problem creating validator: " + error.message)]);
+                return "";
+            }
+            
+            if(validator) {
+                if(isNegation) {
+                    validator = FN.compose(FN.not, validator);
+                }
+                tags.push(validator);
+            }
+            else if(validator !== null) {
+                messages.push([STATUS.ERROR, "Invalid validator (bug, please report): " + match]);
+            }
+            
+            return remnant;
+        });
+        return {
+            result: input,
+            tags: tags,
+            messages: messages
+        };
+    };
     let updateSearchContents = function () {
         Editor.clearSearch();
         initializeMessageContainer();
@@ -3011,35 +3170,12 @@ let onStart = function () {
         }
         
         // isolate the tags in the input
-        let tags = [];
-        input = input.replace(ISOLATE_TAG_REGEX, function (match, isNegation, param, info) {
-            // over each tag:
-            let validator;
-            try {
-                if(info) {
-                    validator = textToPredicate(info, param);
-                }
-                else {
-                    validator = createKindValidator(param);
-                }
-            } catch(error) {
-                addMessage(STATUS.ERROR, "Problem creating validator: " + error.message);
-                return "";
-            }
-            
-            if(validator) {
-                if(isNegation) {
-                    validator = FN.compose(FN.not, validator);
-                }
-                tags.push(validator);
-            }
-            else if(validator !== null) {
-                addMessage(STATUS.ERROR, "Invalid validator (bug, please report): " + match);
-            }
-            
-            // remove the tag, replace with nothing
-            return "";
-        });
+        let isolatedData = formTagsFromInput(input);
+        input = isolatedData.result;
+        let { tags } = isolatedData;
+        for(let message of isolatedData.messages) {
+            addMessage(...message);
+        }
         
         // remove any improper tags
         input = input.replace(/\{[^\}]*$/, function (tag) {
