@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.20.1
+// @version      0.20.2
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -1151,7 +1151,8 @@ let onStart = function () {
     
     const isNormalMonster       = (card) => card.type & cardTypeMap["Normal"];
     const isEffectMonster       = (card) => card.type & cardTypeMap["Effect"];
-    const isMonster             = (card) => !isTrapCard(card) && !isSpellCard(card);
+    // const isMonster             = (card) => !isTrapCard(card) && !isSpellCard(card);
+    const isMonster             = (card) => card.type & cardTypeMap["Monster"];
     const isNonEffectMonster    = (card) => !isEffectMonster(card);
     const isFusionMonster       = (card) => card.type & cardTypeMap["Fusion"];
     const isRitualMonster       = (card) => isMonster(card) && (card.type & cardTypeMap["Ritual"]);
@@ -1177,8 +1178,10 @@ let onStart = function () {
     
     const isLevelMonster = (card) => isMonster(card) && !isLinkMonster(card) && !isXyzMonster(card);
     
+    const isMainDeckMonster = (card) => isMonster(card) && !isExtraDeckMonster(card);
+    const isMainDeckCard = (card) => isMainDeckMonster(card) || isSpellCard(card) || isTrapCard(card);
     // non-ritual main deck monster
-    const isBasicMainDeckMonster  = (card) => isMonster(card) && !isRitualMonster(card) && !isExtraDeckMonster(card);
+    const isBasicMainDeckMonster = (card) => isMainDeckMonster(card) && !isRitualMonster(card);
     
     let kindMap = {
         "TRAP": isTrapCard,
@@ -1216,8 +1219,15 @@ let onStart = function () {
         "EXTRA": isExtraDeckMonster,
         "LEGEND": isLegendMonster,
         "TRAPMONSTER": isTrapMonster,
+        "ST": isSpellOrTrap,
+        "MAIN": isMainDeckCard,
+        "MAINMON": isMainDeckMonster,
     };
-    
+    EXT.is = (kind, card) => {
+        let filter = kindMap[kind.toUpperCase()];
+        if(!filter) return null;
+        return card ? filter(card) : filter;
+    };
     
     const allSatisfies = function (tags, card) {
         return tags.every(tag => tag(card));
