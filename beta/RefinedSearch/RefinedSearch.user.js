@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.20.4
+// @version      0.20.5
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -2565,6 +2565,7 @@ let onStart = function () {
         "Spirit": "SPIRIT",
         "Gemini": "GEMINI",
         "Toon": "TOON",
+        "Union": "UNION",
         "Tuner": "TUNER",
     };
     const CATEGORY_SOURCES = [ "CATEGORY", "ABILITY" ];
