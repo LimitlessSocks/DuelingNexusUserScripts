@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.20.3
+// @version      0.20.4
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -441,27 +441,7 @@ let onStart = function () {
               </table>
             </div>
             <div id=rs-ext-monster class="rs-ext-shrinkable rs-ext-shrunk">
-              <table class="rs-ext-left-float rs-ext-table"id=rs-ext-link-arrows>
-                <tr>
-                  <th colspan=3>Link Arrows</th>
-                </tr>
-                <tr>
-                  <td><button class=rs-ext-toggle-button>↖</button></td>
-                  <td><button class=rs-ext-toggle-button>↑</button></td>
-                  <td><button class=rs-ext-toggle-button>↗</button></td>
-                </tr>
-                <tr>
-                  <td><button class=rs-ext-toggle-button>←</button></td>
-                  <td><button class=rs-ext-toggle-button id=rs-ext-equals>=</button></td>
-                  <td><button class=rs-ext-toggle-button>→</button></td>
-                </tr>
-                <tr>
-                  <td><button class=rs-ext-toggle-button>↙</button></td>
-                  <td><button class=rs-ext-toggle-button>↓</button></td>
-                  <td><button class=rs-ext-toggle-button>↘</button></td>
-                </tr>
-              </table>
-              <div id=rs-ext-monster-table class="rs-ext-left-float rs-ext-table">
+              <div id=rs-ext-monster-table class="rs-ext-right-float rs-ext-table">
                 <table>
                   <tr>
                     <th>Category</th>
@@ -571,6 +551,27 @@ let onStart = function () {
                   </tr>
                 </table>
               </div>
+              
+              <table class="rs-ext-left-float rs-ext-table"id=rs-ext-link-arrows>
+                <tr>
+                  <th colspan=3>Link Arrows</th>
+                </tr>
+                <tr>
+                  <td><button class=rs-ext-toggle-button>↖</button></td>
+                  <td><button class=rs-ext-toggle-button>↑</button></td>
+                  <td><button class=rs-ext-toggle-button>↗</button></td>
+                </tr>
+                <tr>
+                  <td><button class=rs-ext-toggle-button>←</button></td>
+                  <td><button class=rs-ext-toggle-button id=rs-ext-equals>=</button></td>
+                  <td><button class=rs-ext-toggle-button>→</button></td>
+                </tr>
+                <tr>
+                  <td><button class=rs-ext-toggle-button>↙</button></td>
+                  <td><button class=rs-ext-toggle-button>↓</button></td>
+                  <td><button class=rs-ext-toggle-button>↘</button></td>
+                </tr>
+              </table>
             </div>
           </div>
           <div id=rs-ext-spacer></div>
@@ -592,8 +593,8 @@ let onStart = function () {
         
         button.rs-ext-toggle-button {
             cursor: pointer;
-            width: 3em;
-            height: 3em;
+            width: 2.5em;
+            height: 2.5em;
             background: #ddd;
             background: black;
             color: white;
@@ -663,10 +664,14 @@ let onStart = function () {
         #rs-ext-general-table th {
             text-align: right
         }
-
-        .rs-ext-table {
-            padding-right: 5px
+        
+        #rs-ext-monster-table input {
+            width: 15ch;
         }
+
+        /*.rs-ext-table {
+            padding-right: 5px
+        }*/
 
         #rs-ext-spacer {
             height: 0;
