@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.20.2
+// @version      0.20.3
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -1711,24 +1711,52 @@ let onStart = function () {
             it(Editor[name], name);
         }
     };
+    // sorts everything
+    const compareByName = (a, b) => {
+        if ((a.type & 7) != (b.type & 7)) {
+            return (a.type & 7) - (b.type & 7);
+        }
+        if (a.type & CardType.MONSTER) {
+            var c = a.type & 75505856 ? a.type & 75505857 : a.type & 49,
+                d = b.type & 75505856 ? b.type & 75505857 : b.type & 49;
+            if (c != d) return c - d;
+            // if (a.level != b.level) return b.level - a.level;
+            // if (a.attack != b.attack) return b.attack - a.attack;
+            // if (a.defence != b.defence) return b.defence - a.defence
+        } else if ((a.type & 4294967288) != (b.type & 4294967288)) {
+            return (a.type & 4294967288) - (b.type & 4294967288);
+        }
+        return (a.name > b.name) - (a.name < b.name);
+        // return a.id - b.id;
+    };
     
     // sorts everything
-    const sort = function () {
+    const sortBy = function (compare = Editor.compareCards) {
         Editor.detachCards();
         overMainExtraSide((contents, location) => {
             contents.sort((c1, c2) => 
-                Editor.compareCards(Engine.database.cards[c1.data("id")], Engine.database.cards[c2.data("id")])
+                compare(Engine.database.cards[c1.data("id")], Engine.database.cards[c2.data("id")])
             );
         });
         Editor.attachCards();
         addEditPoint();
         refreshBanlistIcons();
     };
+    const sort = function () {
+        sortBy();
+    };
+    const sortByName = function () {
+        sortBy(compareByName);
+    };
     
     // reset listener for editor's sort button
     let sortButton = $("#editor-sort-button");
     sortButton.unbind();
     sortButton.click(sort);
+    sortButton.contextmenu(function (e) {
+        e.preventDefault();
+        sortByName();
+    });
     
     const shuffleAll = function () {
         Editor.detachCards();
