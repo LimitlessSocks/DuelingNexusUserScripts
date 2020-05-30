@@ -875,13 +875,15 @@ let onStartDeckSorter = async function () {
         });
         folderPrompt.addOption(...options);
         form.add(namePrompt, folderPrompt);
+        form.focusKey = namePrompt;
+        form.submit = function (ev, resolve) {
+            resolve({
+                name: namePrompt.element.find("input").val(),
+                folder: folderPrompt.element.val()
+            });
+        };
         form.add(NexusGUI.FormOKCancel(
-            function (ev, resolve) {
-                resolve({
-                    name: namePrompt.element.find("input").val(),
-                    folder: folderPrompt.element.val()
-                });
-            },
+            form.submit,
             () => NexusGUI.closePopup()
         ));
         form.popup("Create New Deck").then(async (data) => {
