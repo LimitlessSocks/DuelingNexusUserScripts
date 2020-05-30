@@ -13,7 +13,7 @@ let onStartDeckSorter = async function () {
     
     if(typeof NexusGUI === "undefined") {
         alert("Error - You need to install the Custom GUI Extension, found here: " + NEXUS_GUI_EXTENSION_INSTALLATION);
-        return;
+        // return;
     }
     
     NexusGUI.addCSS(NexusGUI.q`
