@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CustomNexusGUI API
 // @namespace    https://duelingnexus.com/
-// @version      0.11.1
+// @version      0.11.2
 // @description  To enable custom GUI elements, such as popups.
 // @author       Sock#3222
 // @grant        none
@@ -34,16 +34,27 @@ class NexusForm {
     constructor() {
         this.elements = [];
         this.content = null;
+        this.focusKey;
+        this.submit = null;
     }
     
     add(...formElements) {
         this.elements.push(...formElements);
     }
     
+    listenFocus(focus, callback) {
+        focus.keypress(function (ev) {
+            if(ev.originalEvent.key === "Enter") {
+                callback();
+            }
+        });
+    }
+    
     popup(title = "Form") {
         return new Promise((resolve, reject) => {
             let content = $("<div>");
             let promises = [];
+            let focus;
             
             for(let el of this.elements) {
                 let { promise, element } = el.info();
@@ -51,14 +62,23 @@ class NexusForm {
                     promises.push(promise);
                 }
                 content.append(element);
+                if(el === this.focusKey) {
+                    focus = element;
+                }
             }
             
             this.content = content;
             NexusGUI.popup(title, content).then(() => {
                 resolve();
             });
+            if(focus && this.submit) {
+                this.listenFocus(focus, () => {
+                    NexusGUI.closePopup();
+                    this.submit(null, resolve);
+                });
+            }
             
-            // console.log("THONK", promises);
+            console.log("THONK", promises);
             if(promises.length === 0) {
                 // resolve();
                 return;
