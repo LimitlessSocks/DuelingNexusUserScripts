@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Deck Editor Revamp
 // @namespace    https://duelingnexus.com/
-// @version      0.20.5
+// @version      0.20.6
 // @description  Revamps the deck editor search feature.
 // @author       Sock#3222
 // @grant        none
@@ -133,12 +133,16 @@ const CustomFilters = {
     addFilter (name, body) {
         name = name.toUpperCase();
         let newFilter = new CustomFilters.Filter(name, body);
+        let overwritten = !!CustomFilters.filters[name];
         CustomFilters.insertItem(name, newFilter);
+        return overwritten;
     },
     addAdvancedFilter (name, body) {
         name = name.toUpperCase();
         let newAdvancedFilter = new CustomFilters.Filter(name, body, true);
+        let overwritten = !!CustomFilters.filters[name];
         CustomFilters.insertItem(name, newAdvancedFilter);
+        return overwritten;
     },
     removeFilter (name) {
         name = name.toUpperCase();
@@ -244,7 +248,7 @@ class SearchInputParser {
         return SearchInputParser.parse(text).filter(token => !token.isWhiteSpace());
     }
 }
-SearchInputParser.RULE_EXPRESSION = /^((?:[&=]|[!><]=?)\s*)?("(?:[^"]|"")*"|\S+?(?:\s|$))/;
+SearchInputParser.RULE_EXPRESSION = /^((?:[&$=]|[!><]=?)\s*)?("(?:[^"]|"")*"|\S+?(?:\s|$))/;
 SearchInputParser.RULES = [
     [/^\s+/, TokenTypes.WHITESPACE],
     [/^\(/, TokenTypes.OPEN_PAREN],
@@ -2384,6 +2388,55 @@ let onStart = function () {
         }
     });
     
+    const createFilterButton = $("<button id=rs-ext-create-filter class='engine-button engine-button-default'>")
+        .text("Create Filter")
+        .attr("title", "Milton Button");
+    
+    createFilterButton.click(function () {
+        let form = new NexusGUI.Form();
+        let name = new NexusGUI.FormInput("Filter name");
+        let body = new NexusGUI.FormTextarea("Filter body");
+        let advancedToggle = new NexusGUI.FormInput("Advanced Filter?", "checkbox");
+        form.submit = function (ev, resolve) {
+            resolve({
+                body: body.element.find("textarea").val(),
+                name: name.element.find("input").val(),
+                advanced: advancedToggle.element.find("input").prop("checked")
+            });
+        };
+        form.add(name, body, advancedToggle);
+        form.add(NexusGUI.FormOKCancel(
+            form.submit,
+            () => NexusGUI.closePopup()
+        ));
+        form.css = function (content) {
+            return content.find("input").css("width", "auto");
+        };
+        form.popup("Create New Filter").then((data) => {
+            if(!data) {
+                return;
+            }
+            let method = data.advanced ? CustomFilters.addAdvancedFilter : CustomFilters.addFilter;
+            let overwritten = method(data.name, data.body);
+            let mode = overwritten ? "edited" : "created";
+            let message = "Filter '" + data.name + "' was " + mode + ".";
+            NexusGUI.popup("Success!", message, { style: "minimal" });
+        });
+    });
+    
+    const viewFilterButton = $("<button id=rs-ext-view-filters class='engine-button engine-button-default'>")
+        .text("View Filter");
+    
+    viewFilterButton.click(function () {
+        let content = $("<div>");
+        for(let name of CustomFilters.names) {
+            content.append($("<p>").text(name + " - ").append(
+                $("<code>").text(CustomFilters.filters[name].body)
+            ));
+        }
+        NexusGUI.popup("Filters", content);
+    });
+    
     let buttonHolder = $("<td id=rs-ext-button-holder>");
     buttonHolder.append(leftButton, pageInfo, rightButton);
     
@@ -2417,7 +2470,7 @@ let onStart = function () {
     let trapTab = $("#rs-ext-trap");
     let generalTab = $("#rs-ext-general");
     
-    generalTab.append(addRandomCardButton);
+    generalTab.append(addRandomCardButton, createFilterButton, viewFilterButton);
     
     let spacer = $("#rs-ext-spacer");
     
@@ -2751,7 +2804,10 @@ let onStart = function () {
         "!=": function (x, y) { return x !== y; },
         "<=": function (x, y) { return x  <= y; },
         ">=": function (x, y) { return x  >= y; },
+        // used for indexing
+        "$":  function (x, y) { return x.toString().indexOf(y.toString()) !== -1; },
     };
+    window.COMPARATORS = COMPARATORS;
     const generateComparator = function(compIdentifier) {
         let comp = COMPARATORS[compIdentifier];
         if(comp) {
@@ -2893,7 +2949,7 @@ let onStart = function () {
         else if(tag.param === "NAME") {
             let sub = Engine.cleanText(tag.value);
             return function (cardObject) {
-                return Engine.cleanText(cardObject.Z).indexOf(sub) !== -1;
+                return tag.comp(Engine.cleanText(cardObject.name), sub);
             };
         }
         else if(tag.param === "TYPE") {
@@ -2946,7 +3002,7 @@ let onStart = function () {
         }
     }
     
-    const ISOLATE_COMPARATOR_REGEX = /^([&=]|[!><]=?)?(.+)/;
+    const ISOLATE_COMPARATOR_REGEX = /^([&$=]|[!><]=?)?(.+)/;
     
     // returns 1 or 2 elements
     const isolateComparator = function (str) {
@@ -2974,6 +3030,8 @@ let onStart = function () {
     const operatorFunctions = {
         "OR": FN.or,
         "AND": FN.and,
+        "XOR": FN.xor,
+        "EITHER": FN.xor,
     };
     const operatorNameToFunction = function (opName) {
         let fn = operatorFunctions[opName];
@@ -3135,11 +3193,42 @@ let onStart = function () {
         return result;
     };
     // window.parseInputQuery=parseInputQuery;
-    const ISOLATE_TAG_REGEX = /\{(!?)(\w+)([^\{\}]*?)\}/g;
-    const formTagsFromInput = function (input) {
-        let tags = [];
-        let messages = [];
-        input = input.replace(ISOLATE_TAG_REGEX, function (match, isNegation, param, info) {
+    // const ISOLATE_TAG_REGEX = /\{(!?)(\w+)([^\{\}]*?)\}/g;
+    const ISOLATE_TAG_REGEX = /\{([^\{\}]*?)\}/g;
+    class TagDataParser {
+        constructor(input) {
+            this.tagGroups = [];
+            this.messages = [];
+            this.input = input;
+            this.result = null;
+        }
+        
+        message(status, report) {
+            this.messages.push([status, report]);
+        }
+        
+        newTagGroup() {
+            this.tagGroups.push([]);
+        }
+        
+        addTag(tag) {
+            if(this.tagGroups.length === 0) {
+                this.newTagGroup();
+            }
+            this.tagGroups[this.tagGroups.length - 1].push(tag);
+        }
+        
+        validate(...args) {
+            return this.tagGroups.every(group => group.some(tag => tag(...args)));
+        }
+        
+        parseStep(piece) {
+            let match = piece.match(/(!?)(\w+)([^\{\}]*)/);
+            if(!match) {
+                this.addTag(() => false);
+                return "";
+            }
+            let [ inner, isNegation, param, info ] = match;
             // tag is usually just removed
             let remnant = "";
             // over each tag:
@@ -3168,9 +3257,10 @@ let onStart = function () {
                         }
                         let isolatedData = formTagsFromInput(body);
                         remnant += isolatedData.result;
-                        let localTags = isolatedData.tags;
+                        // let localTags = isolatedData.tags;
                         validator = function (...args) {
-                            return localTags.every(fn => fn(...args));
+                            return isolatedData.validate(...args);
+                            // return localTags.every(fn => fn(...args));
                         };
                         for(let message of isolatedData.messages) {
                             messages.push(...message);
@@ -3178,28 +3268,51 @@ let onStart = function () {
                     }
                 }
             } catch(error) {
-                messages.push([(STATUS.ERROR, "Problem creating validator: " + error.message)]);
-                return "";
+                this.message(STATUS.ERROR, "Problem creating validator: " + error.message);
+                return remnant;
             }
             
             if(validator) {
                 if(isNegation) {
                     validator = FN.compose(FN.not, validator);
                 }
-                tags.push(validator);
+                this.addTag(validator);
             }
             else if(validator !== null) {
-                messages.push([STATUS.ERROR, "Invalid validator (bug, please report): " + match]);
+                this.message(STATUS.ERROR, "Invalid validator (bug, please report): " + match);
             }
             
+            // this.addTag(tags);
             return remnant;
-        });
-        return {
-            result: input,
-            tags: tags,
-            messages: messages
-        };
+        }
+        
+        parse() {
+            let result = this.input.replace(ISOLATE_TAG_REGEX, (match, inner) => {
+            
+                let remnantTotal = "";
+                // let tags = [];
+                this.newTagGroup();
+                for(let piece of inner.split("|")) {
+                    remnantTotal += this.parseStep(piece);
+                }
+                return remnantTotal;
+            });
+            this.result = result;
+        }
+    }
+    const formTagsFromInput = function (input) {
+        let tagGroups = [];
+        let messages = [];
+        let parser = new TagDataParser(input);
+        parser.parse();
+        return parser;
+        // return {
+            // result: input,
+            // tagGroups: tagGroups,
+            // messages: messages
+        // };
     };
+    EXT.Search.formTagsFromInput = formTagsFromInput;
     let updateSearchContents = function () {
         Editor.clearSearch();
         initializeMessageContainer();
@@ -3216,7 +3329,7 @@ let onStart = function () {
         // isolate the tags in the input
         let isolatedData = formTagsFromInput(input);
         input = isolatedData.result;
-        let { tags } = isolatedData;
+        // let { tags } = isolatedData;
         for(let message of isolatedData.messages) {
             addMessage(...message);
         }
@@ -3228,7 +3341,8 @@ let onStart = function () {
         });
         
         // needs non-empty input
-        if (input.length !== 0 || effect.length !== 0 || tags.length !== 0) {
+        let hasTags = isolatedData.tagGroups.length !== 0;
+        if (input.length !== 0 || effect.length !== 0 || hasTags) {
             let exactMatches = [];
             let fuzzyMatches = [];
             
@@ -3243,7 +3357,6 @@ let onStart = function () {
             }
             
             // only if the user is not searching by a valid ID
-            let hasTags = tags.length !== 0;
             let isLongEnough = input.length >= EXT.MIN_INPUT_LENGTH || effect.length >= EXT.MIN_INPUT_LENGTH;
             let isFuzzySearch = hasTags || isLongEnough;
             
@@ -3257,7 +3370,8 @@ let onStart = function () {
                 // for each card ID
                 for (var e in Engine.database.cards) {
                     let card = Engine.database.cards[e];
-                    if(!Editor.isCardFiltered(card) || !allSatisfies(tags, card)) {
+                    // if(!Editor.isCardFiltered(card) || !allSatisfies(tags, card)) {
+                    if(!Editor.isCardFiltered(card) || !isolatedData.validate(card)) {
                         continue;
                     }
                     let compareName = searchableCardName(card);
