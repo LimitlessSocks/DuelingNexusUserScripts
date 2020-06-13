@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Modern Level Replacement Script
 // @namespace    https://duelingnexus.com/
-// @version      0.2
+// @version      1.1
 // @description  Replaces the stars on cards in the textboxes with a more readable description.
 // @author       Sock#3222
 // @grant        none
