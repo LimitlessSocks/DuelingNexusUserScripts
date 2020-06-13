@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DuelingNexus Modern Level Replacement Script
 // @namespace    https://duelingnexus.com/
-// @version      1.1.1
+// @version      1.2
 // @description  Replaces the stars on cards in the textboxes with a more readable description.
 // @author       Sock#3222
 // @grant        none
@@ -27,7 +27,7 @@ let onStart = function () {
             $(".card-types").text(b.join("|"));
             if (a.type & CardType.MONSTER)
                 if ($("#card-if-monster").show(), $("#card-if-spell").hide(),
-                    $("#card-race").text(I18n.races[a.race]), $("#card-attribute").text(I18n.attributes[a.attribute]), $("#card-atk").text(a.attack), a.type & CardType.LINK) {
+                    $("#card-race").text(I18n.races[a.race]), $("#card-attribute").text(I18n.attributes[a.attribute]), $("#card-atk").text(a.attack === -2 ? "?" : a.attack), a.type & CardType.LINK) {
                     $("#card-def").text("LINK-" + a.level);
                     var d = "";
                     a.defence & LinkMarker.TOP_LEFT && (d += "&#8598;");
@@ -40,7 +40,7 @@ let onStart = function () {
                     a.defence & LinkMarker.BOTTOM_RIGHT && (d += "&#8600;");
                     $("#card-level").html(d)
                 } else {
-                    $("#card-def").text(a.defence);
+                    $("#card-def").text(a.defence === -2 ? "?" : a.defence);
                     d = "";
                     let levelIndicator = "Level";
                     if(a.type & CardType.XYZ) {
