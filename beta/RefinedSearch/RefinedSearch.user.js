@@ -556,7 +556,7 @@ let onStart = function () {
                 </table>
               </div>
               
-              <table class="rs-ext-left-float rs-ext-table"id=rs-ext-link-arrows>
+              <table class="rs-ext-left-float rs-ext-table" id=rs-ext-link-arrows>
                 <tr>
                   <th colspan=3>Link Arrows</th>
                 </tr>
@@ -1394,6 +1394,7 @@ let onStart = function () {
             }, 0); 
         }
     };
+    EXT.download = download;
     
     /* TODO: allow larger deck sizes */
     const cardRegionIndicators = {
@@ -1818,7 +1819,7 @@ let onStart = function () {
         return Object.entries(decks).map(([key, value]) =>
             [key + " Deck:", ...cardNamesInDeck($(value))]
             .join("\n")
-        ).join("\n--------------\n");
+        ).join("\n---------\n");
     }
     
     /* UPDATE PAGE STRUCTURE */
@@ -2968,7 +2969,7 @@ let onStart = function () {
             }
         }
         else if(tag.param === "ATTR" || tag.param === "ATTRIBUTE") {
-            let searchAttribute = tag.value.toUpperCase();
+            let searchAttribute = tag.value.toUpperCase().trim();
             let attributeMask = ATTRIBUTE_HASH[searchAttribute];
             if(attributeMask !== undefined) {
                 attributeMask = parseInt(attributeMask, 10);
