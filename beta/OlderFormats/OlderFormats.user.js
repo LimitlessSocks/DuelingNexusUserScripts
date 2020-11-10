@@ -25,7 +25,7 @@ class HistoricalBanlist {
     
     banUnlistedCards() {
         for(let key of Object.keys(Engine.database.cards)) {
-            if(typeof this.banlistIds[key] === "undefined") {
+            if(!(key in this.banlistIds[key])) {
                 this.banlistIds[key] = 0;
             }
         }
@@ -38,4 +38,4 @@ EXT.EDIT_API.waitForReady().then(() => {
         TrinityBanlistExtension.formats.push(banlist);
         EXT.EDIT_API.registerBanlist(banlist);
     }
-}
+});
