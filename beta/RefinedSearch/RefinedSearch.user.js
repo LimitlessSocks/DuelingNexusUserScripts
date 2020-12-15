@@ -1175,7 +1175,7 @@ let onStart = function () {
     const isUnionMonster        = (card) => card.type & cardTypeMap["Union"];
     const isXyzMonster          = (card) => card.type & cardTypeMap["Xyz"];
     const isPendulumMonster     = (card) => card.type & cardTypeMap["Pendulum"];
-    const isLegendMonster       = (card) => 4 === card.ot && 1 === card.category;
+    const isLegendMonster       = (card) => 4 === card.ot && 0x80 === card.category;
     const isTrapMonster         = (card) => (card.type & 131076) && card.race !== 0;
     
     const isExtraDeckMonster = (card) => [
@@ -1924,7 +1924,7 @@ let onStart = function () {
         else {
             for(let testId of [id, alias]) {
                 let card = Engine.database.cards[testId];
-                if(card && card.ot === 4 && card.category === 1) {
+                if(card && isLegendMonster(card)) {
                     result.restricted = true;
                     result.limitStatus = 1;
                     result.src = "assets/images/legend.png";
