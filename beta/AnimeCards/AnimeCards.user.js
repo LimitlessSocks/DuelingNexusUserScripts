@@ -3,7 +3,7 @@
 // @namespace    https://duelingnexus.com/
 // @description  Reskins the existing Dueling Nexus cards with Anime versions.
 // @author       Sock#3222
-// @version      0.1
+// @version      0.2
 // @match        https://duelingnexus.com/game/*
 // @match        https://duelingnexus.com/editor/*
 // @grant        none
