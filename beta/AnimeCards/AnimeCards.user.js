@@ -15,7 +15,10 @@
     window.usingAnimeCards = true;
 
     //https://cdn.jsdelivr.net/gh/ElvinaOlacarynWorld/OlacarynWorld@d079300/18743376.jpg
-    const getAnimeAsset = (id) => "https://raw.githubusercontent.com/LimitlessSocks/UnendingLegacy/master/small/" + id + ".jpg";
+    // const githubRepository = "UnendingLegacy";
+    const githubRepository = "DictionaryPie";
+    const animeBase = "https://raw.githubusercontent.com/LimitlessSocks/" + githubRepository + "/master/small/";
+    const getAnimeAsset = (id) => animeBase + id + ".jpg";
 
     let oldGetPicture = Engine.getCardPicturePath;
     Engine.getCardPicturePath = function (id, usingAnime = window.usingAnimeCards) {
