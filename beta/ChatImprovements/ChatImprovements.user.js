@@ -879,9 +879,6 @@ let onload = function () {
     }
     ChatImprovements.displayMessage = displayMessage;
     
-    // overwrite send message
-    window.td = displayMessage;
-    
     let unifyMessage = function (message) {
         return timestamp() + " " + message;
     }
@@ -893,8 +890,16 @@ let onload = function () {
         let playerId = a.playerId;
         let message = a.message;
         let color;
-        
-        if(0 <= playerId && 3 >= playerId) {
+        if(a.messageType == 1) {
+            let name = Game.players[playerId].name;
+            if(ChatImprovements.playersMuted[name]) {
+                console.info("Message from " + name + " muted.");
+                return;
+            }
+            message = `[Team] [@${name},${playerId}]: ${message}`;
+            color = "powderblue";
+        }
+        else if(0 <= playerId && 3 >= playerId) {
             let name = Game.players[playerId].name;
             if(ChatImprovements.playersMuted[name]) {
                 console.info("Message from " + name + " muted.");
@@ -920,6 +925,10 @@ let onload = function () {
                 type: "SendChatMessage",
                 message: message
             });
+            if(message.startsWith("/")) {
+                // let the message receiver output it
+                return;
+            }
             message = unifyMessage(`[@${Game.username},${Game.position}]: ${message}`);
             if(4 > Game.position) {
                 displayMessage(message);
