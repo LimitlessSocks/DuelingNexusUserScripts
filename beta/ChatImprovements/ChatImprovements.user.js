@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Dueling Nexus Chat Improvements Plugin
 // @namespace    https://duelingnexus.com/
-// @version      0.12.1
+// @version      0.12.2
 // @description  Revamps the chat and visual features of dueling.
 // @author       Sock#3222
 // @grant        none
@@ -12,25 +12,6 @@
 
 // TODO: show chat during ranked - game-container
 // TODO: show options during pre-round
-
-// Game.Card = function(a, b) {
-    // this.code = a || 0;
-    // this.alias = 0;
-    // this.type = CardType.MONSTER;
-    // this.controller = this.owner = this.rightScale = this.leftScale = this.baseDefence = this.baseAttack = this.defence = this.attack = this.race = this.attribute = this.rank = this.level = 0;
-    // this.location = CardLocation.DECK;
-    // this.sequence = 0;
-    // this.position = b || CardPosition.FACEUP_ATTACK;
-    // this.isDisabled = false;
-    // this.overlays = [];
-    // this.counters = {};
-    // this.linkArrows = this.linkRating = 0;
-    // this.zoneElement = null;
-    // this.imgElement = $("<img>").addClass("game-field-card");
-    // this.negatedElement =
-        // this.levelElement = this.textElement = null;
-    // this.sumValue = 0
-// };
 
 let makeReadOnly = function (obj, prop) {
     let val = obj[prop];
@@ -150,6 +131,8 @@ let defaultProperties = {
     showChainEvents: true,
     showTargetEvents: true,
     
+    streamerMode: false,
+    
     showOnHover: true,
     
     keybinds: {
@@ -243,7 +226,7 @@ let waitFrame = function () {
 
 const waitForElementJQuery = async function (selector, source = $("body")) {
     let query;
-    while (source.find(selector).length === 0) {
+    while ((query = source.find(selector)).length === 0) {
         await waitFrame();
     }
     return query;
@@ -792,6 +775,7 @@ let onload = function () {
             $("#game-avatar-player-image").attr("src", "uploads/avatars/" + Game.players[a].customAvatarPath) : $("#game-avatar-player-image").attr("src", Engine.getAssetPath("images/avatars/" + Game.players[a].avatar + ".jpg"));
         null !== Game.players[b].customAvatarPath ? $("#game-avatar-opponent-image").attr("src", "uploads/avatars/" + Game.players[b].customAvatarPath) : $("#game-avatar-opponent-image").attr("src", Engine.getAssetPath("images/avatars/" + Game.players[b].avatar + ".jpg"))
     };
+
     let displayMessage = function (content, color, ...kinds) {
         //Engine.ui.setCardInfo
         let matches;
@@ -1117,6 +1101,107 @@ let onload = function () {
         }
     };
     
+    // hide sleeves/profile picture
+    
+    const BLACK_SQUARE_IMAGE = "https://images.squarespace-cdn.com/content/v1/55fc0004e4b069a519961e2d/1442590746571-RPGKIXWGOO671REUNMCB/ke17ZwdGBToddI8pDm48kKVo6eXXpUnmuNsFtLxYNDVZw-zPPgdn4jUwVcJE1ZvWhcwhEtWJXoshNdA9f1qD7abfyk2s94xLLkDA7TSo2rckMlGDU48FfF-V7lLcSuGNU_Uf7d6wOiJwP-LWX64gbQ/image-asset.gif?format=300w";
+    let visiblePlayersArray = [ true, true, true, true ];
+    const toggleAvatar = (avatar, state = !avatar.data("visible")) => {
+        if(state) {
+            avatar.attr("src", avatar.data("original-source"));
+        }
+        else {
+            avatar.data("original-source", avatar.attr("src"));
+            avatar.attr("src", BLACK_SQUARE_IMAGE);
+        }
+        avatar.data("visible", state);
+    };
+    for(let avatar of $(".game-avatar")) {
+        avatar = $(avatar);
+        avatar.data("visible", true);
+        avatar.css("cursor", "pointer");
+        avatar.click(() => {
+            toggleAvatar(avatar);
+        });
+    }
+    
+    // TODO: revert
+    const censorOpponentSleeveToggle = function () {
+        let myPosition = Game.position;
+        
+        if(Game.players.some((player) => !player)) {
+            return setTimeout(censorOpponentSleeveToggle, 100);
+        }
+        
+        Game.players.forEach((player, i) => {
+            if(i === myPosition) {
+                return;
+            }
+            
+            console.log(player, Game.players);
+            
+            if(player.oa) {
+                player.old_oa = player.oa;
+                player.oa = null;
+                for(let card of $(".game-field-card")) {
+                    if($(card).data("controller") !== 0 && card.src.indexOf(player.old_oa) !== -1) {
+                        card.src = "assets/images/cover.png";
+                    }
+                }
+            }
+        });
+    };
+    $("#game-field-opponent-deck").click(() => {
+        censorOpponentSleeveToggle();
+    });
+    
+    const loadAvatar = function (node, index) {
+        let player = Game.players[index];
+
+        if(Game.players[index].customAvatarPath) {
+            node.attr("src", "uploads/avatars/" + player.customAvatarPath);
+        }
+        else {
+            node.attr("src", Engine.getAssetPath("images/avatars/" + player.avatar + ".jpg"));
+        }
+    };
+    /*
+    Game.updatePlayerNames = function updatePlayerNames() {
+        let offset = 0;
+        if (Game.isTag) {
+            if (2 > Game.position || 4 <= Game.position) {
+                var a = Game.tagPlayer[0];
+                var b = Game.tagPlayer[1] + 2;
+            }
+            else {
+                a = Game.tagPlayer[0] + 2;
+                b = Game.tagPlayer[1];
+            }
+        }
+        else {
+            a = (2 > Game.position) ? Game.position : 0;
+            b = 1 - a;
+        }
+        if (Game.isSpectator) {
+            var c = a;
+            a = b;
+            b = c
+        }
+        $("#game-player-name").text(Game.players[a].name);
+        $("#game-avatar-opponent-image").text(Game.players[b].name);
+        loadAvatar($("#game-avatar-player-image"), a);
+        loadAvatar($("#game-avatar-opponent-image"), b);
+    };
+    */
+    
+    const streamerModeInitialize = function () {
+        if(ChatImprovements.streamerMode) {
+            censorOpponentSleeveToggle();
+        }
+        waitForElementJQuery("#game-avatar-opponent-image:visible").then((el) => {
+            toggleAvatar(el, !ChatImprovements.streamerMode);
+        });
+    };
+    
     const displayKey = (data) => {
         let message = [];
         if(data.ctrl) {
@@ -1232,7 +1317,19 @@ let onload = function () {
                 "ci-ext-option-show-hover",
                 "showOnHover",
                 "checkbox",
-            )
+            ),
+            // new GameOption(
+                // "Streamer Mode",
+                // "ci-ext-streamer-mode-toggle",
+                // "streamerMode",
+                // "checkbox",
+                // {
+                    // resolve: function () {
+                        // streamerModeInitialize();
+                    // },
+                    // resolveOnLoad: true,
+                // }
+            // ),
         ],
         [
             "Event Filters",
@@ -1662,6 +1759,57 @@ let onload = function () {
         }
     });
     
+    /*
+    let OldGameCard = Game.Card;
+    class NewGameCard extends OldGameCard {
+        constructor(...args) {
+            super(...args);
+            // accessibility
+            this.imgElement.focusin(() => {
+                console.log("Focused on", this);
+            });
+            this.imgElement.keypress((ev) => {
+                console.log("Keydown:", ev);
+            });
+            this.actualCode = this.code;
+            // this.code = this.code;
+            // let onClassChange = function (el, how) {
+                // if(this.hasClass("game-selected-cards")) {
+                    // this.attr("tabindex", 0);
+                // }
+                // else {
+                    // this.attr("tabindex", -1);
+                // }
+            // };
+            // let oldAddClass = this.imgElement.addClass;
+            // this.imgElement.addClass = function (...args) {
+                // oldAddClass(...args);
+                // onClassChange(this, "add");
+            // };
+            // let oldRemoveClass = this.imgElement.removeClass;
+            // this.imgElement.removeClass = function (...args) {
+                // oldRemoveClass(...args);
+                // onClassChange(this, "remove");
+            // };
+        }
+        
+        set code(newCode) {
+            this.actualCode = newCode;
+            if(this.actualCode) {
+                this.imgElement.attr("tabindex", 0);
+            }
+            else {
+                this.imgElement.attr("tabindex", -1);
+            }
+        }
+        
+        get code() {
+            return this.actualCode;
+        }
+    };
+    // Game.Card = NewGameCard;
+    */
+    
     // still a mystery to me
     // originally: - 24
     const RESIZE_OFFSET = 10;
@@ -1763,7 +1911,6 @@ let onload = function () {
         let originalZ = this.imgElement.css("z-index") || "2";
         let callback = () => {
             if(cb) {
-                // console.log("CALLING BACK!");
                 cb();
             }
         };
@@ -1868,50 +2015,15 @@ let onload = function () {
         $(overlayExtension).hide();
     });
     
-    // hide sleeves/profile picture
-    
-    const BLACK_SQUARE_IMAGE = "https://images.squarespace-cdn.com/content/v1/55fc0004e4b069a519961e2d/1442590746571-RPGKIXWGOO671REUNMCB/ke17ZwdGBToddI8pDm48kKVo6eXXpUnmuNsFtLxYNDVZw-zPPgdn4jUwVcJE1ZvWhcwhEtWJXoshNdA9f1qD7abfyk2s94xLLkDA7TSo2rckMlGDU48FfF-V7lLcSuGNU_Uf7d6wOiJwP-LWX64gbQ/image-asset.gif?format=300w";
-    for(let avatar of $(".game-avatar")) {
-        avatar = $(avatar);
-        avatar.data("visible", true);
-        avatar.css("cursor", "pointer");
-        avatar.click(() => {
-            if(avatar.data("visible")) {
-                avatar.data("original-source", avatar.attr("src"));
-                avatar.attr("src", BLACK_SQUARE_IMAGE);
-            }
-            else {
-                avatar.attr("src", avatar.data("original-source"));
-            }
-            avatar.data("visible", !avatar.data("visible"));
-        });
-    }
-    
-    // TODO: revert
-    $("#game-field-opponent-deck").click(() => {
-        let opponentName = $("#game-opponent-name").text();
-        let opponent = B.find(player => player.name === opponentName);
-        
-        if(opponent.oa) {
-            opponent.old_oa = opponent.oa;
-            opponent.oa = null;
-            for(let card of $(".game-field-card")) {
-                if($(card).data("controller") !== 0 && card.src.indexOf(opponent.old_oa) !== -1) {
-                    card.src = "assets/images/cover.png";
-                }
-            }
-        }
-    });
-    
-    let oldGameWin = Game.onGameWin;
-    Game.onGameWin = function (a) {
-        Game.players[a.player].score = Game.players[a.player].score || 0;
-        Game.players[a.player].score++;
-        oldGameWin(a);
-    };
-    if(Game.messageHandlers.GameWin) {
-        Game.messageHandlers.GameWin = Game.onGameWin;
-    }
+    // let oldGameWin = Game.onGameWin;
+    // Game.onGameWin = function (a) {
+        // Game.players[a.player].score = Game.players[a.player].score || 0;
+        // Game.players[a.player].score++;
+        // oldGameWin(a);
+    // };
+    // if(Game.messageHandlers.GameWin) {
+        // Game.messageHandlers.GameWin = Game.onGameWin;
+    // }
     
     // sounds
     const swapSound = (sound, src) => {
