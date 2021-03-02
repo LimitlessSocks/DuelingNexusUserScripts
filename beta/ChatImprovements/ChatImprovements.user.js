@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Dueling Nexus Chat Improvements Plugin
 // @namespace    https://duelingnexus.com/
-// @version      0.12.2
+// @version      0.13.1
 // @description  Revamps the chat and visual features of dueling.
 // @author       Sock#3222
 // @grant        none
